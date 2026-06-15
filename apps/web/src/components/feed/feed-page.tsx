@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useFeed, useCreatePost } from '@/hooks/use-feed';
+import { useFeed, useCreatePost, useTrendingFeed } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
-import { Loader2, Send, Eye, PenLine } from 'lucide-react';
+import { Loader2, Send, Eye, PenLine, Clock, TrendingUp } from 'lucide-react';
 import { getInitials } from '@community/shared';
 import { renderMarkdown } from '@/lib/markdown';
 
 export function FeedPage() {
   const { user } = useAuth();
+  const [tab, setTab] = useState<'latest' | 'trending'>('latest');
   const { data, isLoading, error } = useFeed();
+  const { data: trendingData, isLoading: trendingLoading } = useTrendingFeed();
   const createPost = useCreatePost();
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState(false);
+
+  const activePosts = tab === 'latest' ? data?.data : trendingData?.data;
+  const activeLoading = tab === 'latest' ? isLoading : trendingLoading;
+  const activeError = tab === 'latest' ? error : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +36,23 @@ export function FeedPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+      {/* Feed tab switcher */}
+      <div className="flex items-center gap-1 p-1 rounded-xl w-fit" style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}>
+        {([['latest', 'Latest', Clock], ['trending', 'Trending', TrendingUp]] as const).map(([key, label, Icon]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: tab === key ? 'var(--theme-primary)' : 'transparent',
+              color: tab === key ? 'var(--theme-background)' : 'var(--theme-text-muted)',
+            }}
+          >
+            <Icon size={13} /> {label}
+          </button>
+        ))}
+      </div>
+
       {/* Compose */}
       {user && (
         <Card>
@@ -109,7 +132,7 @@ export function FeedPage() {
       )}
 
       {/* Feed */}
-      {isLoading ? (
+      {activeLoading ? (
         Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="p-4 space-y-3">
@@ -125,25 +148,25 @@ export function FeedPage() {
             </CardContent>
           </Card>
         ))
-      ) : error ? (
+      ) : activeError ? (
         <Card>
           <CardContent className="p-8 text-center">
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load feed. Please try again.</p>
           </CardContent>
         </Card>
-      ) : !data?.data?.length ? (
+      ) : !activePosts?.length ? (
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-lg font-medium mb-2" style={{ color: 'var(--theme-text)' }}>
-              No posts yet
+              {tab === 'trending' ? 'No trending posts this week' : 'No posts yet'}
             </p>
             <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-              Be the first to share something with the community!
+              {tab === 'trending' ? 'Check back later or switch to Latest.' : 'Be the first to share something with the community!'}
             </p>
           </CardContent>
         </Card>
       ) : (
-        data.data.map((post) => <PostCard key={post.id} post={post} />)
+        activePosts.map((post) => <PostCard key={post.id} post={post} />)
       )}
     </div>
   );

@@ -14,6 +14,17 @@ export function useFeed(page = 1, limit = 20) {
   });
 }
 
+export function useTrendingFeed(limit = 20) {
+  return useQuery({
+    queryKey: ['feed', 'trending', limit],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/posts/trending', { params: { limit } });
+      return data as { data: any[]; total: number };
+    },
+    refetchInterval: 60_000,
+  });
+}
+
 export function usePost(id: string) {
   return useQuery({
     queryKey: ['post', id],

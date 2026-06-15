@@ -23,6 +23,13 @@ export class PostsController {
     return this.postsService.findAll(Number(page), Number(limit), user?.id);
   }
 
+  @Get('trending')
+  @ApiOperation({ summary: 'Get trending posts (most reacted in last 7 days)' })
+  @ApiQuery({ name: 'limit', required: false })
+  getTrending(@Query('limit') limit = 20, @CurrentUser() user: any) {
+    return this.postsService.getTrending(Number(limit), user?.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get post by ID' })
   findOne(@Param('id') id: string) {

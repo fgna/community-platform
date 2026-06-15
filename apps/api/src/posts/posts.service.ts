@@ -53,6 +53,28 @@ export class PostsService {
     };
   }
 
+  async getTrending(limit = 20, userId?: string) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const posts = await this.prisma.post.findMany({
+      where: { isHidden: false, createdAt: { gte: sevenDaysAgo } },
+      include: {
+        _count: { select: { reactions: true, comments: true } },
+        author: { select: { id: true, name: true, avatarUrl: true, role: true } },
+        reactions: userId
+          ? { where: { userId }, select: { id: true, type: true, userId: true } }
+          : false,
+      },
+    });
+
+    posts.sort((a, b) => b._count.reactions - a._count.reactions);
+
+    return {
+      data: posts.slice(0, limit),
+      total: posts.length,
+    };
+  }
+
   async findOne(id: string) {
     const post = await this.prisma.post.findUnique({
       where: { id, isHidden: false },
