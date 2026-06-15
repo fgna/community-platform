@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   transpilePackages: ['@community/shared', '@community/themes', '@community/ui'],
   images: {
     remotePatterns: [
