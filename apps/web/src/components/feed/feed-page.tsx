@@ -53,8 +53,8 @@ export function FeedPage() {
         ))}
       </div>
 
-      {/* Compose */}
-      {user && (
+      {/* Compose — only on Latest tab */}
+      {user && tab === 'latest' && (
         <Card>
           <CardContent className="p-4">
             <form onSubmit={handleSubmit} className="space-y-3">
