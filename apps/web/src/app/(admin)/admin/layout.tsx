@@ -44,8 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1">
           {adminNav.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href) && href !== '/admin';
-            const isExactActive = exact && pathname === href;
+              const isExactActive = exact && pathname === href;
             const isActive = isExactActive || (!exact && pathname.startsWith(href));
             return (
               <Link

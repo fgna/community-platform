@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
 import {
@@ -91,7 +91,6 @@ export default function AnalyticsPage() {
 
   if (!data) return null;
 
-  const primaryColor = 'var(--theme-primary)';
   const maxAuthorPosts = data.topPostAuthors[0]?.postCount ?? 1;
 
   return (

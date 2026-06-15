@@ -11,7 +11,6 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
-import { cn } from '@/lib/utils';
 
 interface NavCommand {
   kind: 'nav';
