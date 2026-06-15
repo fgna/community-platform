@@ -1,8 +1,8 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, MessageCircle, BookOpen, UserPlus, UserMinus, ArrowLeft } from 'lucide-react';
+import { Users, MessageCircle, BookOpen, UserPlus, UserMinus, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, getInitials } from '@community/shared';
+import { useGetOrCreateConversation } from '@/hooks/use-messages';
 
 interface MemberProfile {
   id: string;
@@ -26,7 +27,9 @@ interface MemberProfile {
 export default function MemberProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const startConversation = useGetOrCreateConversation();
 
   const { data: member, isLoading } = useQuery<MemberProfile>({
     queryKey: ['member', id],
@@ -107,22 +110,37 @@ export default function MemberProfilePage() {
         </div>
 
         {!isOwnProfile && (
-          <Button
-            size="sm"
-            onClick={() => member.isFollowing ? unfollow.mutate() : follow.mutate()}
-            disabled={follow.isPending || unfollow.isPending}
-            variant={member.isFollowing ? 'outline' : 'default'}
-            className="flex items-center gap-2"
-            style={
-              member.isFollowing
-                ? { borderColor: 'var(--theme-border)', color: 'var(--theme-text-muted)' }
-                : { background: 'var(--theme-primary)', color: 'var(--theme-background)' }
-            }
-          >
-            {member.isFollowing
-              ? <><UserMinus size={14} /> Unfollow</>
-              : <><UserPlus size={14} /> Follow</>}
-          </Button>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => member.isFollowing ? unfollow.mutate() : follow.mutate()}
+              disabled={follow.isPending || unfollow.isPending}
+              variant={member.isFollowing ? 'outline' : 'default'}
+              className="flex items-center gap-2"
+              style={
+                member.isFollowing
+                  ? { borderColor: 'var(--theme-border)', color: 'var(--theme-text-muted)' }
+                  : { background: 'var(--theme-primary)', color: 'var(--theme-background)' }
+              }
+            >
+              {member.isFollowing
+                ? <><UserMinus size={14} /> Unfollow</>
+                : <><UserPlus size={14} /> Follow</>}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={startConversation.isPending}
+              onClick={() =>
+                startConversation.mutate(id, {
+                  onSuccess: (conv) => router.push(`/messages?conv=${conv.id}`),
+                })
+              }
+            >
+              <Mail size={14} /> Message
+            </Button>
+          </div>
         )}
       </div>
     </div>

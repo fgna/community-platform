@@ -10,6 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { GdprModule } from './gdpr/gdpr.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     GdprModule,
     HealthModule,
     NotificationsModule,
+    MessagesModule,
   ],
 })
 export class AppModule {}

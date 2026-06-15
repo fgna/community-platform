@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight } from 'lucide-react';
+import { Home, MessageCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/courses', label: 'Learning Hub', icon: GraduationCap },
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/members', label: 'Members', icon: Users },
+  { href: '/messages', label: 'Messages', icon: Mail },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

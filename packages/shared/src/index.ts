@@ -5,6 +5,7 @@ export * from './types/course.types';
 export * from './types/event.types';
 export * from './types/theme.types';
 export * from './types/notification.types';
+export * from './types/message.types';
 
 // Utils
 export * from './utils/date.utils';

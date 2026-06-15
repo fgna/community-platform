@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-06-15
+
+### Added (Sprint 3 — Private Messaging)
+- `Conversation`, `ConversationParticipant`, and `Message` database models with indexes
+- `MessagesModule` with full CRUD: list conversations, get/create conversation, send message, paginated message history
+- `GET /messages/conversations` — lists all conversations for current user (polls every 15 s on frontend)
+- `POST /messages/conversations/:userId` — get or create a direct conversation with another user
+- `GET /messages/conversations/:id/messages` — paginated message history (most recent first, auto-marks as read)
+- `POST /messages/conversations/:id/messages` — send a message, bumps conversation `updatedAt`
+- Messages page `/messages` with split-pane layout: conversation list on left, message thread on right
+- Chat bubble UI: own messages right-aligned with primary colour, others left-aligned with avatar
+- Real-time polling: conversations refresh every 15 s, open thread refreshes every 5 s
+- "Message" button on member profile pages — creates/opens a direct conversation and navigates to `/messages`
+- Messages link added to sidebar navigation
+- `useConversations`, `useMessages`, `useSendMessage`, `useGetOrCreateConversation` React Query hooks
+- `Conversation`, `Message`, `PaginatedMessages` shared types in `packages/shared`
+- `MessagesService` unit tests
+- `?conv=<id>` query param support on messages page for deep-linking from member profiles
+
+---
+
 ## [1.2.0] — 2026-06-15
 
 ### Added (Sprint 2 — Notifications & Profiles)
