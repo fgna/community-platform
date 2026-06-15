@@ -81,7 +81,7 @@ export default function AdminEventsPage() {
                       {event.location && (
                         <span className="flex items-center gap-1"><MapPin size={10} />{event.location}</span>
                       )}
-                      <span>{event.rsvpCount ?? 0} RSVPs</span>
+                      <span>{event._count?.rsvps ?? 0} RSVPs</span>
                     </div>
                   </div>
                   <Button
