@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, MapPin, Video } from 'lucide-react';
 import apiClient from '@/lib/api-client';
@@ -7,6 +8,13 @@ import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { formatDate } from '@community/shared';
 import type { CommunityEvent } from '@community/shared';
 
@@ -17,9 +25,106 @@ function useAdminEvents() {
   });
 }
 
+function CreateEventDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [startsAt, setStartsAt] = useState('');
+  const [endsAt, setEndsAt] = useState('');
+  const [location, setLocation] = useState('');
+  const [isVirtual, setIsVirtual] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState('');
+  const [maxRsvps, setMaxRsvps] = useState('');
+
+  const create = useMutation({
+    mutationFn: () =>
+      apiClient.post('/events', {
+        title,
+        description,
+        startsAt,
+        endsAt,
+        location: location || undefined,
+        isVirtual,
+        meetingUrl: meetingUrl || undefined,
+        maxRsvps: maxRsvps ? Number(maxRsvps) : undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] });
+      setTitle(''); setDescription(''); setStartsAt(''); setEndsAt('');
+      setLocation(''); setIsVirtual(false); setMeetingUrl(''); setMaxRsvps('');
+      onClose();
+    },
+  });
+
+  const valid = title.trim() && description.trim() && startsAt && endsAt;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>New Event</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="e-title">Title</Label>
+            <Input id="e-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q3 Kickoff Meeting" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="e-desc">Description</Label>
+            <Textarea id="e-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="What's this event about?" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="e-start">Starts at</Label>
+              <Input id="e-start" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-end">Ends at</Label>
+              <Input id="e-end" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="e-loc">Location (optional)</Label>
+            <Input id="e-loc" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Conference Room A" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>Virtual event</p>
+              <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>Include a meeting URL</p>
+            </div>
+            <Switch checked={isVirtual} onCheckedChange={setIsVirtual} />
+          </div>
+          {isVirtual && (
+            <div className="space-y-1.5">
+              <Label htmlFor="e-url">Meeting URL</Label>
+              <Input id="e-url" value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://meet.example.com/..." />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="e-max">Max RSVPs (optional)</Label>
+            <Input id="e-max" type="number" min={1} value={maxRsvps} onChange={(e) => setMaxRsvps(e.target.value)} placeholder="Leave blank for unlimited" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={() => create.mutate()}
+            disabled={!valid || create.isPending}
+            style={{ background: 'var(--theme-primary)', color: 'var(--theme-background)' }}
+          >
+            {create.isPending ? 'Creating…' : 'Create Event'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminEventsPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useAdminEvents();
+  const [createOpen, setCreateOpen] = useState(false);
 
   const deleteEvent = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/events/${id}`),
@@ -30,12 +135,13 @@ export default function AdminEventsPage() {
 
   return (
     <div className="space-y-6">
+      <CreateEventDialog open={createOpen} onClose={() => setCreateOpen(false)} />
       <div className="flex items-start justify-between">
         <PageHeader title="Event Management" description={`${data?.total ?? 0} events`} icon={Calendar} />
         <Button
           size="sm"
           style={{ background: 'var(--theme-primary)', color: 'var(--theme-background)' }}
-          onClick={() => alert('Event creation form — add modal in next sprint')}
+          onClick={() => setCreateOpen(true)}
         >
           + New Event
         </Button>

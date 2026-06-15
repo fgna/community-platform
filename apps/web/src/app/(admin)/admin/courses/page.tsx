@@ -1,13 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BookOpen, Globe, Lock } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { PageHeader } from '@/components/common/page-header';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { formatDate } from '@community/shared';
 import type { Course } from '@community/shared';
 
@@ -18,9 +24,61 @@ function useAdminCourses() {
   });
 }
 
+function CreateCourseDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+
+  const create = useMutation({
+    mutationFn: () => apiClient.post('/courses', { title, description, coverUrl: coverUrl || undefined }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'courses'] });
+      setTitle(''); setDescription(''); setCoverUrl('');
+      onClose();
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Course</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="c-title">Title</Label>
+            <Input id="c-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Leadership Fundamentals" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="c-desc">Description</Label>
+            <Textarea id="c-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="What will members learn?" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="c-cover">Cover image URL (optional)</Label>
+            <Input id="c-cover" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} placeholder="https://..." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={() => create.mutate()}
+            disabled={!title.trim() || !description.trim() || create.isPending}
+            style={{ background: 'var(--theme-primary)', color: 'var(--theme-background)' }}
+          >
+            {create.isPending ? 'Creating…' : 'Create Course'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminCoursesPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useAdminCourses();
+  const [createOpen, setCreateOpen] = useState(false);
 
   const togglePublish = useMutation({
     mutationFn: ({ id, published }: { id: string; published: boolean }) =>
@@ -37,12 +95,13 @@ export default function AdminCoursesPage() {
 
   return (
     <div className="space-y-6">
+      <CreateCourseDialog open={createOpen} onClose={() => setCreateOpen(false)} />
       <div className="flex items-start justify-between">
         <PageHeader title="Course Management" description={`${data?.total ?? 0} courses`} icon={BookOpen} />
         <Button
           size="sm"
           style={{ background: 'var(--theme-primary)', color: 'var(--theme-background)' }}
-          onClick={() => alert('Course creation form — add modal in next sprint')}
+          onClick={() => setCreateOpen(true)}
         >
           + New Course
         </Button>

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-06-15
+
+### Added
+- Events calendar grid view with month navigation and List/Calendar toggle
+- Admin course creation modal with title, description, cover URL fields
+- Admin event creation modal with start/end datetime, location, virtual toggle, meeting URL, capacity
+- Admin audit log page with paginated table and action-colour badges
+- Audit Log link added to admin sidebar navigation
+- GDPR data export button now downloads full account data as JSON
+- GDPR account deletion button wired to anonymisation endpoint with confirmation dialog
+
+### Fixed
+- GDPR settings privacy tab buttons were stubs — now fully functional
+
+---
+
 ## [1.0.0] — 2026-06-15
 
 ### Added

@@ -11,7 +11,9 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2 } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import apiClient from '@/lib/api-client';
 
 function getInitials(name: string) {
   return name
@@ -28,6 +30,24 @@ export function SettingsPage() {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
+
+  const exportData = useMutation({
+    mutationFn: () => apiClient.get('/gdpr/export').then((r) => r.data),
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+
+  const deleteAccount = useMutation({
+    mutationFn: () => apiClient.delete('/gdpr/account'),
+    onSuccess: () => logout(),
+  });
 
   if (!user) return null;
 
@@ -245,14 +265,29 @@ export function SettingsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportData.mutate()}
+                  disabled={exportData.isPending}
+                  className="flex items-center gap-2"
+                >
+                  {exportData.isPending ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
                   Export my data
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   style={{ borderColor: 'rgba(239,68,68,0.3)', color: '#ef4444' }}
+                  disabled={deleteAccount.isPending}
+                  onClick={() => {
+                    if (confirm('Permanently delete your account? This cannot be undone.')) {
+                      deleteAccount.mutate();
+                    }
+                  }}
+                  className="flex items-center gap-2"
                 >
+                  {deleteAccount.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   Delete account
                 </Button>
               </div>
