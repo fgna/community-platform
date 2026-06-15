@@ -5,21 +5,22 @@ WORKDIR /app
 
 FROM base AS deps
 # Copy workspace manifests + lockfile for deterministic install
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/themes/package.json ./packages/themes/
 COPY packages/ui/package.json ./packages/ui/
-RUN pnpm install --frozen-lockfile --ignore-scripts
-# Generate Prisma client after install
+# Install only the API's dependency tree
+RUN pnpm install --frozen-lockfile --filter @community/api... --ignore-scripts
+# Copy Prisma schema and generate client
 COPY apps/api/prisma ./apps/api/prisma/
-RUN cd apps/api && pnpm prisma generate
+RUN pnpm --filter @community/api exec prisma generate
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
 COPY . .
-COPY --from=deps /app/apps/api/node_modules/.prisma ./apps/api/node_modules/.prisma
 WORKDIR /app/apps/api
 RUN pnpm run build
 
@@ -27,11 +28,10 @@ FROM node:20-alpine AS production
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 ENV NODE_ENV=production
-# Only copy production artifacts
 COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/node_modules ./node_modules
 COPY --from=builder /app/apps/api/prisma ./prisma
-# Non-root user
+# Copy only production node_modules
+COPY --from=deps /app/node_modules ./node_modules
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
 USER nestjs
 EXPOSE 3001

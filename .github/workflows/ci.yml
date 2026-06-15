@@ -102,7 +102,7 @@ jobs:
 
       - name: Run API unit tests
         working-directory: apps/api
-        run: pnpm test --coverage
+        run: pnpm test:coverage
 
       - name: Upload API coverage
         uses: actions/upload-artifact@v4
@@ -130,7 +130,7 @@ jobs:
 
       - name: Run web unit tests
         working-directory: apps/web
-        run: pnpm test --coverage
+        run: pnpm test:coverage
 
       - name: Upload web coverage
         uses: actions/upload-artifact@v4

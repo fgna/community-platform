@@ -5,16 +5,17 @@ WORKDIR /app
 
 FROM base AS deps
 # Copy workspace manifests + lockfile for deterministic install
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/themes/package.json ./packages/themes/
 COPY packages/ui/package.json ./packages/ui/
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install only the web's dependency tree
+RUN pnpm install --frozen-lockfile --filter @community/web... --ignore-scripts
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
