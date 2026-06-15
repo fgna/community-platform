@@ -1,30 +1,40 @@
+# Build context: repo root (docker build -f apps/api/Dockerfile .)
 FROM node:20-alpine AS base
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json ./
-COPY prisma ./prisma/
+# Copy workspace manifests + lockfile for deterministic install
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/themes/package.json ./packages/themes/
+COPY packages/ui/package.json ./packages/ui/
 RUN pnpm install --frozen-lockfile --ignore-scripts
-RUN pnpm prisma generate
-
-FROM base AS development
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN pnpm prisma generate
-EXPOSE 3001
-CMD ["pnpm", "run", "start:dev"]
+# Generate Prisma client after install
+COPY apps/api/prisma ./apps/api/prisma/
+RUN cd apps/api && pnpm prisma generate
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY . .
-RUN pnpm prisma generate
+COPY --from=deps /app/apps/api/node_modules/.prisma ./apps/api/node_modules/.prisma
+WORKDIR /app/apps/api
 RUN pnpm run build
 
-FROM base AS production
+FROM node:20-alpine AS production
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+# Only copy production artifacts
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/node_modules ./node_modules
+COPY --from=builder /app/apps/api/prisma ./prisma
+# Non-root user
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+USER nestjs
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:3001/health || exit 1
 CMD ["node", "dist/main"]
