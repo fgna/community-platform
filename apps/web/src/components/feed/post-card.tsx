@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface PostCardProps {
   post: Post;
@@ -90,12 +91,11 @@ export function PostCard({ post }: PostCardProps) {
         )}
       </div>
 
-      <p
-        className="text-sm leading-relaxed whitespace-pre-wrap"
+      <div
+        className="text-sm leading-relaxed md-content"
         style={{ color: 'var(--theme-text)' }}
-      >
-        {post.content}
-      </p>
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+      />
 
       <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--theme-border)' }}>
         <ReactionBar post={post} />

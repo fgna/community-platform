@@ -9,28 +9,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
-import { Loader2, Send } from 'lucide-react';
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
+import { Loader2, Send, Eye, PenLine } from 'lucide-react';
+import { getInitials } from '@community/shared';
+import { renderMarkdown } from '@/lib/markdown';
 
 export function FeedPage() {
   const { user } = useAuth();
   const { data, isLoading, error } = useFeed();
   const createPost = useCreatePost();
   const [content, setContent] = useState('');
+  const [preview, setPreview] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
     await createPost.mutateAsync(content.trim());
     setContent('');
+    setPreview(false);
   };
 
   return (
@@ -45,18 +40,56 @@ export function FeedPage() {
                   <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
                   <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
-                <Textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Share something with the community..."
-                  className="min-h-[80px]"
-                  maxLength={2000}
-                />
+                <div className="flex-1">
+                  {preview ? (
+                    <div
+                      className="min-h-[80px] p-3 rounded-lg text-sm leading-relaxed md-content"
+                      style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--theme-border)',
+                        color: 'var(--theme-text)',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(content) || '<span style="opacity:0.4">Nothing to preview</span>' }}
+                    />
+                  ) : (
+                    <Textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="Share something… supports **bold**, *italic*, `code`, > quotes"
+                      className="min-h-[80px]"
+                      maxLength={2000}
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between pl-12">
-                <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
-                  {content.length}/2000
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPreview(false)}
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
+                    style={{
+                      color: !preview ? 'var(--theme-primary)' : 'var(--theme-text-muted)',
+                      background: !preview ? 'rgba(197,168,128,0.1)' : 'transparent',
+                    }}
+                  >
+                    <PenLine size={11} /> Write
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreview(true)}
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
+                    style={{
+                      color: preview ? 'var(--theme-primary)' : 'var(--theme-text-muted)',
+                      background: preview ? 'rgba(197,168,128,0.1)' : 'transparent',
+                    }}
+                  >
+                    <Eye size={11} /> Preview
+                  </button>
+                  <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+                    {content.length}/2000
+                  </span>
+                </div>
                 <Button
                   type="submit"
                   size="sm"
