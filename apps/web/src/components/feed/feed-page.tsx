@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFeed, useCreatePost, useTrendingFeed } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,20 +9,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
-import { Loader2, Send, Eye, PenLine, Clock, TrendingUp } from 'lucide-react';
+import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X } from 'lucide-react';
 import { getInitials } from '@community/shared';
-import { renderMarkdown } from '@/lib/markdown';
+import { renderMarkdown, extractHashtags } from '@/lib/markdown';
 
 export function FeedPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState<'latest' | 'trending'>('latest');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  // Listen for hashtag clicks from PostCard
+  useEffect(() => {
+    const handler = (e: Event) => setActiveTag((e as CustomEvent).detail);
+    window.addEventListener('feed:hashtag', handler);
+    return () => window.removeEventListener('feed:hashtag', handler);
+  }, []);
   const { data, isLoading, error } = useFeed();
   const { data: trendingData, isLoading: trendingLoading } = useTrendingFeed();
   const createPost = useCreatePost();
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState(false);
 
-  const activePosts = tab === 'latest' ? data?.data : trendingData?.data;
+  const rawPosts = tab === 'latest' ? data?.data : trendingData?.data;
+  const activePosts = activeTag
+    ? rawPosts?.filter(p => extractHashtags(p.content).includes(activeTag))
+    : rawPosts;
   const activeLoading = tab === 'latest' ? isLoading : trendingLoading;
   const activeError = tab === 'latest' ? error : null;
 
@@ -52,6 +63,20 @@ export function FeedPage() {
           </button>
         ))}
       </div>
+
+      {/* Active hashtag filter */}
+      {activeTag && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>Filtered by</span>
+          <button
+            onClick={() => setActiveTag(null)}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-medium"
+            style={{ background: 'rgba(197,168,128,0.12)', color: 'var(--theme-primary)' }}
+          >
+            {activeTag} <X size={11} />
+          </button>
+        </div>
+      )}
 
       {/* Compose — only on Latest tab */}
       {user && tab === 'latest' && (

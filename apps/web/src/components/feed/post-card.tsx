@@ -95,6 +95,12 @@ export function PostCard({ post }: PostCardProps) {
         className="text-sm leading-relaxed md-content"
         style={{ color: 'var(--theme-text)' }}
         dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.classList.contains('md-hashtag')) {
+            window.dispatchEvent(new CustomEvent('feed:hashtag', { detail: target.textContent?.toLowerCase() }));
+          }
+        }}
       />
 
       <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--theme-border)' }}>

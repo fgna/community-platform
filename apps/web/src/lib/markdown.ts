@@ -1,3 +1,8 @@
+export function extractHashtags(text: string): string[] {
+  const matches = text.match(/#(\w+)/g) ?? [];
+  return [...new Set(matches.map(m => m.toLowerCase()))];
+}
+
 export function renderMarkdown(text: string): string {
   return text
     // Escape HTML first
@@ -16,6 +21,8 @@ export function renderMarkdown(text: string): string {
     .replace(/^&gt; (.+)$/gm, '<blockquote class="md-quote">$1</blockquote>')
     // Links
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>')
+    // Hashtags — rendered as styled spans
+    .replace(/#(\w+)/g, '<span class="md-hashtag">#$1</span>')
     // Line breaks
     .replace(/\n/g, '<br />');
 }

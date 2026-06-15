@@ -181,3 +181,16 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Hashtags */
+.md-content .md-hashtag {
+  color: var(--theme-primary);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 2px;
+  transition: background 0.15s;
+}
+.md-content .md-hashtag:hover {
+  background: rgba(197,168,128,0.12);
+}
