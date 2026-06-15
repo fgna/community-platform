@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] — 2026-06-15
+
+### Added (Sprint 5 — Rich Text, Search & Polish)
+- Markdown rendering in post content: **bold**, *italic*, `code`, ` ``` ` code blocks, `> blockquotes`, `[links](url)`
+- Write/Preview tab toggle in post compose area for live markdown preview before posting
+- All HTML is escaped before markdown rendering (XSS-safe)
+- Platform-wide search endpoint `GET /search?q=` searching posts, users, courses, and events
+- `SearchModule` wired into AppModule
+- Command palette now shows live search results (debounced 250 ms) alongside navigation commands
+- User avatars shown in member search results within command palette
+- Topbar search input replaced with command palette trigger button (shows ⌘K shortcut)
+
+---
+
 ## [1.4.0] — 2026-06-15
 
 ### Added (Sprint 4 — Command Palette & Analytics)
