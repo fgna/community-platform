@@ -63,4 +63,10 @@ export class AdminController {
   ) {
     return this.adminService.getAuditLog(Number(page), Number(limit));
   }
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get platform analytics' })
+  getAnalytics() {
+    return this.adminService.getAnalytics();
+  }
 }

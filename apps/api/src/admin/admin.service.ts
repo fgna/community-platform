@@ -109,4 +109,70 @@ export class AdminService {
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
+
+  async getAnalytics() {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalUsers,
+      activeUsers,
+      newUsersLast30d,
+      newUsersLast7d,
+      totalPosts,
+      postsLast30d,
+      postsLast7d,
+      totalComments,
+      totalReactions,
+      totalCourses,
+      publishedCourses,
+      totalEvents,
+      upcomingEvents,
+      totalRsvps,
+      totalMessages,
+      totalConversations,
+      topPostAuthors,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { isActive: true } }),
+      this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.post.count({ where: { isHidden: false } }),
+      this.prisma.post.count({ where: { isHidden: false, createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.post.count({ where: { isHidden: false, createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.comment.count(),
+      this.prisma.reaction.count(),
+      this.prisma.course.count(),
+      this.prisma.course.count({ where: { isPublished: true } }),
+      this.prisma.event.count(),
+      this.prisma.event.count({ where: { startsAt: { gte: now } } }),
+      this.prisma.eventRsvp.count({ where: { status: 'GOING' } }),
+      this.prisma.message.count(),
+      this.prisma.conversation.count(),
+      this.prisma.post.groupBy({
+        by: ['authorId'],
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    const topAuthors = await this.prisma.user.findMany({
+      where: { id: { in: topPostAuthors.map(a => a.authorId) } },
+      select: { id: true, name: true, avatarUrl: true },
+    });
+
+    return {
+      users: { total: totalUsers, active: activeUsers, newLast30d: newUsersLast30d, newLast7d: newUsersLast7d },
+      content: { posts: totalPosts, postsLast30d, postsLast7d, comments: totalComments, reactions: totalReactions },
+      courses: { total: totalCourses, published: publishedCourses },
+      events: { total: totalEvents, upcoming: upcomingEvents, totalRsvps },
+      messages: { total: totalMessages, conversations: totalConversations },
+      topPostAuthors: topPostAuthors.map(a => ({
+        ...topAuthors.find(u => u.id === a.authorId),
+        postCount: a._count.id,
+      })),
+    };
+  }
 }

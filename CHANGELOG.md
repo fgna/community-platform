@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-06-15
+
+### Added (Sprint 4 — Command Palette & Analytics)
+- Global command palette triggered by `⌘K` / `Ctrl+K` from any dashboard page
+  - Fuzzy search across all navigation items and admin commands
+  - Keyboard navigation (↑↓ arrows, Enter to select, Escape to close)
+  - Admin-only commands (Analytics, Admin Panel) hidden from regular members
+  - Integrated into dashboard layout — available everywhere
+- Analytics dashboard at `/admin/analytics`
+  - Member stats: total, active, new (7-day / 30-day)
+  - Content stats: posts, comments, reactions with period breakdowns
+  - Course & event stats: published courses, upcoming events, total RSVPs
+  - Messaging stats: total messages and conversation count
+  - Top 5 most active post authors with horizontal bar chart
+  - Auto-refreshes every 60 s
+- `GET /admin/analytics` endpoint with aggregated platform metrics
+- Analytics link added to admin sidebar navigation
+
+---
+
 ## [1.3.0] — 2026-06-15
 
 ### Added (Sprint 3 — Private Messaging)
