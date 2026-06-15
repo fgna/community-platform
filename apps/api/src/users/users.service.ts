@@ -87,4 +87,47 @@ export class UsersService {
   async getProfile(id: string) {
     return this.findOne(id);
   }
+
+  async findOneWithFollow(id: string, requesterId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: { posts: true, courseProgress: true, followers: true, following: true },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const isFollowing = requesterId !== id
+      ? !!(await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: requesterId, followingId: id } },
+        }))
+      : false;
+
+    return { ...user, isFollowing };
+  }
+
+  async follow(followerId: string, followingId: string) {
+    if (followerId === followingId) return { message: 'Cannot follow yourself' };
+
+    await this.prisma.follow.upsert({
+      where: { followerId_followingId: { followerId, followingId } },
+      create: { followerId, followingId },
+      update: {},
+    });
+    return { following: true };
+  }
+
+  async unfollow(followerId: string, followingId: string) {
+    await this.prisma.follow.deleteMany({ where: { followerId, followingId } });
+    return { following: false };
+  }
 }

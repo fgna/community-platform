@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-06-15
+
+### Added (Sprint 2 — Notifications & Profiles)
+- In-app notification bell with live unread count badge (polls every 30 s)
+- Notification dropdown: reaction, comment, mention, event-reminder rows with actor avatar and relative timestamp
+- Mark single / mark-all-read actions on notifications
+- `Notification` and `Follow` database models with indexes
+- `GET/PATCH /notifications` API with `unread-count`, `read-all`, `:id/read` endpoints
+- Notifications auto-created on post reaction and comment (skips self-notifications)
+- Follow / unfollow endpoints `POST/DELETE /users/:id/follow`
+- Public member profile page `/members/[id]` with follower/following counts and follow button
+- Member cards now link to public profile pages
+- Settings profile tab now saves name, bio, and avatar URL via `PATCH /users/me`
+- `updateUser` action added to auth Zustand store for optimistic profile sync
+- `packages/shared` notification types: `Notification`, `PaginatedNotifications`, `NotificationType`
+
+---
+
 ## [1.1.0] — 2026-06-15
 
 ### Added

@@ -9,6 +9,7 @@ import { EventsModule } from './events/events.module';
 import { AdminModule } from './admin/admin.module';
 import { GdprModule } from './gdpr/gdpr.module';
 import { HealthModule } from './health/health.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { HealthModule } from './health/health.module';
     AdminModule,
     GdprModule,
     HealthModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
@@ -20,7 +21,10 @@ const postSelect = {
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async findAll(page = 1, limit = 20, userId?: string) {
     const skip = (page - 1) * limit;
@@ -118,12 +122,8 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
 
-    return this.prisma.comment.create({
-      data: {
-        content: dto.content,
-        postId,
-        authorId,
-      },
+    const comment = await this.prisma.comment.create({
+      data: { content: dto.content, postId, authorId },
       select: {
         id: true,
         content: true,
@@ -131,6 +131,10 @@ export class PostsService {
         author: { select: { id: true, name: true, avatarUrl: true, role: true } },
       },
     });
+
+    this.notifications.create(post.authorId, authorId, 'COMMENT', postId, 'post').catch(() => {});
+
+    return comment;
   }
 
   async toggleReaction(postId: string, type: string, userId: string) {
@@ -150,6 +154,8 @@ export class PostsService {
       data: { postId, userId, type: type as any },
       select: { id: true, type: true, userId: true },
     });
+
+    this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch(() => {});
 
     return { added: true, reaction };
   }

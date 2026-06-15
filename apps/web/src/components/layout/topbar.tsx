@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { ThemeSwitcher } from './theme-switcher';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@community/shared';
@@ -52,17 +53,7 @@ export function Topbar({ title }: TopbarProps) {
 
       <ThemeSwitcher />
 
-      {/* Notifications */}
-      <button
-        className="relative p-2 rounded-lg transition-colors hover:bg-white/5"
-        aria-label="Notifications"
-      >
-        <Bell size={18} style={{ color: 'var(--theme-text-muted)' }} />
-        <span
-          className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-          style={{ background: 'var(--theme-primary)' }}
-        />
-      </button>
+      <NotificationBell />
 
       {/* User avatar */}
       <Avatar className="h-8 w-8 cursor-pointer">

@@ -11,7 +11,8 @@ interface MemberCardProps {
 
 export function MemberCard({ member }: MemberCardProps) {
   return (
-    <Card className="hover:border-[var(--theme-primary)] transition-all duration-200">
+    <Link href={`/members/${member.id}`}>
+    <Card className="hover:border-[var(--theme-primary)] transition-all duration-200 cursor-pointer">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-11 w-11 flex-shrink-0">
@@ -44,5 +45,6 @@ export function MemberCard({ member }: MemberCardProps) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
