@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@community/shared';
-import type { Event } from '@community/shared';
+import type { CommunityEvent } from '@community/shared';
 
 function useAdminEvents() {
   return useQuery({
@@ -26,7 +26,7 @@ export default function AdminEventsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'events'] }),
   });
 
-  const events: Event[] = data?.data ?? [];
+  const events: CommunityEvent[] = data?.data ?? [];
 
   return (
     <div className="space-y-6">

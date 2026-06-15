@@ -1,9 +1,11 @@
 interface CourseProgressProps {
   percentage: number;
   showLabel?: boolean;
+  completedLessons?: number;
+  totalLessons?: number;
 }
 
-export function CourseProgress({ percentage, showLabel = true }: CourseProgressProps) {
+export function CourseProgress({ percentage, showLabel = true, completedLessons, totalLessons }: CourseProgressProps) {
   const clamped = Math.min(100, Math.max(0, percentage));
   const isComplete = clamped >= 100;
 
