@@ -262,6 +262,10 @@ jobs:
           pnpm prisma migrate deploy
           pnpm prisma db seed
 
+      - name: Build API
+        working-directory: apps/api
+        run: pnpm run build
+
       - name: Start API
         working-directory: apps/api
         run: pnpm start:prod &
