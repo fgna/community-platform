@@ -1,88 +1,78 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Cookie } from 'lucide-react';
-
-const COOKIE_CONSENT_KEY = 'community-cookie-consent';
-
-type ConsentValue = 'accepted' | 'declined' | null;
+import apiClient from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth.store';
 
 export function CookieBanner() {
-  const [consent, setConsent] = useState<ConsentValue>(null);
-  const [mounted, setMounted] = useState(false);
+  const [show, setShow] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(COOKIE_CONSENT_KEY) as ConsentValue;
-    if (stored === 'accepted' || stored === 'declined') {
-      setConsent(stored);
+    const consent = localStorage.getItem('cookie-consent');
+    if (!consent) {
+      setTimeout(() => setShow(true), 1000);
     }
   }, []);
 
-  const handleAccept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
-    setConsent('accepted');
+  const handleAccept = async (analytics: boolean, marketing: boolean) => {
+    const sessionId = Math.random().toString(36).substring(2);
+    localStorage.setItem('cookie-consent', JSON.stringify({ analytics, marketing, sessionId }));
+
+    try {
+      if (isAuthenticated) {
+        await apiClient.post('/gdpr/consent', { analytics, marketing });
+      } else {
+        await apiClient.post('/gdpr/consent/anonymous', { sessionId, analytics, marketing });
+      }
+    } catch {
+      // Non-critical
+    }
+
+    setShow(false);
   };
 
-  const handleDecline = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'declined');
-    setConsent('declined');
-  };
-
-  if (!mounted || consent !== null) return null;
+  if (!show) return null;
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl rounded-2xl p-5 shadow-2xl"
+      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 rounded-xl p-4 shadow-2xl animate-fade-in"
       style={{
         background: 'var(--theme-surface)',
         backdropFilter: 'blur(16px)',
         border: '1px solid var(--theme-border)',
       }}
-      role="dialog"
-      aria-label="Cookie consent"
     >
-      <div className="flex items-start gap-4">
-        <div
-          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'rgba(197,168,128,0.15)' }}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+          Cookie Preferences
+        </p>
+        <button onClick={() => handleAccept(false, false)} className="flex-shrink-0">
+          <X size={16} style={{ color: 'var(--theme-text-muted)' }} />
+        </button>
+      </div>
+      <p className="text-xs mb-4" style={{ color: 'var(--theme-text-muted)' }}>
+        We use cookies to improve your experience. You can choose which types to accept. Essential cookies are always active.
+      </p>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 text-xs"
+          style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-muted)' }}
+          onClick={() => handleAccept(false, false)}
         >
-          <Cookie size={20} style={{ color: 'var(--theme-primary)' }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--theme-text)' }}>
-            Cookie Preferences
-          </h3>
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
-            We use essential cookies to keep you signed in and remember your preferences. We do not
-            track you for advertising purposes. By continuing you accept our use of cookies.{' '}
-            <a
-              href="/privacy"
-              className="underline"
-              style={{ color: 'var(--theme-primary)' }}
-            >
-              Privacy Policy
-            </a>
-          </p>
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" onClick={handleAccept}>
-              Accept
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDecline}
-              style={{
-                borderColor: 'var(--theme-border)',
-                color: 'var(--theme-text-muted)',
-                background: 'transparent',
-              }}
-            >
-              Decline
-            </Button>
-          </div>
-        </div>
+          Essential only
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1 text-xs"
+          onClick={() => handleAccept(true, true)}
+        >
+          Accept all
+        </Button>
       </div>
     </div>
   );

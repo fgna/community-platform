@@ -1,17 +1,18 @@
-import { Metadata } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
-
-export const metadata: Metadata = {
-  title: 'Dashboard',
-};
+import { Topbar } from '@/components/layout/topbar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--theme-background)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--theme-background)' }}>
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {children}
-      </main>
+      <div style={{ marginLeft: 'var(--sidebar-width)' }}>
+        <Topbar />
+        <main className="pt-16 min-h-screen">
+          <div className="p-6">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
