@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { ThemeSwitcher } from './theme-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -14,7 +13,9 @@ interface TopbarProps {
 
 export function Topbar({ title }: TopbarProps) {
   const { user } = useAuth();
-  const [searchValue, setSearchValue] = useState('');
+
+  const openPalette = () =>
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
 
   return (
     <header
@@ -33,23 +34,25 @@ export function Topbar({ title }: TopbarProps) {
         </h1>
       )}
 
-      {/* Search */}
-      <div className="relative flex-1 max-w-sm">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-text-muted)' }} />
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          className="w-full pl-9 pr-4 py-1.5 text-sm rounded-lg transition-colors"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid var(--theme-border)',
-            color: 'var(--theme-text)',
-            outline: 'none',
-          }}
-        />
-      </div>
+      {/* Command palette trigger */}
+      <button
+        onClick={openPalette}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors flex-1 max-w-sm"
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid var(--theme-border)',
+          color: 'var(--theme-text-muted)',
+        }}
+      >
+        <Search size={14} />
+        <span className="flex-1 text-left text-sm">Search commands…</span>
+        <kbd
+          className="text-xs px-1.5 py-0.5 rounded font-mono"
+          style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--theme-text-muted)' }}
+        >
+          ⌘K
+        </kbd>
+      </button>
 
       <ThemeSwitcher />
 
