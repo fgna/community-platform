@@ -11,8 +11,13 @@ export interface User {
   avatarUrl?: string | null;
   role: Role;
   isActive: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile extends User {
+  postCount?: number;
+  courseCount?: number;
 }
 
 export interface AuthUser {
@@ -23,25 +28,13 @@ export interface AuthUser {
   avatarUrl?: string | null;
 }
 
-export interface LoginDto {
-  email: string;
-  password: string;
-}
-
-export interface RegisterDto {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface AuthTokens {
+export interface TokenPair {
   accessToken: string;
   refreshToken: string;
-  user: AuthUser;
 }
 
-export interface UpdateProfileDto {
-  name?: string;
-  bio?: string;
-  avatarUrl?: string;
+export interface LoginResponse {
+  user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
 }
