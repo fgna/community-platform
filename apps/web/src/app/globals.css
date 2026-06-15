@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Theme variables - set by JavaScript */
+  --theme-primary: #c5a880;
+  --theme-secondary: #6366f1;
+  --theme-accent: #c5a880;
+  --theme-success: #22c55e;
+  --theme-warning: #f59e0b;
+  --theme-danger: #ef4444;
+  --theme-background: #090d16;
+  --theme-surface: rgba(10, 15, 26, 0.85);
+  --theme-card: rgba(17, 24, 39, 0.7);
+  --theme-text: #f3f4f6;
+  --theme-text-muted: #9ca3af;
+  --theme-border: rgba(255, 255, 255, 0.08);
+  --theme-glow: rgba(197, 168, 128, 0.25);
+  --theme-blur: 16px;
+  --sidebar-width: 280px;
+
+  /* shadcn/ui variables mapped to theme */
+  --background: 222 47% 7%;
+  --foreground: 213 31% 95%;
+  --card: 222 47% 9%;
+  --card-foreground: 213 31% 95%;
+  --popover: 222 47% 9%;
+  --popover-foreground: 213 31% 95%;
+  --primary: 36 42% 65%;
+  --primary-foreground: 222 47% 7%;
+  --secondary: 240 5% 35%;
+  --secondary-foreground: 213 31% 95%;
+  --muted: 222 47% 13%;
+  --muted-foreground: 215 16% 62%;
+  --accent: 36 42% 65%;
+  --accent-foreground: 222 47% 7%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 213 31% 95%;
+  --border: 222 47% 15%;
+  --input: 222 47% 15%;
+  --ring: 36 42% 65%;
+  --radius: 0.75rem;
+}
+
+[data-theme='corporate-light'] {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 6%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 6%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 6%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 221 83% 53%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+}
+
+[data-theme='high-contrast'] {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 60 100% 50%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 180 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 30%;
+  --input: 0 0% 30%;
+  --ring: 0 0% 100%;
+}
+
+* {
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
+}
+
+html {
+  background-color: var(--theme-background);
+  color: var(--theme-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--theme-background);
+  color: var(--theme-text);
+  min-height: 100vh;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: var(--theme-surface);
+  backdrop-filter: blur(var(--theme-blur));
+  -webkit-backdrop-filter: blur(var(--theme-blur));
+  border: 1px solid var(--theme-border);
+}
+
+.glass-card {
+  background: var(--theme-card);
+  backdrop-filter: blur(var(--theme-blur));
+  -webkit-backdrop-filter: blur(var(--theme-blur));
+  border: 1px solid var(--theme-border);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-text-muted);
+}
+
+/* Selection */
+::selection {
+  background: var(--theme-primary);
+  color: var(--theme-background);
+}
