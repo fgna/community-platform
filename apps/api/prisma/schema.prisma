@@ -257,3 +257,13 @@ model Message {
 
   @@index([conversationId, createdAt])
 }
+
+model PlatformSettings {
+  id           String   @id @default("default")
+  platformName String   @default("Community")
+  logoUrl      String?
+  primaryColor String   @default("#c5a880")
+  accentColor  String   @default("#6366f1")
+  allowSignups Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+}

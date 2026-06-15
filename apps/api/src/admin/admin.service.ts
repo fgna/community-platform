@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { UpdatePlatformSettingsDto } from './dto/update-platform-settings.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -174,5 +175,21 @@ export class AdminService {
         postCount: a._count.id,
       })),
     };
+  }
+
+  async getPlatformSettings() {
+    const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'default' } });
+    if (settings) return settings;
+    return this.prisma.platformSettings.create({
+      data: { id: 'default', updatedAt: new Date() },
+    });
+  }
+
+  async updatePlatformSettings(dto: UpdatePlatformSettingsDto) {
+    return this.prisma.platformSettings.upsert({
+      where: { id: 'default' },
+      create: { id: 'default', ...dto, updatedAt: new Date() },
+      update: { ...dto, updatedAt: new Date() },
+    });
   }
 }

@@ -1,7 +1,8 @@
-import { Controller, Get, Patch, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Param, Body, Query, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { UpdatePlatformSettingsDto } from './dto/update-platform-settings.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -68,5 +69,17 @@ export class AdminController {
   @ApiOperation({ summary: 'Get platform analytics' })
   getAnalytics() {
     return this.adminService.getAnalytics();
+  }
+
+  @Get('settings')
+  @ApiOperation({ summary: 'Get platform settings' })
+  getPlatformSettings() {
+    return this.adminService.getPlatformSettings();
+  }
+
+  @Put('settings')
+  @ApiOperation({ summary: 'Update platform settings' })
+  updatePlatformSettings(@Body() dto: UpdatePlatformSettingsDto) {
+    return this.adminService.updatePlatformSettings(dto);
   }
 }
