@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  bio           String?
+  avatarUrl     String?
+  role          Role           @default(MEMBER)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  posts         Post[]
+  comments      Comment[]
+  reactions     Reaction[]
+  courseProgress Progress[]
+  eventRsvps    EventRsvp[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  cookieConsents CookieConsent[]
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  content   String
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  reactions Reaction[]
+  isPinned  Boolean    @default(false)
+  isHidden  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reaction {
+  id        String       @id @default(cuid())
+  type      ReactionType
+  postId    String
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([postId, userId, type])
+}
+
+enum ReactionType {
+  LIKE
+  HEART
+  CELEBRATE
+  INSIGHTFUL
+}
+
+model Course {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  coverUrl    String?
+  isPublished Boolean    @default(false)
+  modules     Module[]
+  progress    Progress[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Module {
+  id        String   @id @default(cuid())
+  title     String
+  order     Int
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+  createdAt DateTime @default(now())
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  order     Int
+  moduleId  String
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Progress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  completedAt DateTime?
+  percentage  Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, courseId])
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  startsAt    DateTime
+  endsAt      DateTime
+  location    String?
+  isVirtual   Boolean     @default(false)
+  meetingUrl  String?
+  maxRsvps    Int?
+  rsvps       EventRsvp[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model EventRsvp {
+  id        String     @id @default(cuid())
+  eventId   String
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    RsvpStatus @default(GOING)
+  createdAt DateTime   @default(now())
+
+  @@unique([eventId, userId])
+}
+
+enum RsvpStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  resource  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model CookieConsent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?
+  analytics Boolean  @default(false)
+  marketing Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

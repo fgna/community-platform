@@ -1,0 +1,66 @@
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { EventsService } from './events.service';
+import { CreateEventDto } from './dto/create-event.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+
+@ApiTags('events')
+@ApiBearerAuth()
+@Controller('events')
+export class EventsController {
+  constructor(private eventsService: EventsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all events' })
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @CurrentUser() user: any,
+  ) {
+    return this.eventsService.findAll(Number(page), Number(limit), user?.id);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get event by ID' })
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.eventsService.findOne(id, user?.id);
+  }
+
+  @Post()
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create event (Admin only)' })
+  create(@Body() dto: CreateEventDto) {
+    return this.eventsService.create(dto);
+  }
+
+  @Put(':id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update event (Admin only)' })
+  update(@Param('id') id: string, @Body() dto: Partial<CreateEventDto>) {
+    return this.eventsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete event (Admin only)' })
+  remove(@Param('id') id: string) {
+    return this.eventsService.delete(id);
+  }
+
+  @Post(':id/rsvp')
+  @ApiOperation({ summary: 'RSVP to an event' })
+  rsvp(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.eventsService.rsvp(id, user.id, body.status);
+  }
+
+  @Delete(':id/rsvp')
+  @ApiOperation({ summary: 'Cancel RSVP' })
+  cancelRsvp(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.eventsService.cancelRsvp(id, user.id);
+  }
+}
