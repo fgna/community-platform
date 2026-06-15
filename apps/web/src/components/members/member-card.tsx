@@ -9,7 +9,17 @@ interface MemberCardProps {
   member: User & { _count?: { posts: number; courseProgress: number } };
 }
 
+function getMemberBadge(postCount: number): { emoji: string; label: string } | null {
+  if (postCount >= 51) return { emoji: '💎', label: 'Diamond' };
+  if (postCount >= 21) return { emoji: '🔥', label: 'Active' };
+  if (postCount >= 6) return { emoji: '⭐', label: 'Rising Star' };
+  if (postCount >= 1) return { emoji: '🌱', label: 'Seedling' };
+  return null;
+}
+
 export function MemberCard({ member }: MemberCardProps) {
+  const badge = getMemberBadge(member._count?.posts ?? 0);
+
   return (
     <Link href={`/members/${member.id}`}>
     <Card className="hover:border-[var(--theme-primary)] transition-all duration-200 cursor-pointer">
@@ -25,6 +35,9 @@ export function MemberCard({ member }: MemberCardProps) {
                 {member.name}
               </p>
               {member.role === 'ADMIN' && <Badge className="text-xs py-0 px-1.5">Admin</Badge>}
+              {badge && (
+                <span title={badge.label} className="text-sm leading-none flex-shrink-0">{badge.emoji}</span>
+              )}
             </div>
             {member.bio && (
               <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--theme-text-muted)' }}>
