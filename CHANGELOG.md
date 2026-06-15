@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] — 2026-06-15
+
+### Added (Sprint 6 — Social Features & Platform Polish)
+- White-labeling foundation: `PlatformSettings` singleton model with platform name, logo URL, primary/accent colours, and signup toggle
+- `GET /admin/settings` and `PUT /admin/settings` admin endpoints
+- Admin Settings page (`/admin/settings`) with colour swatches, logo URL, and signup control
+- Trending posts: `GET /posts/trending` returns most-reacted posts in the last 7 days, sorted by reaction count
+- Feed page now has Latest / Trending tab toggle; compose area hidden on Trending tab
+- `useTrendingFeed()` hook with 60-second auto-refresh
+- Top Contributors leaderboard on Members page (right-hand sidebar, top 5 by post count with medal indicators)
+- Members page refactored to use shared `MemberCard` component with clickable profile links
+
+---
+
 ## [1.5.0] — 2026-06-15
 
 ### Added (Sprint 5 — Rich Text, Search & Polish)
