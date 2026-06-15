@@ -11,6 +11,7 @@ import { GdprModule } from './gdpr/gdpr.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { MessagesModule } from './messages/messages.module';
     HealthModule,
     NotificationsModule,
     MessagesModule,
+    SearchModule,
   ],
 })
 export class AppModule {}
