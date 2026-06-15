@@ -22,6 +22,8 @@ export interface Course {
   description: string;
   coverUrl?: string | null;
   isPublished: boolean;
+  duration?: string | null;
+  level?: string | null;
   modules: CourseModule[];
   createdAt: string;
   updatedAt: string;

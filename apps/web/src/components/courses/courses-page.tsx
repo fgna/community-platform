@@ -139,7 +139,7 @@ export function CoursesPage() {
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load courses.</p>
           </CardContent>
         </Card>
-      ) : !data?.courses?.length ? (
+      ) : !data?.data?.length ? (
         <Card>
           <CardContent className="p-12 text-center">
             <BookOpen size={40} className="mx-auto mb-3" style={{ color: 'var(--theme-text-muted)' }} />
@@ -151,7 +151,7 @@ export function CoursesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.courses.map((course) => (
+          {data.data.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>

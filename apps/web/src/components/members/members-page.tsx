@@ -19,18 +19,16 @@ function getInitials(name: string) {
 
 function roleStyle(role: string) {
   switch (role) {
-    case 'admin':
+    case 'ADMIN':
       return { background: 'rgba(220,38,38,0.15)', borderColor: 'rgba(220,38,38,0.3)', color: '#f87171' };
-    case 'moderator':
-      return { background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' };
     default:
       return undefined;
   }
 }
 
 function MemberCard({ member }: { member: AuthUser }) {
-  const isAdmin = member.role === 'admin';
-  const isModerator = member.role === 'moderator';
+  const isAdmin = member.role === 'ADMIN';
+  const isModerator = false;
 
   return (
     <Card className="hover:scale-[1.02] transition-all cursor-pointer">

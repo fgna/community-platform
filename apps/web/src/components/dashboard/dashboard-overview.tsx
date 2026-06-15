@@ -147,7 +147,7 @@ export function DashboardOverview() {
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              : feedData?.posts?.slice(0, 4).map((post) => (
+              : feedData?.data?.slice(0, 4).map((post) => (
                   <div
                     key={post.id}
                     className="flex flex-col gap-0.5 py-1 border-b last:border-0"
@@ -166,7 +166,7 @@ export function DashboardOverview() {
                     </div>
                   </div>
                 ))}
-            {!feedLoading && !feedData?.posts?.length && (
+            {!feedLoading && !feedData?.data?.length && (
               <p className="text-sm text-center py-4" style={{ color: 'var(--theme-text-muted)' }}>
                 No posts yet. Be the first!
               </p>
@@ -196,7 +196,7 @@ export function DashboardOverview() {
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              : eventsData?.events?.slice(0, 4).map((event) => (
+              : eventsData?.data?.slice(0, 4).map((event) => (
                   <div
                     key={event.id}
                     className="flex items-start gap-3 py-1 border-b last:border-0"
@@ -210,10 +210,10 @@ export function DashboardOverview() {
                       }}
                     >
                       <span className="leading-none">
-                        {new Date(event.startDate).getDate()}
+                        {new Date(event.startsAt).getDate()}
                       </span>
                       <span className="text-[9px] leading-none uppercase">
-                        {new Date(event.startDate).toLocaleString('default', { month: 'short' })}
+                        {new Date(event.startsAt).toLocaleString('default', { month: 'short' })}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -227,12 +227,12 @@ export function DashboardOverview() {
                         {event.location || 'Online'}
                       </p>
                     </div>
-                    {event.isOnline && (
+                    {event.isVirtual && (
                       <Badge className="text-[10px] flex-shrink-0">Online</Badge>
                     )}
                   </div>
                 ))}
-            {!eventsLoading && !eventsData?.events?.length && (
+            {!eventsLoading && !eventsData?.data?.length && (
               <p className="text-sm text-center py-4" style={{ color: 'var(--theme-text-muted)' }}>
                 No upcoming events.
               </p>

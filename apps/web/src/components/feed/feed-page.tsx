@@ -98,7 +98,7 @@ export function FeedPage() {
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load feed. Please try again.</p>
           </CardContent>
         </Card>
-      ) : !data?.posts?.length ? (
+      ) : !data?.data?.length ? (
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-lg font-medium mb-2" style={{ color: 'var(--theme-text)' }}>
@@ -110,7 +110,7 @@ export function FeedPage() {
           </CardContent>
         </Card>
       ) : (
-        data.posts.map((post) => <PostCard key={post.id} post={post} />)
+        data.data.map((post) => <PostCard key={post.id} post={post} />)
       )}
     </div>
   );

@@ -15,19 +15,19 @@ function EventCard({ event }: { event: CommunityEvent }) {
   const rsvp = useRsvp(event.id);
   const cancelRsvp = useCancelRsvp(event.id);
 
-  const userRsvp = event.attendees?.find((a) => a.userId === user?.id);
-  const attendeeCount = event.attendees?.length ?? 0;
+  const userRsvp = event.rsvps?.find((a) => a.userId === user?.id);
+  const attendeeCount = event.rsvps?.length ?? 0;
 
   const handleRsvp = () => {
     if (userRsvp) {
       cancelRsvp.mutate();
     } else {
-      rsvp.mutate('attending');
+      rsvp.mutate('GOING');
     }
   };
 
   const isPending = rsvp.isPending || cancelRsvp.isPending;
-  const startDate = new Date(event.startDate);
+  const startDate = new Date(event.startsAt);
 
   return (
     <Card className="overflow-hidden">
@@ -54,7 +54,7 @@ function EventCard({ event }: { event: CommunityEvent }) {
                 {event.title}
               </h3>
               <div className="flex gap-1.5 flex-shrink-0">
-                {event.isOnline && (
+                {event.isVirtual && (
                   <Badge style={{ background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)', color: '#818cf8' }}>
                     <Video size={10} className="mr-1" />
                     Online
@@ -86,16 +86,16 @@ function EventCard({ event }: { event: CommunityEvent }) {
               <Users size={12} />
               {attendeeCount} attending
             </span>
-            {event.maxAttendees && (
+            {event.maxRsvps && (
               <span className="flex items-center gap-1">
-                <span>{event.maxAttendees - attendeeCount} spots left</span>
+                <span>{event.maxRsvps - attendeeCount} spots left</span>
               </span>
             )}
           </div>
 
           <div className="flex items-center justify-between pt-1">
             <div className="flex -space-x-2">
-              {event.attendees?.slice(0, 5).map((attendee) => (
+              {event.rsvps?.slice(0, 5).map((attendee) => (
                 <div
                   key={attendee.userId}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2"
@@ -179,7 +179,7 @@ export function EventsPage() {
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load events.</p>
           </CardContent>
         </Card>
-      ) : !data?.events?.length ? (
+      ) : !data?.data?.length ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Calendar size={40} className="mx-auto mb-3" style={{ color: 'var(--theme-text-muted)' }} />
@@ -191,7 +191,7 @@ export function EventsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {data.events.map((event) => (
+          {data.data.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>
