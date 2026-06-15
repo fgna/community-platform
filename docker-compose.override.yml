@@ -16,6 +16,7 @@ services:
       NODE_ENV: development
     volumes:
       - ./apps/api/src:/app/src
+      - ./apps/api/prisma:/app/prisma
     command: pnpm run start:dev
 
   web:
@@ -25,4 +26,4 @@ services:
       NODE_ENV: development
     volumes:
       - ./apps/web/src:/app/src
-    command: pnpm run dev
+      - ./apps/web/public:/app/public
