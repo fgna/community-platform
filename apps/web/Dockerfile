@@ -1,4 +1,4 @@
-# Build context: repo root (docker build -f apps/web/Dockerfile .)
+# Build context: repo root (docker compose -f apps/web/Dockerfile .)
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
@@ -31,13 +31,16 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
-# With outputFileTracingRoot set to the workspace root, standalone output
-# uses apps/web/ prefixed paths for public assets and static files
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+# outputFileTracingRoot=workspace-root causes standalone to nest everything
+# under apps/web/ — server.js lands at apps/web/server.js, so public and
+# static must also be at apps/web/* (which they are via these COPY targets).
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3000 || exit 1
+# server.js is at apps/web/server.js within the standalone bundle
+WORKDIR /app/apps/web
 CMD ["node", "server.js"]

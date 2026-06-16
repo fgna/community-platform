@@ -113,19 +113,10 @@ export class CoursesService {
     }
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
-
     return this.prisma.progress.upsert({
       where: { userId_courseId: { userId, courseId } },
-      update: {
-        percentage,
-        completedAt: percentage >= 100 ? new Date() : null,
-      },
-      create: {
-        userId,
-        courseId,
-        percentage,
-        completedAt: percentage >= 100 ? new Date() : null,
-      },
+      update: { percentage, completedAt: percentage >= 100 ? new Date() : null },
+      create: { userId, courseId, percentage, completedAt: percentage >= 100 ? new Date() : null },
     });
   }
 

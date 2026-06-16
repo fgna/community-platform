@@ -46,12 +46,12 @@ export class UsersController {
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: join(process.cwd(), 'uploads', 'avatars'),
-      filename: (req: any, file, cb) => {
+      filename: (req: any, file: any, cb: any) => {
         const userId = req.user?.id ?? 'unknown';
         cb(null, `${userId}-${Date.now()}${extname(file.originalname)}`);
       },
     }),
-    fileFilter: (_req, file, cb) => {
+    fileFilter: (_req: any, file: any, cb: any) => {
       if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
         return cb(new BadRequestException('Only image files are allowed'), false);
       }

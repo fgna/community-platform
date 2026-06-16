@@ -318,6 +318,37 @@
 
 ---
 
+## UI / UX Bug Fixes — Exploratory QA Findings (June 2026)
+
+> Discovered by automated Playwright exploratory QA run on PR #6 (2026-06-16).
+> All items below were confirmed against a seeded local environment with screenshots.
+
+### 🔴 High (P0/P1 — fix before production deploy)
+
+| ID | Finding | Root cause | Size | Status |
+|----|---------|------------|------|--------|
+| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useQuery` returns profile data but form is never re-initialised once data arrives; call `form.reset(data)` inside `useEffect` on query success | S | `[ ]` |
+| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | NestJS ThrottlerModule defaults to `$remote_addr`; behind Nginx all users share one IP and 100 req/min is hit in <15 page loads | S | `[ ]` |
+| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | TanStack Query `isError` branch never renders; skeleton shown while `isLoading \|\| !data` which includes error states | S | `[ ]` |
+
+### 🟡 Medium (P1)
+
+| ID | Finding | Root cause | Size | Status |
+|----|---------|------------|------|--------|
+| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Profile page (`/members/[id]`) missing CTA that routes to `/messages?userId=…` | S | `[ ]` |
+| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | No `<Link href="/feed/[id]">` on post titles or bodies; post detail route may exist but is unreachable from the feed | S | `[ ]` |
+| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Consent state stored in Zustand but not persisted fast enough; modal renders before store rehydrates from localStorage | S | `[ ]` |
+
+### 🟢 Low (P2)
+
+| ID | Finding | Root cause | Size | Status |
+|----|---------|------------|------|--------|
+| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Sidebar user card logout button missing `aria-label="Sign out"` | XS | `[ ]` |
+| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | `/members` page missing a name/role filter input; admin `/admin/users` has one | S | `[ ]` |
+
+---
+
+
 ## Definition of Done
 
 A story is **Done** when:

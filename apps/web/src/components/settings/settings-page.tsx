@@ -50,6 +50,7 @@ export function SettingsPage() {
     setProfileAvatar(profile.avatarUrl ?? '');
   }, [profile]);
 
+
   const [savedProfile, setSavedProfile] = useState(false);
   const saveProfile = useMutation({
     mutationFn: () =>

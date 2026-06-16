@@ -17,7 +17,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY apps/api/prisma ./apps/api/prisma/
 RUN pnpm install --frozen-lockfile --filter @community/api...
 
-# ── builder: compile TypeScript → dist/ ─────────────────────────────────────────
+# ── builder: compile TypeScript → dist/ ────────────────────────────────────────
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
@@ -25,10 +25,13 @@ COPY . .
 # Make @nestjs/cli (nest binary) findable — pnpm copies it under apps/api/node_modules
 # but the .bin symlinks cross stage boundaries, so we expose them explicitly.
 ENV PATH="/app/apps/api/node_modules/.bin:/app/node_modules/.bin:${PATH}"
+# Re-generate Prisma client via pnpm so it writes into the correct pnpm virtual
+# store path that TypeScript resolves (deps layer may carry a stale cached client).
+RUN pnpm --filter @community/api exec prisma generate
 WORKDIR /app/apps/api
 RUN nest build
 
-# ── production: minimal runtime image ───────────────────────────────────────────
+# ── production: minimal runtime image ────────────────────────────────────────
 FROM base AS production
 WORKDIR /app
 ENV NODE_ENV=production

@@ -66,6 +66,7 @@ export class CoursesController {
     return this.coursesService.updateProgress(id, user.id, body.percentage);
   }
 
+
   @Post(':id/progress')
   @ApiOperation({ summary: 'Mark a lesson as complete' })
   completeLesson(
