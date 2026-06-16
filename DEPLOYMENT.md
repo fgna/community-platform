@@ -1,172 +1,103 @@
 # Deployment Guide
 
-## Prerequisites
-
-- Docker 24+ and Docker Compose v2 (`docker compose` not `docker-compose`)
-- pnpm 9.15+ (for local development)
-- Node.js 20+
-
 ---
 
-## Local Development (no Docker)
+## Local Development
 
-### 0. Node version and pnpm setup
+### First install
 
-This repo requires **Node 20**. Node 18 will break it. Use nvm:
+**1. Node version**
+
+This repo requires Node 20. Node 18 will break it.
 
 ```bash
 nvm use 20
 ```
 
-Make pnpm available via corepack (do this once per machine):
+**2. pnpm (once per machine)**
 
 ```bash
 corepack enable
 corepack prepare pnpm@9.15.4 --activate
 ```
 
-### 1. Install dependencies
+**3. Install dependencies**
 
 ```bash
 pnpm install
 ```
 
-### 2. Configure environment
+**4. Configure environment**
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum set JWT_SECRET and JWT_REFRESH_SECRET
+# Edit .env — set at minimum JWT_SECRET and JWT_REFRESH_SECRET
 ```
 
-### 3. Start Postgres and Redis via Docker
+**5. Start Postgres and Redis**
 
 ```bash
-pnpm docker:up postgres redis
-# Or: docker compose up postgres redis -d
+docker compose up postgres redis -d
 ```
 
-### 4. Run database migrations
+**6. Run migrations and seed**
 
 ```bash
-pnpm db:migrate          # creates/applies migrations + generates Prisma client
-pnpm db:seed             # loads seed data (admin user, sample content)
+pnpm db:migrate   # applies migrations + generates Prisma client
+pnpm db:seed      # creates admin user and sample content
 ```
 
-### 5. Start development servers
+Default seed credentials: `admin@example.com / Admin123!@#`
 
-Run everything from the **project root** (Turbo starts all apps in parallel):
+**7. Start the app**
 
 ```bash
 pnpm dev
-# API → http://localhost:3001
-# Web → http://localhost:3000  (hot reload on both)
 ```
 
-> **Do not** start apps with `node server.js` or `node dist/main.js`. This is
-> a monorepo managed by Turbo — always start through `pnpm dev` from the root.
+- Web → http://localhost:3000
+- API → http://localhost:3001
 
-If you only want the frontend (e.g. mocking the API or working on UI only):
+---
+
+### After a git pull
 
 ```bash
-cd apps/web
+nvm use 20
+pnpm install       # picks up any new or changed dependencies
+pnpm db:migrate    # applies any new migrations (safe to run even if none pending)
 pnpm dev
-```
-
-If something starts but immediately exits, the real error is usually hidden above
-the Turbo output. Check the individual app directly:
-
-```bash
-cd apps/web && pnpm dev    # shows raw Next.js output
-cd apps/api && pnpm dev    # shows raw NestJS output
 ```
 
 ---
 
-## Full Stack via Docker Compose
+### Notes
 
-Runs the entire application (Postgres, Redis, API, Web) as containers.
-
-### Quick start
-
-```bash
-cp .env.example .env          # configure secrets (see "Required environment variables" below)
-docker compose up --build -d  # build images and start all services
-docker compose logs -f        # tail logs
-```
-
-### First-time database setup
-
-After the API container is healthy, run migrations and seed data:
-
-```bash
-docker compose exec api pnpm prisma migrate deploy
-docker compose exec api pnpm prisma db seed
-```
-
-### Services
-
-| Service  | URL                             | Notes                              |
-|----------|---------------------------------|------------------------------------|
-| Web      | http://localhost:3000           |                                    |
-| API      | http://localhost:3001           |                                    |
-| API Docs | http://localhost:3001/api/docs  | Swagger UI (non-production builds) |
-| Postgres | localhost:5432                  |                                    |
-| Redis    | localhost:6379                  |                                    |
-
-### Useful commands
-
-```bash
-pnpm docker:up       # start all services (detached)
-pnpm docker:down     # stop and remove containers
-pnpm docker:logs     # tail all service logs
-docker compose ps    # check container health status
-```
-
-### Service startup order
-
-Health checks enforce the dependency chain:
-```
-postgres (healthy) → api (healthy) → web
-redis    (healthy) ↗
-```
-
----
-
-## Docker image architecture
-
-The API Dockerfile uses a four-stage build:
-
-| Stage        | Purpose                                              |
-|--------------|------------------------------------------------------|
-| `base`       | Node 20 Alpine + pnpm via corepack                   |
-| `deps`       | Install all dependencies; run `prisma generate`      |
-| `builder`    | Compile TypeScript → `dist/` using `nest build`      |
-| `production` | Runtime image; copies `node_modules` + `dist/`       |
-
-Key design decisions:
-- **No `pnpm install --prod` in production**: `@prisma/client` requires the Prisma-generated runtime files that `prisma generate` (a devDep) creates. Copying the full `node_modules` from the `deps` stage preserves these without re-running the generator.
-- **Explicit `PATH` in builder**: sets `/app/apps/api/node_modules/.bin:/app/node_modules/.bin` so `nest build` resolves the `@nestjs/cli` binary reliably across Docker layer boundaries.
-- **Production extends `base`**: pnpm is available in the final image; the production `CMD` is `node dist/main`.
-
-The `docker-compose.override.yml` applies automatically on `docker compose up`. It currently only overrides environment variables for local development. **No dev command (`nest start --watch`) is injected**; for hot-reloading run `pnpm dev` locally instead.
+- Always run `pnpm dev` from the **project root**. This is a monorepo managed by
+  Turbo — do not start apps with `node server.js` or `node dist/main.js`.
+- If you only want the frontend (UI work, API mocked):
+  ```bash
+  cd apps/web && pnpm dev
+  ```
+- If `pnpm dev` exits silently, Turbo is hiding the error. Run the failing app
+  directly to see the raw output:
+  ```bash
+  cd apps/api && pnpm dev    # NestJS output
+  cd apps/web && pnpm dev    # Next.js output
+  ```
 
 ---
 
 ## Required environment variables
 
-The API **exits at startup** if either JWT secret is missing:
-
-```bash
-JWT_SECRET=          # required — 64+ random characters
-JWT_REFRESH_SECRET=  # required — 64+ different random characters
-```
+The API **exits at startup** if either JWT secret is missing.
 
 Generate secure values:
 ```bash
-openssl rand -hex 32   # run twice, use each output for one secret
+openssl rand -hex 32   # run twice — one value for each secret
 ```
 
-Full variable reference (copy from `.env.example`):
+Full variable reference (see `.env.example`):
 
 ```env
 # Database
@@ -192,7 +123,7 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com
 # CORS (comma-separated list of allowed origins)
 CORS_ORIGINS=https://yourdomain.com
 
-# Rate limiting (requests per TTL window; defaults: 100 req / 60 s)
+# Rate limiting (defaults: 100 req / 60 s)
 THROTTLE_TTL=60000
 THROTTLE_LIMIT=100
 ```
@@ -201,54 +132,67 @@ THROTTLE_LIMIT=100
 
 ## Production deployment (VPS / cloud)
 
-### 1. Server setup
+### First deploy
 
 ```bash
-# Install Docker (Ubuntu/Debian)
+# 1. Install Docker
 curl -fsSL https://get.docker.com | sh
-```
 
-### 2. Clone and configure
-
-```bash
+# 2. Clone the repo
 git clone https://github.com/fgna/community-platform.git
 cd community-platform
+
+# 3. Configure secrets
 cp .env.example .env
 # Set JWT_SECRET, JWT_REFRESH_SECRET, DATABASE_URL, CORS_ORIGINS, NEXT_PUBLIC_API_URL
-```
 
-### 3. Build and start
-
-```bash
+# 4. Build and start
 docker compose up --build -d
+
+# 5. Migrate and seed (first deploy only)
+docker compose exec api pnpm prisma migrate deploy
+docker compose exec api pnpm prisma db seed
+
+# 6. Verify
+docker compose ps                  # all containers should show "healthy"
+curl http://localhost:3001/health  # {"status":"ok"}
 ```
 
-### 4. Run migrations (first deploy and every deploy with schema changes)
+### Updating
 
 ```bash
+git pull
+docker compose up --build -d
 docker compose exec api pnpm prisma migrate deploy
 ```
 
-### 5. Verify health
+### Services
+
+| Service  | URL                             | Notes                              |
+|----------|---------------------------------|------------------------------------|
+| Web      | http://localhost:3000           |                                    |
+| API      | http://localhost:3001           |                                    |
+| API Docs | http://localhost:3001/api/docs  | Swagger UI (non-production only)   |
+| Postgres | localhost:5432                  |                                    |
+| Redis    | localhost:6379                  |                                    |
 
 ```bash
-docker compose ps                          # all containers should show "healthy"
-curl http://localhost:3001/health          # {"status":"ok"}
+docker compose ps        # check health status
+docker compose logs -f   # tail all logs
+docker compose down      # stop and remove containers
 ```
 
 ---
 
-## Reverse proxy (nginx)
+## Reverse proxy (nginx + TLS)
 
 ```nginx
-# Redirect HTTP → HTTPS
 server {
     listen 80;
     server_name yourdomain.com api.yourdomain.com;
     return 301 https://$host$request_uri;
 }
 
-# Web (Next.js)
 server {
     listen 443 ssl;
     server_name yourdomain.com;
@@ -269,7 +213,6 @@ server {
     }
 }
 
-# API (NestJS)
 server {
     listen 443 ssl;
     server_name api.yourdomain.com;
@@ -278,17 +221,16 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
 
     location / {
-        proxy_pass         http://localhost:3001;
+        proxy_pass       http://localhost:3001;
         proxy_http_version 1.1;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
 
-Obtain TLS certificates with Certbot:
 ```bash
 certbot --nginx -d yourdomain.com -d api.yourdomain.com
 ```
@@ -299,18 +241,19 @@ certbot --nginx -d yourdomain.com -d api.yourdomain.com
 
 ```bash
 # Apply pending migrations (production-safe, never resets data)
-docker compose exec api pnpm prisma migrate deploy
-
-# Open Prisma Studio (visual browser — dev only)
-pnpm db:studio
-
-# Create a new migration after schema changes (dev only)
 pnpm db:migrate
+# or in Docker: docker compose exec api pnpm prisma migrate deploy
+
+# Seed initial data
+pnpm db:seed
+
+# Open Prisma Studio (visual DB browser — dev only)
+pnpm db:studio
 
 # Reset database (dev only — destroys all data)
 cd apps/api && pnpm prisma migrate reset
 
-# Regenerate Prisma client after schema change (without migrating)
+# Regenerate Prisma client after schema change
 cd apps/api && pnpm prisma generate
 ```
 
@@ -319,27 +262,21 @@ cd apps/api && pnpm prisma generate
 ## Running tests
 
 ```bash
-# All unit tests (all packages)
-pnpm test
+pnpm test                  # all unit tests
 
-# API unit tests with coverage
-cd apps/api && pnpm test:coverage
+cd apps/api
+pnpm test:coverage         # API unit tests with coverage
+pnpm test:integration      # integration tests (requires Postgres)
 
-# API integration tests (requires a running Postgres — use DATABASE_URL env var)
-cd apps/api && DATABASE_URL=postgresql://postgres:password@localhost:5432/community_test \
-  pnpm test:integration
-
-# Frontend E2E tests (requires API + web dev servers running)
-cd apps/web && pnpm test:e2e
+cd apps/web
+pnpm test:e2e              # Playwright E2E (requires running API + web)
 ```
-
-CI runs unit tests and integration tests on every push (see `.github/workflows/`).
 
 ---
 
 ## Scaling
 
-- **API**: Stateless — run multiple instances behind a load balancer. Shared Postgres and Redis handle session state.
+- **API**: Stateless — run multiple instances behind a load balancer. Postgres and Redis handle shared state.
 - **Database**: Add PgBouncer for connection pooling under high concurrency.
 - **Web**: Next.js supports horizontal scaling; no sticky sessions required.
 - **File uploads**: Configure S3-compatible object storage for user avatars.
