@@ -20,7 +20,7 @@ const mockPrisma = {
 };
 
 const mockJwt = {
-  sign: vi.fn().mockReturnValue('mock-access-token'),
+  sign: vi.fn().mockReturnValue('mock-jwt-token'),
 };
 
 const mockInvites = {
@@ -68,6 +68,9 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.email).toBe('test@example.com');
+      // refreshToken is now a signed JWT (not a UUID) so the
+      // JwtRefreshStrategy's ExtractJwt.fromBodyField can decode it
+      expect(mockJwt.sign).toHaveBeenCalledTimes(2); // access + refresh
     });
 
     it('should throw ConflictException if email already exists', async () => {

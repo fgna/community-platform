@@ -5,7 +5,6 @@ import { InvitesService } from '../invites/invites.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as argon2 from 'argon2';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -111,13 +110,17 @@ export class AuthService {
       secret: process.env.JWT_SECRET || 'default-secret',
     });
 
-    const refreshTokenValue = uuidv4();
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+      secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+    });
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.prisma.refreshToken.create({
       data: {
-        token: refreshTokenValue,
+        token: refreshToken,
         userId,
         expiresAt,
       },
@@ -125,7 +128,7 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken: refreshTokenValue,
+      refreshToken,
     };
   }
 }

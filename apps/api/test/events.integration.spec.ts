@@ -34,8 +34,8 @@ describe('Events — integration', () => {
       .send({
         title: 'Integration Event',
         description: 'Test event for integration tests',
-        startDate: tomorrow(),
-        endDate: dayAfterTomorrow(),
+        startsAt: tomorrow(),
+        endsAt: dayAfterTomorrow(),
         location: 'Online',
       });
     eventId = eventRes.body.id;

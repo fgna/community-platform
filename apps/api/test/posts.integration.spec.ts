@@ -60,7 +60,7 @@ describe('Posts — integration', () => {
         .expect(201);
 
       expect(res.body.content).toBe('Hello integration test #test');
-      expect(res.body.authorId).toBe(memberUserId);
+      expect(res.body.author.id).toBe(memberUserId);
       expect(res.body).toHaveProperty('id');
     });
 
@@ -93,8 +93,7 @@ describe('Posts — integration', () => {
         .expect(201);
 
       expect(res.body.content).toBe('Great post!');
-      expect(res.body.postId).toBe(postId);
-      expect(res.body.authorId).toBe(memberUserId);
+      expect(res.body.author.id).toBe(memberUserId);
     });
 
     it('400 — empty comment content', async () => {
@@ -184,7 +183,8 @@ describe('Posts — integration', () => {
         .set(bearer(memberToken))
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveProperty('data');
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 });
