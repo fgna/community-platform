@@ -56,6 +56,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
@@ -89,3 +91,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:

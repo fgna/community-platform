@@ -1,7 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { join } from 'path';
+import * as fs from 'fs';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -19,11 +22,16 @@ async function bootstrap() {
   validateRequiredSecrets();
 
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
 
   app.enableShutdownHooks();
+
+  // Ensure uploads directory exists and serve as static files
+  const uploadsDir = join(process.cwd(), 'uploads');
+  fs.mkdirSync(join(uploadsDir, 'avatars'), { recursive: true });
+  app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
 
   // Security
   app.use(helmet());
