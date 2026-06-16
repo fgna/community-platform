@@ -89,6 +89,7 @@ export default function AdminCoursesPage() {
   const deleteCourse = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/courses/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'courses'] }),
+    onError: (err: any) => alert(err?.response?.data?.message ?? 'Failed to delete course'),
   });
 
   const courses: Course[] = data?.data ?? [];

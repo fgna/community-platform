@@ -6,13 +6,14 @@ import { CreateCourseDto } from './dto/create-course.dto';
 export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(page = 1, limit = 20, userId?: string) {
+  async findAll(page = 1, limit = 20, userId?: string, userRole?: string) {
     limit = Math.max(1, Math.min(limit, 100));
     page = Math.max(1, page);
     const skip = (page - 1) * limit;
+    const where = userRole === 'ADMIN' ? {} : { isPublished: true };
     const [data, total] = await Promise.all([
       this.prisma.course.findMany({
-        where: { isPublished: true },
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -21,7 +22,7 @@ export class CoursesService {
           progress: userId ? { where: { userId } } : false,
         },
       }),
-      this.prisma.course.count({ where: { isPublished: true } }),
+      this.prisma.course.count({ where }),
     ]);
 
     return {
