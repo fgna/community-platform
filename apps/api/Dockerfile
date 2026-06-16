@@ -25,6 +25,7 @@ COPY . .
 # but the .bin symlinks cross stage boundaries, so we expose them explicitly.
 ENV PATH="/app/apps/api/node_modules/.bin:/app/node_modules/.bin:${PATH}"
 WORKDIR /app/apps/api
+RUN prisma generate
 RUN nest build
 
 # ── production: minimal runtime image ───────────────────────────────────────────
