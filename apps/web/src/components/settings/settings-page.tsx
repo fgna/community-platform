@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/lib/theme-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +37,7 @@ export function SettingsPage() {
   const [profileBio, setProfileBio] = useState('');
   const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
 
+  const [savedProfile, setSavedProfile] = useState(false);
   const saveProfile = useMutation({
     mutationFn: () =>
       apiClient.patch('/users/me', {
@@ -47,8 +48,15 @@ export function SettingsPage() {
     onSuccess: (data) => {
       updateUser({ name: data.name, avatarUrl: data.avatarUrl });
       queryClient.invalidateQueries({ queryKey: ['me'] });
+      setSavedProfile(true);
     },
   });
+
+  useEffect(() => {
+    if (!savedProfile) return;
+    const t = setTimeout(() => setSavedProfile(false), 2000);
+    return () => clearTimeout(t);
+  }, [savedProfile]);
 
   const exportData = useMutation({
     mutationFn: () => apiClient.get('/gdpr/export').then((r) => r.data),
@@ -173,7 +181,7 @@ export function SettingsPage() {
                   onClick={() => saveProfile.mutate()}
                   disabled={saveProfile.isPending}
                 >
-                  {saveProfile.isPending ? 'Saving…' : 'Save changes'}
+                  {saveProfile.isPending ? 'Saving…' : savedProfile ? 'Saved ✓' : 'Save changes'}
                 </Button>
               </div>
             </CardContent>
