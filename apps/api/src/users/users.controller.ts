@@ -1,12 +1,15 @@
 import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseInterceptors, UploadedFile, BadRequestException, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
+// multer is a transitive dep of @nestjs/platform-express; types are optional
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { diskStorage } = require('multer') as { diskStorage: (opts: any) => any };
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -58,7 +61,7 @@ export class UsersController {
   }))
   async uploadAvatar(
     @CurrentUser() user: any,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: { filename: string; mimetype: string; size: number } & Record<string, any>,
     @Req() req: Request,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
