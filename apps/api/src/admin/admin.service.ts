@@ -52,7 +52,7 @@ export class AdminService {
     });
 
     await this.prisma.auditLog.create({
-      data: { action: 'UPDATE_USER_ROLE', entityType: 'User', entityId: userId, metadata: { role }, userId: actorId },
+      data: { action: 'UPDATE_USER_ROLE', resource: `User:${userId}`, metadata: { role }, userId: actorId },
     });
 
     return updated;
@@ -69,7 +69,7 @@ export class AdminService {
     });
 
     await this.prisma.auditLog.create({
-      data: { action: 'TOGGLE_USER_ACTIVE', entityType: 'User', entityId: userId, metadata: { isActive: updated.isActive }, userId: actorId },
+      data: { action: 'TOGGLE_USER_ACTIVE', resource: `User:${userId}`, metadata: { isActive: updated.isActive }, userId: actorId },
     });
 
     return updated;
@@ -85,7 +85,7 @@ export class AdminService {
     });
 
     await this.prisma.auditLog.create({
-      data: { action: 'HIDE_POST', entityType: 'Post', entityId: postId, metadata: { isHidden: updated.isHidden }, userId: actorId },
+      data: { action: 'HIDE_POST', resource: `Post:${postId}`, metadata: { isHidden: updated.isHidden }, userId: actorId },
     });
 
     return updated;
@@ -101,7 +101,7 @@ export class AdminService {
     });
 
     await this.prisma.auditLog.create({
-      data: { action: 'PIN_POST', entityType: 'Post', entityId: postId, metadata: { isPinned: updated.isPinned }, userId: actorId },
+      data: { action: 'PIN_POST', resource: `Post:${postId}`, metadata: { isPinned: updated.isPinned }, userId: actorId },
     });
 
     return updated;
