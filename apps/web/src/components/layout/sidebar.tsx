@@ -122,7 +122,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <button
             onClick={logout}
             className="p-1.5 rounded-md transition-colors hover:bg-white/5"
-            title="Logout"
+            aria-label="Sign out"
+            title="Sign out"
           >
             <LogOut size={14} style={{ color: 'var(--theme-text-muted)' }} />
           </button>

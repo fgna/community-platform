@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -37,6 +37,18 @@ export function SettingsPage() {
   const [profileName, setProfileName] = useState(user?.name ?? '');
   const [profileBio, setProfileBio] = useState('');
   const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
+
+  const { data: profile } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => apiClient.get('/users/me').then((r) => r.data),
+  });
+
+  useEffect(() => {
+    if (!profile) return;
+    setProfileName(profile.name ?? '');
+    setProfileBio(profile.bio ?? '');
+    setProfileAvatar(profile.avatarUrl ?? '');
+  }, [profile]);
 
   const [savedProfile, setSavedProfile] = useState(false);
   const saveProfile = useMutation({

@@ -27,6 +27,7 @@ async function bootstrap() {
   });
 
   app.enableShutdownHooks();
+  app.set('trust proxy', true);
 
   // Ensure uploads directory exists and serve as static files
   const uploadsDir = join(process.cwd(), 'uploads');

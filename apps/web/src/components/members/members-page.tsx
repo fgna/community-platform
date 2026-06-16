@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useMembers } from '@/hooks/use-members';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Trophy } from 'lucide-react';
@@ -50,9 +52,11 @@ function Leaderboard({ members }: { members: MemberWithCount[] }) {
 
 export function MembersPage() {
   const { data, isLoading, error } = useMembers(1, 50);
+  const [search, setSearch] = useState('');
 
   const members: MemberWithCount[] = data?.data ?? data?.users ?? [];
   const total: number = data?.total ?? members.length;
+  const filtered = members.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -62,6 +66,14 @@ export function MembersPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>
             {total} {total === 1 ? 'member' : 'members'} in the community
           </p>
+        </div>
+        <div className="relative max-w-xs">
+          <Input
+            placeholder="Search members…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 text-sm"
+          />
         </div>
       </div>
 
@@ -97,7 +109,7 @@ export function MembersPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {members.map((member) => (
+              {filtered.map((member) => (
                 <MemberCard key={member.id} member={member} />
               ))}
             </div>

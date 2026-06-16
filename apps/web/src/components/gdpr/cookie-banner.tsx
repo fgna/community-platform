@@ -8,12 +8,15 @@ import { useAuthStore } from '@/store/auth.store';
 
 export function CookieBanner() {
   const [show, setShow] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
+    setMounted(true);
     const consent = localStorage.getItem('cookie-consent');
     if (!consent) {
-      setTimeout(() => setShow(true), 1000);
+      const t = setTimeout(() => setShow(true), 800);
+      return () => clearTimeout(t);
     }
   }, []);
 
@@ -34,6 +37,7 @@ export function CookieBanner() {
     setShow(false);
   };
 
+  if (!mounted) return null;  // suppress hydration flash
   if (!show) return null;
 
   return (

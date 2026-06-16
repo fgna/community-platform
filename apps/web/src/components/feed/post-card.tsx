@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { MessageCircle, MoreHorizontal, Trash2, Pin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -69,9 +70,9 @@ export function PostCard({ post }: PostCardProps) {
                 <Badge className="text-xs py-0 px-1.5">Admin</Badge>
               )}
             </div>
-            <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+            <Link href={`/feed/${post.id}`} className="text-xs hover:underline" style={{ color: 'var(--theme-text-muted)' }}>
               {timeAgo(post.createdAt)}
-            </p>
+            </Link>
           </div>
         </div>
 
