@@ -34,11 +34,6 @@ async function bootstrap() {
   fs.mkdirSync(join(uploadsDir, 'avatars'), { recursive: true });
   app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
 
-  // Ensure uploads directory exists and serve as static files
-  const uploadsDir = join(process.cwd(), 'uploads');
-  fs.mkdirSync(join(uploadsDir, 'avatars'), { recursive: true });
-  app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
-
   // Security
   app.use(helmet());
 
