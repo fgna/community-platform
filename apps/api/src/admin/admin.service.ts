@@ -41,46 +41,70 @@ export class AdminService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateUserRole(userId: string, role: string) {
+  async updateUserRole(userId: string, role: string, actorId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { role: role as any },
       select: { id: true, email: true, name: true, role: true },
     });
+
+    await this.prisma.auditLog.create({
+      data: { action: 'UPDATE_USER_ROLE', entityType: 'User', entityId: userId, metadata: { role }, userId: actorId },
+    });
+
+    return updated;
   }
 
-  async toggleUserActive(userId: string) {
+  async toggleUserActive(userId: string, actorId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { isActive: !user.isActive },
       select: { id: true, email: true, name: true, isActive: true },
     });
+
+    await this.prisma.auditLog.create({
+      data: { action: 'TOGGLE_USER_ACTIVE', entityType: 'User', entityId: userId, metadata: { isActive: updated.isActive }, userId: actorId },
+    });
+
+    return updated;
   }
 
-  async hidePost(postId: string) {
+  async hidePost(postId: string, actorId: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
 
-    return this.prisma.post.update({
+    const updated = await this.prisma.post.update({
       where: { id: postId },
       data: { isHidden: !post.isHidden },
     });
+
+    await this.prisma.auditLog.create({
+      data: { action: 'HIDE_POST', entityType: 'Post', entityId: postId, metadata: { isHidden: updated.isHidden }, userId: actorId },
+    });
+
+    return updated;
   }
 
-  async pinPost(postId: string) {
+  async pinPost(postId: string, actorId: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
 
-    return this.prisma.post.update({
+    const updated = await this.prisma.post.update({
       where: { id: postId },
       data: { isPinned: !post.isPinned },
     });
+
+    await this.prisma.auditLog.create({
+      data: { action: 'PIN_POST', entityType: 'Post', entityId: postId, metadata: { isPinned: updated.isPinned }, userId: actorId },
+    });
+
+    return updated;
   }
 
   async getModerationQueue() {

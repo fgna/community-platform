@@ -141,8 +141,8 @@ describe('Events — integration', () => {
         .send({
           title: 'Admin Created Event',
           description: 'Created in test',
-          startDate: tomorrow(),
-          endDate: dayAfterTomorrow(),
+          startsAt: tomorrow(),
+          endsAt: dayAfterTomorrow(),
           location: 'Virtual',
         })
         .expect(201);
@@ -158,8 +158,8 @@ describe('Events — integration', () => {
         .send({
           title: 'Sneaky Event',
           description: 'Not allowed',
-          startDate: tomorrow(),
-          endDate: dayAfterTomorrow(),
+          startsAt: tomorrow(),
+          endsAt: dayAfterTomorrow(),
         })
         .expect(403);
     });

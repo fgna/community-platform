@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UpdatePlatformSettingsDto } from './dto/update-platform-settings.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { InvitesService } from '../invites/invites.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -34,26 +35,30 @@ export class AdminController {
 
   @Patch('users/:id/role')
   @ApiOperation({ summary: 'Update user role' })
-  updateUserRole(@Param('id') id: string, @Body() body: { role: string }) {
-    return this.adminService.updateUserRole(id, body.role);
+  updateUserRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+    @CurrentUser() actor: { id: string },
+  ) {
+    return this.adminService.updateUserRole(id, dto.role, actor.id);
   }
 
   @Patch('users/:id/toggle-active')
   @ApiOperation({ summary: 'Toggle user active status' })
-  toggleUserActive(@Param('id') id: string) {
-    return this.adminService.toggleUserActive(id);
+  toggleUserActive(@Param('id') id: string, @CurrentUser() actor: { id: string }) {
+    return this.adminService.toggleUserActive(id, actor.id);
   }
 
   @Patch('posts/:id/hide')
   @ApiOperation({ summary: 'Toggle post visibility' })
-  hidePost(@Param('id') id: string) {
-    return this.adminService.hidePost(id);
+  hidePost(@Param('id') id: string, @CurrentUser() actor: { id: string }) {
+    return this.adminService.hidePost(id, actor.id);
   }
 
   @Patch('posts/:id/pin')
   @ApiOperation({ summary: 'Toggle post pin status' })
-  pinPost(@Param('id') id: string) {
-    return this.adminService.pinPost(id);
+  pinPost(@Param('id') id: string, @CurrentUser() actor: { id: string }) {
+    return this.adminService.pinPost(id, actor.id);
   }
 
   @Get('moderation')
