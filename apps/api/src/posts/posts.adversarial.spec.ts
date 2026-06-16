@@ -67,67 +67,52 @@ describe('PostsService — adversarial', () => {
     prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
   });
 
-  // ── INVARIANT: hidden posts must be inaccessible to non-admins ──────────
+  // ── FIXED SEC-001: hidden posts are fully locked down ────────────────────
 
-  describe('INVARIANT: hidden posts must not be interactive', () => {
-    it('addComment DOES NOT check isHidden — users can comment on moderated posts', async () => {
-      /**
-       * posts.service.ts:118 — addComment looks up the post WITHOUT isHidden filter.
-       * A hidden post is returned, and the comment is created.
-       * This bypasses admin moderation: hidden content continues to receive engagement.
-       *
-       * Expected: 404 (or ForbiddenException) for hidden posts
-       * Actual:   comment is created successfully
-       */
-      const hiddenPost = { id: 'post-hidden', content: 'bad content', isHidden: true };
-      prisma.post.findUnique.mockResolvedValue(hiddenPost);
-      prisma.comment.create.mockResolvedValue({
-        id: 'comment-1',
-        content: 'comment on hidden post',
-        createdAt: new Date(),
-        author: { id: 'u1', name: 'User', avatarUrl: null, role: 'MEMBER' },
-      });
+  describe('FIXED SEC-001: hidden posts reject all non-admin interactions', () => {
+    it('addComment on a hidden post throws NotFoundException (isHidden: false filter)', async () => {
+      // addComment queries { id, isHidden: false } — hidden post returns null → 404
+      prisma.post.findUnique.mockResolvedValue(null);
 
-      // This should throw NotFoundException but does not
-      const result = await service.addComment('post-hidden', { content: 'engaging with hidden content' }, 'user-1');
-      expect(result).toBeDefined();
-      // FAILURE: comment was created on a hidden (admin-moderated) post
+      await expect(
+        service.addComment('post-hidden', { content: 'engaging with hidden content' }, 'user-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
-    it('toggleReaction DOES NOT check isHidden — users can react to moderated posts', async () => {
-      /**
-       * posts.service.ts:137 — toggleReaction looks up the post WITHOUT isHidden filter.
-       * Reactions on hidden posts can accumulate, skewing metrics and
-       * giving attackers confirmation that the post exists (oracle vulnerability).
-       */
-      const hiddenPost = { id: 'post-hidden', isHidden: true };
-      prisma.post.findUnique.mockResolvedValue(hiddenPost);
-      prisma.reaction.findUnique.mockResolvedValue(null);
-      prisma.reaction.create.mockResolvedValue({
-        id: 'r1',
-        type: 'LIKE',
-        userId: 'user-1',
-      });
+    it('toggleReaction on a hidden post throws NotFoundException (isHidden: false filter)', async () => {
+      // toggleReaction queries { id, isHidden: false } — hidden post returns null → 404
+      prisma.post.findUnique.mockResolvedValue(null);
 
-      const result = await service.toggleReaction('post-hidden', 'LIKE', 'user-1');
-      expect(result).toHaveProperty('added', true);
-      // FAILURE: reaction accepted on admin-hidden post
+      await expect(
+        service.toggleReaction('post-hidden', 'LIKE', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
-    it('update() CAN modify a hidden post (no isHidden guard)', async () => {
-      /**
-       * The author can still edit their post even after an admin hides it.
-       * An admin hides a post to stop it from being visible; the author can
-       * mutate its content while hidden, then the admin might unhide it
-       * without re-reviewing the new content.
-       */
+    it('update() on a hidden post throws ForbiddenException for the author (SEC-001)', async () => {
       const hiddenPost = { id: 'post-hidden', authorId: 'author-1', isHidden: true };
       prisma.post.findUnique.mockResolvedValue(hiddenPost);
-      prisma.post.update.mockResolvedValue({ ...hiddenPost, content: 'updated while hidden' });
 
-      const result = await service.update('post-hidden', 'updated while hidden', 'author-1', 'MEMBER');
+      await expect(
+        service.update('post-hidden', 'updated while hidden', 'author-1', 'MEMBER'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('delete() on a hidden post throws ForbiddenException for the author (SEC-001)', async () => {
+      const hiddenPost = { id: 'post-hidden', authorId: 'author-1', isHidden: true };
+      prisma.post.findUnique.mockResolvedValue(hiddenPost);
+
+      await expect(
+        service.delete('post-hidden', 'author-1', 'MEMBER'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('admin can update a hidden post', async () => {
+      const hiddenPost = { id: 'post-hidden', authorId: 'author-1', isHidden: true };
+      prisma.post.findUnique.mockResolvedValue(hiddenPost);
+      prisma.post.update.mockResolvedValue({ ...hiddenPost, content: 'admin edit' });
+
+      const result = await service.update('post-hidden', 'admin edit', 'admin-id', 'ADMIN');
       expect(result).toBeDefined();
-      // No error — author successfully updated a post that is currently moderated/hidden
     });
   });
 

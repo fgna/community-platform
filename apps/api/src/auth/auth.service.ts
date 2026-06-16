@@ -114,7 +114,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-      secret: process.env.JWT_SECRET || 'default-secret',
+      secret: process.env.JWT_SECRET,
     });
 
     // jti (JWT ID) makes every refresh token unique even when signed within
@@ -124,7 +124,7 @@ export class AuthService {
       { ...payload, jti: uuidv4() },
       {
         expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-        secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+        secret: process.env.JWT_REFRESH_SECRET,
       },
     );
 

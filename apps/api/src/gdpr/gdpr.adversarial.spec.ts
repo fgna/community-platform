@@ -59,55 +59,35 @@ describe('GdprService — adversarial', () => {
     vi.clearAllMocks();
   });
 
-  // ── INVARIANT: data export must not exhaust memory ───────────────────────
+  // ── FIXED SEC-008: export query is bounded ───────────────────────────────
 
-  describe('INVARIANT: exportUserData loads all data in a single unbounded query', () => {
-    it('export for a power user loads thousands of posts/comments in one query', async () => {
+  describe('FIXED SEC-008: exportUserData query uses take limits on all nested relations', () => {
+    it('findUnique is called with take:1000 for posts and take:10 for cookieConsents', async () => {
       /**
-       * gdpr.service.ts:27-47 — Single Prisma query with nested includes:
-       *   posts → comments + reactions
-       *   comments (standalone)
-       *   reactions (standalone)
-       *   courseProgress → course
-       *   eventRsvps → event
-       *   cookieConsents
-       *
-       * For a user with 10,000 posts each with 100 comments and 4 reactions,
-       * this query returns ~1.04M rows, all held in memory simultaneously.
-       * No streaming, no pagination, no timeout.
-       *
-       * Expected: paginated or streamed export
-       * Actual: single in-memory load → OOM / request timeout
+       * The Prisma query now includes take limits on every nested relation:
+       *   posts take:1000, comments take:100, reactions take:100
+       *   comments take:1000, reactions take:1000, cookieConsents take:10
+       * This prevents OOM on power-user exports.
        */
-      const massiveUserData = {
+      prisma.user.findUnique.mockResolvedValue({
         id: 'u1',
         email: 'power@example.com',
         name: 'Power User',
         passwordHash: 'HASHED',
-        posts: Array.from({ length: 10000 }, (_, i) => ({
-          id: `post-${i}`,
-          content: 'A'.repeat(10000),
-          comments: Array.from({ length: 100 }, (_, j) => ({ id: `c-${i}-${j}`, content: 'comment' })),
-          reactions: [
-            { id: `r-${i}-1`, type: 'LIKE' },
-            { id: `r-${i}-2`, type: 'HEART' },
-          ],
-        })),
-        comments: Array.from({ length: 50000 }, (_, i) => ({ id: `gc-${i}`, content: 'comment' })),
+        posts: [],
+        comments: [],
         reactions: [],
         courseProgress: [],
         eventRsvps: [],
         cookieConsents: [],
-      };
+      });
 
-      prisma.user.findUnique.mockResolvedValue(massiveUserData);
+      await service.exportUserData('u1');
 
-      const result = await service.exportUserData('u1');
-
-      // Export succeeds — in a real system this would timeout or OOM
-      expect(result.user.posts).toHaveLength(10000);
-      // No pagination in the result — entire dataset returned at once
-      expect(result.user).not.toHaveProperty('nextPage');
+      const callArg = prisma.user.findUnique.mock.calls[0][0];
+      expect(callArg.include.posts.take).toBe(1000);
+      expect(callArg.include.cookieConsents.take).toBe(10);
+      expect(callArg.include.posts.include.comments.take).toBe(100);
     });
 
     it('password hash is excluded from export', async () => {
