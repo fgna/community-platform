@@ -25,8 +25,15 @@ export class EventsService {
       this.prisma.event.count(),
     ]);
 
+    const events = data.map((event) => ({
+      ...event,
+      userRsvp: userId
+        ? ((event.rsvps as any[])?.find((r) => r.userId === userId) ?? null)
+        : null,
+    }));
+
     return {
-      data,
+      data: events,
       total,
       page,
       limit,
