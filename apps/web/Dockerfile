@@ -29,6 +29,8 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
 # With outputFileTracingRoot set to the workspace root, standalone output
 # uses apps/web/ prefixed paths for public assets and static files
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
