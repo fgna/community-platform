@@ -11,6 +11,7 @@ export async function createTestApp(): Promise<{
   prisma: PrismaService;
 }> {
   process.env.THROTTLE_LIMIT = '10000';
+  process.env.THROTTLE_DISABLE = 'true';
 
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],
