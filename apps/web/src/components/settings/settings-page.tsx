@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/lib/theme-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +37,7 @@ export function SettingsPage() {
   const [profileBio, setProfileBio] = useState('');
   const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
 
+  const [savedProfile, setSavedProfile] = useState(false);
   const saveProfile = useMutation({
     mutationFn: () =>
       apiClient.patch('/users/me', {
@@ -47,8 +48,15 @@ export function SettingsPage() {
     onSuccess: (data) => {
       updateUser({ name: data.name, avatarUrl: data.avatarUrl });
       queryClient.invalidateQueries({ queryKey: ['me'] });
+      setSavedProfile(true);
     },
   });
+
+  useEffect(() => {
+    if (!savedProfile) return;
+    const t = setTimeout(() => setSavedProfile(false), 2000);
+    return () => clearTimeout(t);
+  }, [savedProfile]);
 
   const exportData = useMutation({
     mutationFn: () => apiClient.get('/gdpr/export').then((r) => r.data),
@@ -64,56 +72,51 @@ export function SettingsPage() {
   });
 
   const deleteAccount = useMutation({
-    mutationFn: () => apiClient.delete('/gdpr/account'),
+    mutationFn: () => apiClient.delete('/gdpr/delete').then((r) => r.data),
     onSuccess: () => logout(),
   });
 
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text)' }}>
-          Settings
-        </h2>
-        <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>
-          Manage your account and preferences.
-        </p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--theme-text)' }}>Settings</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>Manage your account and preferences</p>
       </div>
 
       <Tabs defaultValue="profile">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="profile" className="flex items-center gap-1.5">
-            <User size={14} /> Profile
+        <TabsList className="w-full justify-start gap-1 h-auto p-1 flex-wrap">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs">
+            <User size={13} /> Profile
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-1.5">
-            <Palette size={14} /> Appearance
+          <TabsTrigger value="appearance" className="flex items-center gap-1.5 text-xs">
+            <Palette size={13} /> Appearance
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-1.5">
-            <Bell size={14} /> Notifications
+          <TabsTrigger value="notifications" className="flex items-center gap-1.5 text-xs">
+            <Bell size={13} /> Notifications
           </TabsTrigger>
-          <TabsTrigger value="privacy" className="flex items-center gap-1.5">
-            <Shield size={14} /> Privacy
+          <TabsTrigger value="privacy" className="flex items-center gap-1.5 text-xs">
+            <Shield size={13} /> Privacy & Data
           </TabsTrigger>
         </TabsList>
 
-        {/* Profile tab */}
-        <TabsContent value="profile" className="mt-6 space-y-4">
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Profile Information</CardTitle>
-              <CardDescription>Update your name, email and avatar.</CardDescription>
+              <CardTitle className="text-base">Public Profile</CardTitle>
+              <CardDescription>This information will be visible to other community members.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
-                  <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
+                  <AvatarImage src={profileAvatar || undefined} />
+                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
-                    {user.name}
-                  </p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{user.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{user.email}</p>
                   <p className="text-xs capitalize" style={{ color: 'var(--theme-text-muted)' }}>
                     {user.role}
                   </p>
@@ -125,44 +128,32 @@ export function SettingsPage() {
 
               <Separator />
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full name</Label>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Display name</Label>
                   <Input
-                    id="name"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    className="mt-1"
+                    placeholder="Your name"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Bio</Label>
                   <Input
-                    id="bio"
                     value={profileBio}
                     onChange={(e) => setProfileBio(e.target.value)}
-                    placeholder="Tell us about yourself"
-                    className="mt-1"
+                    placeholder="Tell others about yourself"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="avatar">Avatar URL</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Avatar URL</Label>
                   <Input
-                    id="avatar"
                     value={profileAvatar}
                     onChange={(e) => setProfileAvatar(e.target.value)}
                     placeholder="https://..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    defaultValue={user.email}
-                    disabled
-                    className="mt-1 opacity-60"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
@@ -173,7 +164,7 @@ export function SettingsPage() {
                   onClick={() => saveProfile.mutate()}
                   disabled={saveProfile.isPending}
                 >
-                  {saveProfile.isPending ? 'Saving…' : 'Save changes'}
+                  {saveProfile.isPending ? 'Saving…' : savedProfile ? 'Saved ✓' : 'Save changes'}
                 </Button>
               </div>
             </CardContent>
@@ -181,7 +172,7 @@ export function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base text-red-400">Danger Zone</CardTitle>
+              <CardTitle className="text-base">Account</CardTitle>
               <CardDescription>Irreversible actions for your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -189,7 +180,6 @@ export function SettingsPage() {
                 variant="outline"
                 onClick={logout}
                 className="flex items-center gap-2"
-                style={{ borderColor: 'rgba(239,68,68,0.3)', color: '#ef4444' }}
               >
                 <LogOut size={15} />
                 Sign out
@@ -198,12 +188,12 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Appearance tab */}
-        <TabsContent value="appearance" className="mt-6">
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Theme</CardTitle>
-              <CardDescription>Choose the look and feel of the platform.</CardDescription>
+              <CardDescription>Choose your preferred look and feel.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -211,30 +201,34 @@ export function SettingsPage() {
                   <button
                     key={t.name}
                     onClick={() => setTheme(t.name)}
-                    className="flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+                    className="relative p-4 rounded-xl text-left transition-all"
                     style={{
-                      border: `2px solid ${t.name === currentTheme.name ? t.colors.primary : 'var(--theme-border)'}`,
-                      background:
-                        t.name === currentTheme.name
-                          ? `${t.colors.primary}10`
-                          : 'rgba(255,255,255,0.02)',
+                      background: t.colors.surface,
+                      border: `2px solid ${currentTheme?.name === t.name ? t.colors.primary : t.colors.border ?? 'rgba(255,255,255,0.08)'}`,
                     }}
                   >
-                    <div
-                      className="w-8 h-8 rounded-lg flex-shrink-0"
-                      style={{ background: t.colors.background, border: `2px solid ${t.colors.primary}` }}
-                    />
-                    <div>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: 'var(--theme-text)' }}
-                      >
-                        {t.displayName}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
-                        {t.description}
-                      </p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-6 h-6 rounded-full"
+                        style={{ background: t.colors.primary }}
+                      />
+                      <span className="text-sm font-medium" style={{ color: t.colors.text }}>
+                        {t.name}
+                      </span>
                     </div>
+                    <div className="flex gap-1.5">
+                      {[t.colors.background, t.colors.surface, t.colors.card, t.colors.primary].map((c, i) => (
+                        <div key={i} className="h-4 flex-1 rounded" style={{ background: c }} />
+                      ))}
+                    </div>
+                    {currentTheme?.name === t.name && (
+                      <div
+                        className="absolute top-2 right-2 text-xs px-1.5 py-0.5 rounded"
+                        style={{ background: t.colors.primary, color: t.colors.background }}
+                      >
+                        Active
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -242,73 +236,45 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Notifications tab */}
-        <TabsContent value="notifications" className="mt-6">
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Notification Preferences</CardTitle>
               <CardDescription>Control how and when you receive notifications.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4">
               {[
-                {
-                  label: 'Email notifications',
-                  description: 'Receive notifications about activity in your feed.',
-                  value: emailNotifs,
-                  onChange: setEmailNotifs,
-                },
-                {
-                  label: 'Push notifications',
-                  description: 'Receive push notifications in your browser.',
-                  value: pushNotifs,
-                  onChange: setPushNotifs,
-                },
-                {
-                  label: 'Marketing emails',
-                  description: 'Receive updates about new features and promotions.',
-                  value: marketingEmails,
-                  onChange: setMarketingEmails,
-                },
-              ].map(({ label, description, value, onChange }) => (
+                { label: 'Email notifications', description: 'Receive activity summaries via email', value: emailNotifs, set: setEmailNotifs },
+                { label: 'Push notifications', description: 'Browser push notifications for mentions', value: pushNotifs, set: setPushNotifs },
+                { label: 'Marketing emails', description: 'News and feature announcements', value: marketingEmails, set: setMarketingEmails },
+              ].map(({ label, description, value, set }) => (
                 <div key={label} className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
-                      {label}
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
-                      {description}
-                    </p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{label}</p>
+                    <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{description}</p>
                   </div>
-                  <Switch checked={value} onCheckedChange={onChange} />
+                  <Switch checked={value} onCheckedChange={set} />
                 </div>
               ))}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Privacy tab */}
-        <TabsContent value="privacy" className="mt-6">
+        {/* Privacy Tab */}
+        <TabsContent value="privacy" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Privacy & Data</CardTitle>
-              <CardDescription>Manage your data and privacy settings.</CardDescription>
+              <CardTitle className="text-base">Your Data</CardTitle>
+              <CardDescription>
+                Under GDPR you have the right to access and delete your personal data.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div
-                className="p-4 rounded-lg text-sm leading-relaxed"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--theme-border)',
-                  color: 'var(--theme-text-muted)',
-                }}
-              >
-                <p className="font-medium mb-1" style={{ color: 'var(--theme-text)' }}>
-                  Your data rights (GDPR)
-                </p>
-                <p>
-                  You have the right to access, correct, export or delete your personal data at any
-                  time. We only store data necessary to provide the service and never sell your data
-                  to third parties.
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: 'var(--theme-text)' }}>Data Export</p>
+                <p className="text-xs mb-3" style={{ color: 'var(--theme-text-muted)' }}>
+                  Download a copy of all data associated with your account.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
