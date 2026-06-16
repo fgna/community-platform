@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASSWORD = 'Admin123!@#';
@@ -7,7 +7,7 @@ const MEMBER_PASSWORD = 'Member123!@#';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
-async function loginAs(page: Parameters<typeof test>[1], email: string, password: string) {
+async function loginAs(page: Page, email: string, password: string) {
   await page.goto('/login');
   await page.getByLabel(/email address/i).fill(email);
   await page.getByLabel(/^password$/i).fill(password);
