@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -17,7 +17,7 @@ interface RegisterForm {
   confirmPassword: string;
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const { register: registerUser, registerLoading, registerError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
@@ -189,5 +189,13 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }
