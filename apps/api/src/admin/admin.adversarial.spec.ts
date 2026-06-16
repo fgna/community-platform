@@ -77,7 +77,9 @@ describe('AdminService — adversarial', () => {
       await service.updateUserRole('u1', 'ADMIN', 'actor-id');
 
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'UPDATE_USER_ROLE', resource: 'User:u1' }),
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'UPDATE_USER_ROLE', resource: 'User:u1' }),
+        }),
       );
     });
 

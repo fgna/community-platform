@@ -15,6 +15,7 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { InvitesService } from '../invites/invites.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -38,12 +39,18 @@ const mockJwt = {
   sign: vi.fn().mockReturnValue('signed-access-token'),
 };
 
+const mockInvites = {
+  validateInvite: vi.fn(),
+  consumeInvite: vi.fn(),
+};
+
 async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
   const module = await Test.createTestingModule({
     providers: [
       AuthService,
       { provide: PrismaService, useValue: prisma },
       { provide: JwtService, useValue: mockJwt },
+      { provide: InvitesService, useValue: mockInvites },
     ],
   }).compile();
   return module.get<AuthService>(AuthService);
