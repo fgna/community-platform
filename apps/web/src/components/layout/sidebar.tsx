@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail } from 'lucide-react';
+import { Home, MessageCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -17,13 +17,19 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full flex flex-col z-40"
+      className={`fixed left-0 top-0 h-full flex flex-col z-40 transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       style={{
         width: 'var(--sidebar-width)',
         background: 'var(--theme-surface)',
@@ -42,9 +48,17 @@ export function Sidebar() {
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
         </div>
-        <span className="font-bold text-base" style={{ color: 'var(--theme-text)' }}>
+        <span className="font-bold text-base flex-1" style={{ color: 'var(--theme-text)' }}>
           Community
         </span>
+        {/* Close button — mobile only */}
+        <button
+          className="lg:hidden p-1.5 rounded-md hover:bg-white/5"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          <X size={18} style={{ color: 'var(--theme-text-muted)' }} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -55,6 +69,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group"
               style={{
                 background: isActive ? 'rgba(197,168,128,0.12)' : 'transparent',
@@ -78,6 +93,7 @@ export function Sidebar() {
             </div>
             <Link
               href="/admin"
+              onClick={onClose}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
               style={{
                 background: pathname.startsWith('/admin') ? 'rgba(197,168,128,0.12)' : 'transparent',
