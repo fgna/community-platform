@@ -17,9 +17,10 @@ export class EventsService {
         orderBy: { startsAt: 'asc' },
         include: {
           _count: { select: { rsvps: true } },
-          rsvps: userId
-            ? { where: { userId }, select: { id: true, status: true, userId: true } }
-            : false,
+          rsvps: {
+            take: 5,
+            select: { id: true, status: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+          },
         },
       }),
       this.prisma.event.count(),
