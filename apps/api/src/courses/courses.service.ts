@@ -85,26 +85,63 @@ export class CoursesService {
     return { message: 'Course deleted' };
   }
 
-  async updateProgress(courseId: string, userId: string, percentage: number) {
-    if (percentage < 0 || percentage > 100) {
-      throw new BadRequestException('Percentage must be between 0 and 100');
-    }
-    const clamped = Math.max(0, Math.min(100, percentage));
-
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+  async getProgress(courseId: string, userId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        modules: { include: { lessons: { select: { id: true } } } },
+      },
+    });
     if (!course) throw new NotFoundException('Course not found');
+
+    const progress = await this.prisma.progress.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+
+    const completedLessons: string[] = (progress?.completedLessons as string[]) ?? [];
+    return {
+      percentage: progress?.percentage ?? 0,
+      completedLessons,
+      completedAt: progress?.completedAt ?? null,
+    };
+  }
+
+  async completeLesson(courseId: string, userId: string, lessonId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        modules: { include: { lessons: { select: { id: true } } } },
+      },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+
+    const totalLessons = course.modules.flatMap((m) => m.lessons).length;
+    if (totalLessons === 0) throw new BadRequestException('Course has no lessons');
+
+    const existing = await this.prisma.progress.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+
+    const completedLessons: string[] = (existing?.completedLessons as string[]) ?? [];
+    if (!completedLessons.includes(lessonId)) {
+      completedLessons.push(lessonId);
+    }
+
+    const percentage = Math.round((completedLessons.length / totalLessons) * 100);
 
     return this.prisma.progress.upsert({
       where: { userId_courseId: { userId, courseId } },
       update: {
-        percentage: clamped,
-        completedAt: clamped >= 100 ? new Date() : null,
+        completedLessons,
+        percentage,
+        completedAt: percentage >= 100 ? new Date() : null,
       },
       create: {
         userId,
         courseId,
-        percentage: clamped,
-        completedAt: clamped >= 100 ? new Date() : null,
+        completedLessons,
+        percentage,
+        completedAt: percentage >= 100 ? new Date() : null,
       },
     });
   }

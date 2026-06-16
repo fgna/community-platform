@@ -49,14 +49,20 @@ export class CoursesController {
     return this.coursesService.delete(id);
   }
 
-  @Put(':id/progress')
-  @ApiOperation({ summary: 'Update course progress' })
-  updateProgress(
+  @Get(':id/progress')
+  @ApiOperation({ summary: 'Get course progress for current user' })
+  getProgress(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.coursesService.getProgress(id, user.id);
+  }
+
+  @Post(':id/progress')
+  @ApiOperation({ summary: 'Mark a lesson as complete' })
+  completeLesson(
     @Param('id') id: string,
     @Body() dto: UpdateProgressDto,
     @CurrentUser() user: any,
   ) {
-    return this.coursesService.updateProgress(id, user.id, dto.percentage);
+    return this.coursesService.completeLesson(id, user.id, dto.lessonId);
   }
 
   @Get('lessons/:lessonId')

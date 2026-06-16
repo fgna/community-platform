@@ -123,8 +123,9 @@ model Progress {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
   course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  completedAt DateTime?
-  percentage  Float     @default(0)
+  completedAt      DateTime?
+  completedLessons Json      @default("[]")
+  percentage       Float     @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
