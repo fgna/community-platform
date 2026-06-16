@@ -70,8 +70,11 @@ function RegisterForm() {
             color: '#ef4444',
           }}
         >
-          {(registerError as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message || 'Registration failed'}
+          {(() => {
+            const msg = (registerError as { response?: { data?: { message?: string | string[] } } })
+              ?.response?.data?.message;
+            return Array.isArray(msg) ? msg[0] : (msg || 'Registration failed');
+          })()}
         </div>
       )}
 
@@ -123,10 +126,14 @@ function RegisterForm() {
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Min 8 characters"
+              placeholder="Min 8 chars, upper + lower + number"
               {...register('password', {
                 required: 'Password is required',
                 minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                pattern: {
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                  message: 'Password must contain uppercase, lowercase, and a number',
+                },
               })}
               className="pr-10"
             />
