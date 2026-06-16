@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile --filter @community/api... --ignore-scripts
 COPY apps/api/prisma ./apps/api/prisma/
 RUN pnpm --filter @community/api exec prisma generate
 
-# ── builder: compile TypeScript → dist/ ─────────────────────────────────────────
+# ── builder: compile TypeScript → dist/ ────────────────────────────────────────
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
@@ -25,9 +25,10 @@ COPY . .
 # but the .bin symlinks cross stage boundaries, so we expose them explicitly.
 ENV PATH="/app/apps/api/node_modules/.bin:/app/node_modules/.bin:${PATH}"
 WORKDIR /app/apps/api
+RUN prisma generate
 RUN nest build
 
-# ── production: minimal runtime image ───────────────────────────────────────────
+# ── production: minimal runtime image ────────────────────────────────────────
 FROM base AS production
 WORKDIR /app
 ENV NODE_ENV=production
