@@ -10,6 +10,21 @@
 
 ## Local Development (no Docker)
 
+### 0. Node version and pnpm setup
+
+This repo requires **Node 20**. Node 18 will break it. Use nvm:
+
+```bash
+nvm use 20
+```
+
+Make pnpm available via corepack (do this once per machine):
+
+```bash
+corepack enable
+corepack prepare pnpm@9.15.4 --activate
+```
+
 ### 1. Install dependencies
 
 ```bash
@@ -39,10 +54,30 @@ pnpm db:seed             # loads seed data (admin user, sample content)
 
 ### 5. Start development servers
 
+Run everything from the **project root** (Turbo starts all apps in parallel):
+
 ```bash
 pnpm dev
 # API → http://localhost:3001
 # Web → http://localhost:3000  (hot reload on both)
+```
+
+> **Do not** start apps with `node server.js` or `node dist/main.js`. This is
+> a monorepo managed by Turbo — always start through `pnpm dev` from the root.
+
+If you only want the frontend (e.g. mocking the API or working on UI only):
+
+```bash
+cd apps/web
+pnpm dev
+```
+
+If something starts but immediately exits, the real error is usually hidden above
+the Turbo output. Check the individual app directly:
+
+```bash
+cd apps/web && pnpm dev    # shows raw Next.js output
+cd apps/api && pnpm dev    # shows raw NestJS output
 ```
 
 ---
