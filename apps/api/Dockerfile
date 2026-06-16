@@ -24,8 +24,10 @@ COPY . .
 # Make @nestjs/cli (nest binary) findable — pnpm copies it under apps/api/node_modules
 # but the .bin symlinks cross stage boundaries, so we expose them explicitly.
 ENV PATH="/app/apps/api/node_modules/.bin:/app/node_modules/.bin:${PATH}"
+# Re-generate Prisma client via pnpm so it writes into the correct pnpm virtual
+# store path that TypeScript resolves (deps layer may carry a stale cached client).
+RUN pnpm --filter @community/api exec prisma generate
 WORKDIR /app/apps/api
-RUN prisma generate
 RUN nest build
 
 # ── production: minimal runtime image ────────────────────────────────────────
