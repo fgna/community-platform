@@ -15,6 +15,14 @@ export default defineConfig({
         singleFork: true,
       },
     },
+    server: {
+      deps: {
+        // supertest and its deps are CJS; inline them so Vite bundles
+        // them rather than SSR-transforming them, preserving the callable
+        // default export that `request(app.getHttpServer())` depends on.
+        inline: ['supertest', 'superagent', 'methods'],
+      },
+    },
   },
   plugins: [
     swc.vite({
