@@ -1,6 +1,6 @@
 export function extractHashtags(text: string): string[] {
   const matches = text.match(/#(\w+)/g) ?? [];
-  return [...new Set(matches.map(m => m.toLowerCase()))];
+  return Array.from(new Set(matches.map(m => m.toLowerCase())));
 }
 
 export function renderMarkdown(text: string): string {
