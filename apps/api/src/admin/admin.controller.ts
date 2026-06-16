@@ -63,8 +63,11 @@ export class AdminController {
 
   @Get('moderation')
   @ApiOperation({ summary: 'Get moderation queue' })
-  getModerationQueue() {
-    return this.adminService.getModerationQueue();
+  getModerationQueue(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.adminService.getModerationQueue(Number(page), Number(limit));
   }
 
   @Get('audit-log')

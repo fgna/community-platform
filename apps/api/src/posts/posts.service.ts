@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -44,6 +44,8 @@ export class PostsService {
   ) {}
 
   async findAll(page = 1, limit = 20, userId?: string) {
+    limit = Math.max(1, Math.min(limit, 100));
+    page = Math.max(1, page);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.post.findMany({
@@ -202,7 +204,7 @@ export class PostsService {
   }
 
   async addComment(postId: string, dto: CreateCommentDto, authorId: string) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const post = await this.prisma.post.findUnique({ where: { id: postId, isHidden: false } });
     if (!post) throw new NotFoundException('Post not found');
 
     const comment = await this.prisma.comment.create({
@@ -223,26 +225,42 @@ export class PostsService {
   }
 
   async toggleReaction(postId: string, type: string, userId: string) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post) throw new NotFoundException('Post not found');
-
-    const existing = await this.prisma.reaction.findUnique({
-      where: { postId_userId_type: { postId, userId, type: type as any } },
-    });
-
-    if (existing) {
-      await this.prisma.reaction.delete({ where: { id: existing.id } });
-      return { removed: true, type };
+    const VALID_TYPES = ['LIKE', 'HEART', 'CELEBRATE', 'INSIGHTFUL'];
+    if (!VALID_TYPES.includes(type)) {
+      throw new BadRequestException(`Invalid reaction type. Must be one of: ${VALID_TYPES.join(', ')}`);
     }
 
-    const reaction = await this.prisma.reaction.create({
-      data: { postId, userId, type: type as any },
-      select: { id: true, type: true, userId: true },
-    });
+    const post = await this.prisma.post.findUnique({ where: { id: postId, isHidden: false } });
+    if (!post) throw new NotFoundException('Post not found');
 
-    this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch(() => {});
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.reaction.findUnique({
+          where: { postId_userId_type: { postId, userId, type: type as any } },
+        });
 
-    return { added: true, reaction };
+        if (existing) {
+          await tx.reaction.delete({ where: { id: existing.id } });
+          return { removed: true, type };
+        }
+
+        const reaction = await tx.reaction.create({
+          data: { postId, userId, type: type as any },
+          select: { id: true, type: true, userId: true },
+        });
+
+        return { added: true, reaction };
+      });
+
+      if ((result as any).added) {
+        this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch(() => {});
+      }
+
+      return result;
+    } catch (err: any) {
+      if (err?.code === 'P2002') throw new ConflictException('Reaction already exists');
+      throw err;
+    }
   }
 
   async votePoll(postId: string, optionId: string, userId: string) {

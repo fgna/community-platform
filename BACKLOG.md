@@ -277,37 +277,37 @@
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| SEC-001 | **Hidden posts accept comments & reactions** — moderation bypass | `addComment` / `toggleReaction` query posts without `isHidden: false` filter | S | `[ ]` |
-| SEC-002 | **RSVP capacity TOCTOU race** — `maxRsvps` can be exceeded under concurrent load | `rsvp()` reads count then writes in a non-atomic check-then-act pattern; no DB-level lock | M | `[ ]` |
-| SEC-003 | **Unpublished course content accessible by ID** — content leak before launch | `CoursesService.findOne` and `getLesson` have no `isPublished` filter | S | `[ ]` |
+| SEC-001 | **Hidden posts accept comments & reactions** — moderation bypass | `addComment` / `toggleReaction` query posts without `isHidden: false` filter | S | `[x]` |
+| SEC-002 | **RSVP capacity TOCTOU race** — `maxRsvps` can be exceeded under concurrent load | `rsvp()` reads count then writes in a non-atomic check-then-act pattern; no DB-level lock | M | `[x]` |
+| SEC-003 | **Unpublished course content accessible by ID** — content leak before launch | `CoursesService.findOne` and `getLesson` have no `isPublished` filter | S | `[x]` |
 | SEC-004 | **`JWT_SECRET \|\| 'default-secret'` fallback in production** — trivially forgeable JWTs | `auth.service.ts` and `jwt.strategy.ts` fall back to a known-default secret when env var is absent | S | `[x]` |
-| SEC-005 | **Concurrent token refresh duplicates sessions** — ghost sessions | `refresh()` is not atomic: both concurrent requests pass the DB validation check before either deletes the token | M | `[ ]` |
+| SEC-005 | **Concurrent token refresh duplicates sessions** — ghost sessions | `refresh()` is not atomic: both concurrent requests pass the DB validation check before either deletes the token | M | `[x]` |
 
 ### 🟠 High (P0/P1)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
 | SEC-006 | **Audit log is never written** — all admin actions are untracked | `AdminService` never calls `prisma.auditLog.create`; the `AuditLog` table is unused | M | `[x]` |
-| SEC-007 | **No last-admin guard** — admin can self-demote or self-deactivate, locking out the system | `updateUserRole` / `toggleUserActive` have no check for self-targeting or last-admin scenarios | S | `[ ]` |
-| SEC-008 | **GDPR data export loads all user data in a single unbounded query** — OOM risk | `exportUserData` uses a single `include`-heavy Prisma query with no pagination or streaming | L | `[ ]` |
-| SEC-009 | **Login accumulates refresh tokens without cleanup** — unbounded DB growth | `generateTokens` always `INSERT`s a new refresh token; no cleanup of existing tokens for the same user on login | S | `[ ]` |
+| SEC-007 | **No last-admin guard** — admin can self-demote or self-deactivate, locking out the system | `updateUserRole` / `toggleUserActive` have no check for self-targeting or last-admin scenarios | S | `[x]` |
+| SEC-008 | **GDPR data export loads all user data in a single unbounded query** — OOM risk | `exportUserData` uses a single `include`-heavy Prisma query with no pagination or streaming | L | `[x]` |
+| SEC-009 | **Login accumulates refresh tokens without cleanup** — unbounded DB growth | `generateTokens` always `INSERT`s a new refresh token; no cleanup of existing tokens for the same user on login | S | `[x]` |
 
 ### 🟡 Medium (P1)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| SEC-010 | **Event `update()` skips start/end date validation** — events can have `endsAt < startsAt` | `create()` validates temporal order; `update()` does not run the same check | XS | `[ ]` |
-| SEC-011 | **RSVP status is not enum-validated at the route level** — invalid values produce unhandled 500 | `EventsController` accepts `body: { status: string }` with no `@IsEnum(RsvpStatus)` guard | XS | `[ ]` |
-| SEC-012 | **Reaction type is not enum-validated at the route level** — invalid values produce unhandled 500 | `PostsController` reads `:type` URL param with no `@IsEnum(ReactionType)` guard | XS | `[ ]` |
-| SEC-013 | **Concurrent reaction toggle race** — unique-constraint violation produces unhandled 500 | `toggleReaction` check-then-create is not wrapped in a transaction; simultaneous identical requests hit P2002 | S | `[ ]` |
-| SEC-014 | **Course progress percentage is unconstrained** — negative, >100, NaN, Infinity all accepted | `updateProgress` has no bounds validation; DTO for progress update is missing `@Min(0) @Max(100)` | XS | `[ ]` |
+| SEC-010 | **Event `update()` skips start/end date validation** — events can have `endsAt < startsAt` | `create()` validates temporal order; `update()` does not run the same check | XS | `[x]` |
+| SEC-011 | **RSVP status is not enum-validated at the route level** — invalid values produce unhandled 500 | `EventsController` accepts `body: { status: string }` with no `@IsEnum(RsvpStatus)` guard | XS | `[x]` |
+| SEC-012 | **Reaction type is not enum-validated at the route level** — invalid values produce unhandled 500 | `PostsController` reads `:type` URL param with no `@IsEnum(ReactionType)` guard | XS | `[x]` |
+| SEC-013 | **Concurrent reaction toggle race** — unique-constraint violation produces unhandled 500 | `toggleReaction` check-then-create is not wrapped in a transaction; simultaneous identical requests hit P2002 | S | `[x]` |
+| SEC-014 | **Course progress percentage is unconstrained** — negative, >100, NaN, Infinity all accepted | `updateProgress` has no bounds validation; DTO for progress update is missing `@Min(0) @Max(100)` | XS | `[x]` |
 | SEC-015 | **`updateUserRole` accepts arbitrary strings** — invalid role produces unhandled 500 from DB | `AdminService.updateUserRole` casts `role as any`; no `@IsEnum(Role)` on the controller body | XS | `[x]` |
-| SEC-016 | **Anonymous consent `sessionId` is attacker-controlled** — consent hijacking possible | `saveAnonymousConsent` applies no length limit or ownership validation to the caller-supplied `sessionId` | S | `[ ]` |
-| SEC-017 | **Cookie consent rows grow unboundedly** — append-only table, no dedup or cleanup | `updateConsent` always calls `prisma.cookieConsent.create`; should upsert on `(userId)` | XS | `[ ]` |
+| SEC-016 | **Anonymous consent `sessionId` is attacker-controlled** — consent hijacking possible | `saveAnonymousConsent` applies no length limit or ownership validation to the caller-supplied `sessionId` | S | `[x]` |
+| SEC-017 | **Cookie consent rows grow unboundedly** — append-only table, no dedup or cleanup | `updateConsent` always calls `prisma.cookieConsent.create`; should upsert on `(userId)` | XS | `[x]` |
 | SEC-018 | **`avatarUrl` accepts `javascript:` and `data:` URIs** — stored XSS vector | `UpdateProfileDto.avatarUrl` uses `@IsString()` only; no `@IsUrl({ protocols: ['http','https'] })` | XS | `[x]` |
 | SEC-019 | **Member directory exposes user emails to all authenticated members** — PII enumeration | `UsersService.findAll` `select` includes `email`; email should be excluded from public member-directory responses | S | `[x]` |
-| SEC-020 | **`limit=0` produces `Infinity` totalPages across all paginated endpoints** | `Math.ceil(n / 0) = Infinity` serialises to `null` in JSON; `page=0` produces negative `skip` rejected by Prisma | S | `[ ]` |
-| SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[ ]` |
+| SEC-020 | **`limit=0` produces `Infinity` totalPages across all paginated endpoints** | `Math.ceil(n / 0) = Infinity` serialises to `null` in JSON; `page=0` produces negative `skip` rejected by Prisma | S | `[x]` |
+| SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[x]` |
 | SEC-022 | **Email uniqueness is case-sensitive** — `USER@EXAMPLE.COM` and `user@example.com` can co-exist | `register` does not normalise email to lowercase before the uniqueness check | XS | `[x]` |
 
 ### CI Infrastructure

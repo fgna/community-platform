@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] — 2026-06-16
+
+### Security (Adversarial QA — SEC fixes)
+
+- **SEC-001** Hidden posts no longer accept comments or reactions (`isHidden: false` filter added)
+- **SEC-002** RSVP capacity check is now atomic inside a `$transaction` (eliminates TOCTOU race)
+- **SEC-003** Unpublished courses/lessons return 404 to non-admin users (`isPublished` gate)
+- **SEC-005** Concurrent refresh token rotation is safe: detects already-consumed tokens (count=0 → 401)
+- **SEC-007** Last-admin guard: `updateUserRole` and `toggleUserActive` prevent self-demotion and last-admin removal
+- **SEC-008** GDPR data export is bounded (posts ≤ 1000, nested items ≤ 100, cookie consents ≤ 10)
+- **SEC-009** Expired refresh tokens purged on every token generation (prevents unbounded table growth)
+- **SEC-010** Event `update()` now validates `startsAt < endsAt` (same check as `create()`)
+- **SEC-011** RSVP status validated via `RsvpDto` with `@IsEnum(RsvpStatus)` — was raw `string`
+- **SEC-012** Reaction type validated against allowed enum values — invalid types return 400
+- **SEC-013** `toggleReaction` is wrapped in `$transaction` to prevent P2002 unique-constraint races
+- **SEC-014** Course progress `UpdateProgressDto` uses `@Min(0) @Max(100) @IsNumber()` — out-of-range returns 400
+- **SEC-016** Anonymous consent `sessionId` capped at 128 characters
+- **SEC-017** Cookie consent upserts on existing record instead of always inserting new rows
+- **SEC-020** All paginated endpoints clamp `limit` to 1–100 and `page` to ≥ 1 (`limit=0` no longer returns `Infinity`)
+- **SEC-021** Moderation queue is now paginated (was unbounded `findMany`)
+
+---
+
 ## [1.8.0] — 2026-06-16
 
 ### Added (Sprint 8 — Security Hardening)

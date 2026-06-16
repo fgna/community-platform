@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdatePlatformSettingsDto } from './dto/update-platform-settings.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -19,6 +19,8 @@ export class AdminService {
   }
 
   async getAllUsers(page = 1, limit = 20) {
+    limit = Math.max(1, Math.min(limit, 100));
+    page = Math.max(1, page);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -45,6 +47,17 @@ export class AdminService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
+    if (userId === actorId && role !== 'ADMIN') {
+      throw new BadRequestException('Cannot demote yourself');
+    }
+
+    if (user.role === 'ADMIN' && role !== 'ADMIN') {
+      const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN', isActive: true } });
+      if (adminCount <= 1) {
+        throw new BadRequestException('Cannot remove the last admin');
+      }
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { role: role as any },
@@ -59,8 +72,19 @@ export class AdminService {
   }
 
   async toggleUserActive(userId: string, actorId: string) {
+    if (userId === actorId) {
+      throw new BadRequestException('Cannot deactivate yourself');
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+
+    if (user.role === 'ADMIN' && user.isActive) {
+      const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN', isActive: true } });
+      if (adminCount <= 1) {
+        throw new BadRequestException('Cannot deactivate the last admin');
+      }
+    }
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -107,15 +131,26 @@ export class AdminService {
     return updated;
   }
 
-  async getModerationQueue() {
-    return this.prisma.post.findMany({
-      where: { isHidden: true },
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        _count: { select: { comments: true, reactions: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getModerationQueue(page = 1, limit = 20) {
+    limit = Math.max(1, Math.min(limit, 100));
+    page = Math.max(1, page);
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where: { isHidden: true },
+        skip,
+        take: limit,
+        include: {
+          author: { select: { id: true, name: true, email: true } },
+          _count: { select: { comments: true, reactions: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.post.count({ where: { isHidden: true } }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getAuditLog(page = 1, limit = 50) {
