@@ -40,7 +40,7 @@ export function FeedPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    await createPost.mutateAsync(content.trim());
+    await createPost.mutateAsync({ content: content.trim() });
     setContent('');
     setPreview(false);
   };

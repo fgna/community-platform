@@ -68,9 +68,12 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.email).toBe('test@example.com');
-      // refreshToken is now a signed JWT (not a UUID) so the
-      // JwtRefreshStrategy's ExtractJwt.fromBodyField can decode it
-      expect(mockJwt.sign).toHaveBeenCalledTimes(2); // access + refresh
+      // jwtService.sign is called twice: once for the access token and once
+      // for the refresh token (which now carries a jti claim for uniqueness)
+      expect(mockJwt.sign).toHaveBeenCalledTimes(2);
+      // The second call includes jti so the DB unique constraint is never hit
+      const refreshCall = mockJwt.sign.mock.calls[1];
+      expect(refreshCall[0]).toHaveProperty('jti');
     });
 
     it('should throw ConflictException if email already exists', async () => {
