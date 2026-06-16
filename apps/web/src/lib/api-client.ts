@@ -57,17 +57,15 @@ apiClient.interceptors.response.use(
       }
 
       originalRequest._retry = true;
-      isRefreshing = true;
 
       const { refreshToken, clearAuth, setAccessToken } = useAuthStore.getState();
 
       if (!refreshToken) {
-        clearAuth();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        // No session to refresh — propagate the original error (e.g. wrong password on /auth/login)
         return Promise.reject(error);
       }
+
+      isRefreshing = true;
 
       try {
         const response = await axios.post(`${API_URL}/api/auth/refresh`, {

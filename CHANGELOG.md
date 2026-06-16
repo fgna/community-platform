@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] — 2026-06-16
+
+### Fixed
+- **Auth flow**: login and registration now sync `auth-session` and `user-role` cookies on success so the Next.js middleware can gate protected routes correctly
+- **Auth flow**: Zustand store rehydration from localStorage re-syncs cookies on page refresh
+- **Axios interceptor**: 401 responses on unauthenticated requests (e.g. wrong password on login) no longer trigger a redirect to `/login`; the error propagates to the React mutation state and is displayed inline
+
+### Security
+- **SEC-001** (extended) Hidden posts now also reject non-admin `update()` and `delete()` calls with 403
+- **SEC-004** `JWT_SECRET` / `JWT_REFRESH_SECRET` fallback removed from `generateTokens()` — startup guard guarantees env vars are present
+- **SEC-018** `avatarUrl` validated with `@IsUrl({ protocols: ['http','https'], require_protocol: true })` in `UpdateProfileDto` — rejects `javascript:` and `data:` URIs
+- **SEC-022** Email normalization (lowercase + trim) tested end-to-end — duplicate accounts via mixed-case email are blocked
+
+### Tests
+- E2E auth suite expanded from 6 to 20 tests covering login/register flows, client-side validation, error messages, and logout
+
+---
+
 ## [1.9.0] — 2026-06-16
 
 ### Security (Adversarial QA — SEC fixes)
