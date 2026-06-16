@@ -15,10 +15,10 @@ import { Test } from '@nestjs/testing';
 import { PostsService } from './posts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 
 function buildMockPrisma() {
-  return {
+  const prisma = {
     post: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -35,7 +35,10 @@ function buildMockPrisma() {
       create: vi.fn(),
       delete: vi.fn(),
     },
+    $transaction: vi.fn(),
   };
+  prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
+  return prisma;
 }
 
 const mockNotifications = {
@@ -61,6 +64,7 @@ describe('PostsService — adversarial', () => {
     prisma = buildMockPrisma();
     service = await buildService(prisma);
     vi.clearAllMocks();
+    prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
   });
 
   // ── INVARIANT: hidden posts must be inaccessible to non-admins ──────────
@@ -129,20 +133,18 @@ describe('PostsService — adversarial', () => {
 
   // ── INVARIANT: reaction toggle is race-condition-safe ───────────────────
 
-  describe('INVARIANT: concurrent reaction toggles must not crash with 500', () => {
-    it('simultaneous toggle-add race produces unique-constraint violation (unhandled P2002)', async () => {
+  describe('FIXED SEC-013: concurrent reaction toggles return 409 ConflictException, not 500', () => {
+    it('P2002 from concurrent insert is caught and returned as ConflictException (409)', async () => {
       /**
-       * toggleReaction reads then writes without a transaction.
-       * Two concurrent calls for the same (postId, userId, type) can both
-       * read "no existing reaction" and both attempt to INSERT.
-       * The second INSERT hits the DB unique constraint → Prisma throws P2002.
-       * The service has no try/catch → unhandled exception → 500 to the client.
+       * toggleReaction is wrapped in $transaction and catches P2002.
+       * Two concurrent calls for the same (postId, userId, type):
+       * - First insert succeeds
+       * - Second insert hits unique constraint (P2002) → caught → ConflictException (409)
        *
-       * Expected: idempotent 200 or a 409 Conflict
-       * Actual: second request returns HTTP 500
+       * Fixed: no longer an unhandled 500; the caller receives a proper 409.
        */
       prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isHidden: false });
-      prisma.reaction.findUnique.mockResolvedValue(null); // both reads return null
+      prisma.reaction.findUnique.mockResolvedValue(null);
 
       let callCount = 0;
       prisma.reaction.create.mockImplementation(() => {
@@ -161,10 +163,10 @@ describe('PostsService — adversarial', () => {
       ]);
 
       expect(first.status).toBe('fulfilled');
-      // Second call crashes — not a graceful conflict response
+      // Second call returns ConflictException (409), not a raw P2002 / 500
       expect(second.status).toBe('rejected');
       if (second.status === 'rejected') {
-        expect((second.reason as any).code).toBe('P2002');
+        expect(second.reason).toBeInstanceOf(ConflictException);
       }
     });
   });
@@ -195,60 +197,41 @@ describe('PostsService — adversarial', () => {
 
   // ── INVARIANT: pagination parameters cannot cause arithmetic anomalies ──
 
-  describe('INVARIANT: pagination edge cases', () => {
-    it('page=0 produces skip=-1 — negative offset sent to Prisma', async () => {
-      /**
-       * findAll: skip = (page - 1) * limit = (0 - 1) * 20 = -1
-       * Prisma rejects negative skip values at runtime (InvalidArgumentError).
-       * No input guard exists for page < 1.
-       */
+  describe('FIXED SEC-020: findAll pagination is clamped', () => {
+    it('page=0 is clamped to page=1 (skip=0, not negative)', async () => {
       prisma.post.findMany.mockResolvedValue([]);
       prisma.post.count.mockResolvedValue(0);
 
-      // capture the actual call args
-      await service.findAll(0, 20).catch(() => {});
+      await service.findAll(0, 20);
       const findManyCall = prisma.post.findMany.mock.calls[0];
-      if (findManyCall) {
-        // (0 - 1) * 20 = -20 — negative skip, which Prisma rejects at runtime
-        expect(findManyCall[0].skip).toBe(-20);
-      }
+      expect(findManyCall[0].skip).toBe(0);
     });
 
-    it('limit=0 produces totalPages=Infinity (division by zero)', async () => {
-      /**
-       * totalPages = Math.ceil(total / limit) = Math.ceil(100 / 0) = Infinity
-       * Serialized to JSON as `null`, breaks client pagination logic.
-       */
+    it('limit=0 is clamped to 1 (totalPages is finite, not Infinity)', async () => {
       prisma.post.findMany.mockResolvedValue([]);
       prisma.post.count.mockResolvedValue(100);
 
       const result = await service.findAll(1, 0);
-      expect(result.totalPages).toBe(Infinity);
+      expect(result.totalPages).toBe(100);
     });
 
-    it('page=-1 produces skip=-2 — negative offset', async () => {
+    it('page=-1 is clamped to page=1 (skip=0, not negative)', async () => {
       prisma.post.findMany.mockResolvedValue([]);
       prisma.post.count.mockResolvedValue(0);
 
-      await service.findAll(-1, 20).catch(() => {});
+      await service.findAll(-1, 20);
       const call = prisma.post.findMany.mock.calls[0];
-      if (call) {
-        expect(call[0].skip).toBe(-40);
-      }
+      expect(call[0].skip).toBe(0);
     });
 
-    it('huge limit is passed through uncapped (potential OOM / slow query)', async () => {
-      /**
-       * No maximum limit enforcement. A client sending limit=1000000 forces
-       * the DB to return (up to) 1M rows in one query.
-       */
+    it('huge limit is clamped to 100 (not passed through uncapped)', async () => {
       prisma.post.findMany.mockResolvedValue([]);
       prisma.post.count.mockResolvedValue(1000000);
 
       await service.findAll(1, 1000000);
 
       const call = prisma.post.findMany.mock.calls[0];
-      expect(call[0].take).toBe(1000000);
+      expect(call[0].take).toBe(100);
     });
   });
 

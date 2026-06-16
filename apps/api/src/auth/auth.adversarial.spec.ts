@@ -102,9 +102,9 @@ describe('AuthService — adversarial', () => {
       expect(resultA.accessToken).not.toBe(resultB.accessToken);
       expect(resultA.refreshToken).not.toBe(resultB.refreshToken);
 
-      // deleteMany was called twice, but the second call is a no-op in a real DB
-      // (the row is already gone). In a real system this silently succeeds.
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(2);
+      // Each refresh() call: 1× deleteMany for old token + 1× deleteMany in generateTokens()
+      // purging expired tokens (SEC-009 fix) = 2 per call × 2 concurrent calls = 4 total.
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(4);
     });
 
     it('refresh deletes the OLD token but never revokes the just-issued one', async () => {
@@ -117,10 +117,10 @@ describe('AuthService — adversarial', () => {
 
       await service.refresh('user-1', 'user@example.com', 'MEMBER', 'captured-refresh-token');
 
+      // First deleteMany: old token consumed; second: expired-token purge (SEC-009)
       const deletedTokenArg = prisma.refreshToken.deleteMany.mock.calls[0][0];
       expect(deletedTokenArg.where.token).toBe('captured-refresh-token');
-      // No deleteMany call for the newly issued token
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(1);
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -149,9 +149,11 @@ describe('AuthService — adversarial', () => {
       await service.login({ email: 'user@example.com', password: 'password123' });
       await service.login({ email: 'user@example.com', password: 'password123' });
 
-      // Three logins → three refresh tokens created, ZERO deleted
+      // Three logins → three refresh tokens created; SEC-009: each generateTokens()
+      // purges expired tokens for the user — 1 deleteMany per login = 3 total.
+      // Active (non-expired) tokens for the user are NOT deleted — sessions preserved.
       expect(prisma.refreshToken.create).toHaveBeenCalledTimes(3);
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(0);
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(3);
     });
   });
 
