@@ -1,8 +1,24 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+
+const pollSelect = {
+  id: true,
+  question: true,
+  endsAt: true,
+  createdAt: true,
+  options: {
+    select: {
+      id: true,
+      text: true,
+      order: true,
+      _count: { select: { votes: true } },
+    },
+    orderBy: { order: 'asc' as const },
+  },
+};
 
 const postSelect = {
   id: true,
@@ -14,6 +30,7 @@ const postSelect = {
   author: {
     select: { id: true, name: true, avatarUrl: true, role: true },
   },
+  poll: { select: pollSelect },
   _count: {
     select: { comments: true, reactions: true },
   },
@@ -39,6 +56,22 @@ export class PostsService {
           reactions: userId
             ? { where: { userId }, select: { id: true, type: true, userId: true } }
             : false,
+          poll: {
+            select: {
+              ...pollSelect,
+              options: {
+                select: {
+                  id: true,
+                  text: true,
+                  order: true,
+                  _count: { select: { votes: true } },
+                  votes: userId ? { where: { userId }, select: { id: true } } : false,
+                },
+                orderBy: { order: 'asc' as const },
+              },
+              votes: userId ? { where: { userId }, select: { optionId: true } } : false,
+            },
+          },
         },
       }),
       this.prisma.post.count({ where: { isHidden: false } }),
@@ -64,6 +97,21 @@ export class PostsService {
         reactions: userId
           ? { where: { userId }, select: { id: true, type: true, userId: true } }
           : false,
+        poll: {
+          select: {
+            ...pollSelect,
+            options: {
+              select: {
+                id: true,
+                text: true,
+                order: true,
+                _count: { select: { votes: true } },
+                votes: userId ? { where: { userId }, select: { id: true } } : false,
+              },
+              orderBy: { order: 'asc' as const },
+            },
+          },
+        },
       },
     });
 
@@ -106,13 +154,26 @@ export class PostsService {
   }
 
   async create(dto: CreatePostDto, authorId: string) {
-    return this.prisma.post.create({
+    const post = await this.prisma.post.create({
       data: {
         content: dto.content,
         authorId,
+        ...(dto.poll && {
+          poll: {
+            create: {
+              question: dto.poll.question,
+              endsAt: dto.poll.endsAt ? new Date(dto.poll.endsAt) : undefined,
+              options: {
+                create: dto.poll.options.map((text, order) => ({ text, order })),
+              },
+            },
+          },
+        }),
       },
       select: postSelect,
     });
+
+    return post;
   }
 
   async update(id: string, content: string, userId: string, userRole: string) {
@@ -150,6 +211,8 @@ export class PostsService {
         id: true,
         content: true,
         createdAt: true,
+        postId: true,
+        authorId: true,
         author: { select: { id: true, name: true, avatarUrl: true, role: true } },
       },
     });
@@ -180,5 +243,36 @@ export class PostsService {
     this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch(() => {});
 
     return { added: true, reaction };
+  }
+
+  async votePoll(postId: string, optionId: string, userId: string) {
+    const poll = await this.prisma.poll.findUnique({
+      where: { postId },
+      include: { options: { select: { id: true } } },
+    });
+    if (!poll) throw new NotFoundException('Poll not found');
+    if (poll.endsAt && poll.endsAt < new Date()) {
+      throw new BadRequestException('Poll has ended');
+    }
+
+    const validOption = poll.options.some((o) => o.id === optionId);
+    if (!validOption) throw new NotFoundException('Poll option not found');
+
+    const vote = await this.prisma.pollVote.upsert({
+      where: { pollId_userId: { pollId: poll.id, userId } },
+      create: { pollId: poll.id, optionId, userId },
+      update: { optionId },
+      select: { id: true, optionId: true, userId: true, createdAt: true },
+    });
+
+    return vote;
+  }
+
+  async unvotePoll(postId: string, userId: string) {
+    const poll = await this.prisma.poll.findUnique({ where: { postId } });
+    if (!poll) throw new NotFoundException('Poll not found');
+
+    await this.prisma.pollVote.deleteMany({ where: { pollId: poll.id, userId } });
+    return { message: 'Vote removed' };
   }
 }

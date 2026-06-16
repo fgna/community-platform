@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -37,7 +37,7 @@ export class PostsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new post' })
+  @ApiOperation({ summary: 'Create a new post (optionally with a poll)' })
   create(@Body() dto: CreatePostDto, @CurrentUser() user: any) {
     return this.postsService.create(dto, user.id);
   }
@@ -76,5 +76,22 @@ export class PostsController {
     @CurrentUser() user: any,
   ) {
     return this.postsService.toggleReaction(id, type, user.id);
+  }
+
+  @Post(':id/poll/vote')
+  @ApiOperation({ summary: 'Vote on a poll option (creates or changes vote)' })
+  votePoll(
+    @Param('id') postId: string,
+    @Body() body: { optionId: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.postsService.votePoll(postId, body.optionId, user.id);
+  }
+
+  @Delete(':id/poll/vote')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove own vote from a poll' })
+  unvotePoll(@Param('id') postId: string, @CurrentUser() user: any) {
+    return this.postsService.unvotePoll(postId, user.id);
   }
 }

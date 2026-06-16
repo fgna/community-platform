@@ -36,11 +36,20 @@ export function usePost(id: string) {
   });
 }
 
+interface CreatePostPayload {
+  content: string;
+  poll?: {
+    question: string;
+    options: string[];
+    endsAt?: string;
+  };
+}
+
 export function useCreatePost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (content: string) => {
-      const { data } = await apiClient.post('/posts', { content });
+    mutationFn: async (payload: CreatePostPayload) => {
+      const { data } = await apiClient.post('/posts', payload);
       return data;
     },
     onSuccess: () => {

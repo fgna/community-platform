@@ -33,6 +33,7 @@ model User {
   conversationParticipants ConversationParticipant[]
   sentMessages  Message[]
   sentInvites   Invite[]
+  pollVotes     PollVote[]
 }
 
 enum Role {
@@ -47,6 +48,7 @@ model Post {
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   reactions Reaction[]
+  poll      Poll?
   isPinned  Boolean    @default(false)
   isHidden  Boolean    @default(false)
   createdAt DateTime   @default(now())
@@ -280,4 +282,37 @@ model Invite {
   createdAt   DateTime  @default(now())
 
   @@index([email])
+}
+
+model Poll {
+  id        String       @id @default(cuid())
+  postId    String       @unique
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  question  String
+  endsAt    DateTime?
+  options   PollOption[]
+  votes     PollVote[]
+  createdAt DateTime     @default(now())
+}
+
+model PollOption {
+  id     String     @id @default(cuid())
+  pollId String
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text   String
+  order  Int        @default(0)
+  votes  PollVote[]
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId  String
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([pollId, userId])
 }

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionBar } from './reaction-bar';
 import { CommentList } from './comment-list';
+import { PollCard } from './poll-card';
 import { useDeletePost } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
 import { timeAgo, getInitials } from '@community/shared';
@@ -102,6 +103,10 @@ export function PostCard({ post }: PostCardProps) {
           }
         }}
       />
+
+      {post.poll && (
+        <PollCard poll={post.poll} postId={post.id} />
+      )}
 
       <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--theme-border)' }}>
         <ReactionBar post={post} />
