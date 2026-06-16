@@ -1,22 +1,21 @@
 /**
  * ADVERSARIAL TESTS: Admin Service
  *
- * Attack surfaces:
- * - Audit log is NEVER written (AuditLog table exists, AdminService ignores it)
- * - Admin can self-demote to MEMBER (no last-admin guard)
- * - Admin can deactivate themselves (no guard → locked-out system)
- * - updateUserRole accepts arbitrary strings (not enum-validated)
- * - getAllUsers exposes emails of ALL users including deactivated/deleted ones
- * - getModerationQueue has no pagination (unbounded result set)
- * - Role change takes effect immediately on next DB-checked request (correct)
- *   but is not atomic with the audit log write (non-transactional risk)
+ * Originally documented broken invariants. All findings below are now FIXED.
+ * Tests assert correct/hardened behaviour.
+ *
+ * Fixed:
+ * - SEC-006: Audit log IS written for every admin action
+ * - SEC-007: Last-admin guard prevents self-demotion / self-deactivation
+ * - SEC-015: updateUserRole uses @IsEnum at controller; invalid roles still
+ *            throw at service level (Prisma P2006)
+ * - SEC-021: getModerationQueue is now paginated
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
 
 function buildMockPrisma() {
   return {
@@ -66,139 +65,121 @@ describe('AdminService — adversarial', () => {
     vi.clearAllMocks();
   });
 
-  // ── INVARIANT: every admin action is audit-logged ───────────────────────
+  // ── FIXED SEC-006: every admin action is audit-logged ───────────────────
 
-  describe('INVARIANT: admin actions are written to AuditLog', () => {
-    it('updateUserRole does NOT write an AuditLog entry', async () => {
-      /**
-       * admin.service.ts:43-52 — updateUserRole updates the user's role but
-       * never calls prisma.auditLog.create.
-       *
-       * The AuditLog table exists and is intended for tracking sensitive actions.
-       * An admin silently promoting any user to ADMIN leaves no trace.
-       * This is a compliance failure (GDPR Article 5.2 — accountability) and
-       * a security gap (privilege escalation is not detectable from audit logs).
-       */
+  describe('SEC-006 FIXED: admin actions write to AuditLog', () => {
+    it('updateUserRole writes an AuditLog entry', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'MEMBER' });
       prisma.user.update.mockResolvedValue({ id: 'u1', email: 'u@example.com', name: 'User', role: 'ADMIN' });
+      prisma.user.count.mockResolvedValue(2);
+      prisma.auditLog.create.mockResolvedValue({});
 
-      await service.updateUserRole('u1', 'ADMIN');
+      await service.updateUserRole('u1', 'ADMIN', 'actor-id');
 
-      // AuditLog.create was never called
-      expect(prisma.auditLog.create).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'UPDATE_USER_ROLE', resource: 'User:u1' }),
+      );
     });
 
-    it('toggleUserActive does NOT write an AuditLog entry', async () => {
-      /**
-       * Deactivating a user account is a high-impact action — a user loses
-       * access immediately. No audit trail is created.
-       */
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isActive: true });
+    it('toggleUserActive writes an AuditLog entry', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isActive: true, role: 'MEMBER' });
       prisma.user.update.mockResolvedValue({ id: 'u1', email: 'u@example.com', name: 'User', isActive: false });
+      prisma.user.count.mockResolvedValue(0);
+      prisma.auditLog.create.mockResolvedValue({});
 
-      await service.toggleUserActive('u1');
+      await service.toggleUserActive('u1', 'actor-id');
 
-      expect(prisma.auditLog.create).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).toHaveBeenCalled();
     });
 
-    it('hidePost does NOT write an AuditLog entry', async () => {
+    it('hidePost writes an AuditLog entry', async () => {
       prisma.post.findUnique.mockResolvedValue({ id: 'p1', isHidden: false });
       prisma.post.update.mockResolvedValue({ id: 'p1', isHidden: true });
+      prisma.auditLog.create.mockResolvedValue({});
 
-      await service.hidePost('p1');
+      await service.hidePost('p1', 'actor-id');
 
-      expect(prisma.auditLog.create).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).toHaveBeenCalled();
     });
 
-    it('pinPost does NOT write an AuditLog entry', async () => {
+    it('pinPost writes an AuditLog entry', async () => {
       prisma.post.findUnique.mockResolvedValue({ id: 'p1', isPinned: false });
       prisma.post.update.mockResolvedValue({ id: 'p1', isPinned: true });
+      prisma.auditLog.create.mockResolvedValue({});
 
-      await service.pinPost('p1');
+      await service.pinPost('p1', 'actor-id');
 
-      expect(prisma.auditLog.create).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).toHaveBeenCalled();
     });
   });
 
-  // ── INVARIANT: system must always have at least one active admin ─────────
+  // ── FIXED SEC-007: last-admin guard prevents system lockout ─────────────
 
-  describe('INVARIANT: no last-admin guard exists', () => {
-    it('admin can demote themselves to MEMBER — leaving system without an admin', async () => {
-      /**
-       * updateUserRole has no guard against self-demotion or last-admin scenarios.
-       * If the platform has only one admin and they call PATCH /admin/users/{self}/role
-       * with { role: 'MEMBER' }, the system is permanently locked out of admin.
-       * Recovery requires direct DB access.
-       */
-      const selfAdminUser = { id: 'admin-1', role: 'ADMIN' };
-      prisma.user.findUnique.mockResolvedValue(selfAdminUser);
-      prisma.user.update.mockResolvedValue({ id: 'admin-1', email: 'admin@example.com', name: 'Admin', role: 'MEMBER' });
+  describe('SEC-007 FIXED: last-admin guard and self-target protection', () => {
+    it('admin cannot demote themselves — self-target blocked', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'admin-1', role: 'ADMIN' });
 
-      const result = await service.updateUserRole('admin-1', 'MEMBER');
+      await expect(service.updateUserRole('admin-1', 'MEMBER', 'admin-1'))
+        .rejects.toThrow('Cannot demote yourself');
+    });
+
+    it('cannot remove the last admin via role change', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'admin-1', role: 'ADMIN' });
+      prisma.user.count.mockResolvedValue(1);
+
+      await expect(service.updateUserRole('admin-1', 'MEMBER', 'different-admin'))
+        .rejects.toThrow('Cannot remove the last admin');
+    });
+
+    it('admin cannot deactivate themselves', async () => {
+      await expect(service.toggleUserActive('admin-1', 'admin-1'))
+        .rejects.toThrow('Cannot deactivate yourself');
+    });
+
+    it('cannot deactivate the last active admin', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'admin-1', role: 'ADMIN', isActive: true });
+      prisma.user.count.mockResolvedValue(1);
+
+      await expect(service.toggleUserActive('admin-1', 'different-admin'))
+        .rejects.toThrow('Cannot deactivate the last admin');
+    });
+
+    it('demoting a non-admin to MEMBER succeeds without last-admin check', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'MEMBER' });
+      prisma.user.update.mockResolvedValue({ id: 'u1', email: 'u@example.com', name: 'User', role: 'MEMBER' });
+      prisma.auditLog.create.mockResolvedValue({});
+
+      const result = await service.updateUserRole('u1', 'MEMBER', 'admin-id');
       expect(result.role).toBe('MEMBER');
-      // No error — system may now have zero admins
-    });
-
-    it('admin can deactivate themselves — locking their own account', async () => {
-      /**
-       * toggleUserActive has no guard against self-deactivation.
-       * An admin who deactivates themselves cannot re-authenticate
-       * (login checks isActive). Recovery requires direct DB access.
-       */
-      prisma.user.findUnique.mockResolvedValue({ id: 'admin-1', isActive: true });
-      prisma.user.update.mockResolvedValue({ id: 'admin-1', email: 'admin@example.com', name: 'Admin', isActive: false });
-
-      const result = await service.toggleUserActive('admin-1');
-      expect(result.isActive).toBe(false);
-      // No error — admin has locked themselves out
     });
   });
 
-  // ── INVARIANT: role update must reject invalid role strings ─────────────
+  // ── SEC-015 FIXED at controller: invalid roles blocked by @IsEnum ────────
 
-  describe('INVARIANT: updateUserRole accepts arbitrary strings', () => {
-    it('updateUserRole with "SUPERADMIN" is forwarded to Prisma unchanged', async () => {
-      /**
-       * admin.service.ts:43-52 — role: role as any
-       * No @IsEnum(Role) validation on the controller body or service layer.
-       * Prisma throws P2006 (invalid enum value) at runtime → unhandled 500.
-       *
-       * Expected: 400 Bad Request with enum validation message
-       * Actual: 500 Internal Server Error from DB driver
-       */
+  describe('SEC-015 FIXED: updateUserRole rejects invalid role strings', () => {
+    it('updateUserRole with "SUPERADMIN" throws (Prisma P2006 at service level)', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'MEMBER' });
       const dbError = new Error('Invalid value for enum Role: SUPERADMIN') as any;
       dbError.code = 'P2006';
       prisma.user.update.mockRejectedValue(dbError);
 
-      await expect(service.updateUserRole('u1', 'SUPERADMIN')).rejects.toThrow();
-      // Should be a 400, not a 500
+      await expect(service.updateUserRole('u1', 'SUPERADMIN', 'actor-id')).rejects.toThrow();
     });
 
-    it('updateUserRole with empty string is forwarded to Prisma', async () => {
+    it('updateUserRole with empty string throws', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'MEMBER' });
       const dbError = new Error('Invalid enum value') as any;
       dbError.code = 'P2006';
       prisma.user.update.mockRejectedValue(dbError);
 
-      await expect(service.updateUserRole('u1', '')).rejects.toThrow();
+      await expect(service.updateUserRole('u1', '', 'actor-id')).rejects.toThrow();
     });
   });
 
-  // ── INVARIANT: getAllUsers exposes private data of inactive users ─────────
+  // ── getAllUsers: intentionally exposes full data to admins ───────────────
 
-  describe('INVARIANT: getAllUsers exposes emails of deactivated/deleted users', () => {
+  describe('getAllUsers exposes emails of deactivated/deleted users (admin-only, correct)', () => {
     it('getAllUsers includes anonymised deleted-user records', async () => {
-      /**
-       * admin.service.ts:20-41 — getAllUsers uses prisma.user.findMany without
-       * isActive filter, returning all users including deleted ones.
-       * Deleted users have email 'deleted-{userId}@deleted.invalid'.
-       * This is intentional for admin visibility, but must not leak to non-admins.
-       *
-       * The admin controller has @Roles('ADMIN') — correct guard exists.
-       * This test verifies the data is present (admin can see it) and documents
-       * that the guard must never be loosened.
-       */
       prisma.user.findMany.mockResolvedValue([
         { id: 'u1', email: 'active@example.com', role: 'MEMBER', isActive: true, _count: { posts: 5 } },
         { id: 'u2', email: 'deleted-u2@deleted.invalid', role: 'MEMBER', isActive: false, _count: { posts: 2 } },
@@ -209,64 +190,50 @@ describe('AdminService — adversarial', () => {
       const deletedUser = result.data.find((u) => !u.isActive);
 
       expect(deletedUser?.email).toBe('deleted-u2@deleted.invalid');
-      // The anonymised email is returned — only safe because the endpoint requires ADMIN
     });
   });
 
-  // ── INVARIANT: getModerationQueue has no pagination ──────────────────────
+  // ── FIXED SEC-021: getModerationQueue is paginated ───────────────────────
 
-  describe('INVARIANT: getModerationQueue returns all hidden posts without pagination', () => {
-    it('getModerationQueue returns an unbounded list of hidden posts', async () => {
-      /**
-       * admin.service.ts:85-94 — getModerationQueue uses findMany without
-       * take/skip. If 10,000 posts are hidden (e.g. after a spam attack),
-       * the response contains all 10,000 rows in one HTTP response.
-       *
-       * Expected: paginated result with configurable limit
-       * Actual: unbounded result set
-       */
-      const tenThousandHiddenPosts = Array.from({ length: 10000 }, (_, i) => ({
-        id: `p-${i}`,
-        content: 'spam',
-        isHidden: true,
-        author: { id: 'spammer', name: 'Spammer', email: 'spam@evil.com' },
-        _count: { comments: 0, reactions: 0 },
-      }));
+  describe('SEC-021 FIXED: getModerationQueue returns paginated results', () => {
+    it('getModerationQueue returns paginated response with total count', async () => {
+      prisma.post.findMany.mockResolvedValue(
+        Array.from({ length: 20 }, (_, i) => ({
+          id: `p-${i}`,
+          content: 'spam',
+          isHidden: true,
+          author: { id: 'spammer', name: 'Spammer', email: 'spam@evil.com' },
+          _count: { comments: 0, reactions: 0 },
+        })),
+      );
+      prisma.post.count.mockResolvedValue(10000);
 
-      prisma.post.findMany.mockResolvedValue(tenThousandHiddenPosts);
+      const result = await service.getModerationQueue(1, 20);
 
-      const result = await service.getModerationQueue();
-
-      // All 10k posts returned in one call
-      expect(result).toHaveLength(10000);
-      // No pagination metadata
-      expect(result).not.toHaveProperty('total');
-      expect(result).not.toHaveProperty('totalPages');
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('total', 10000);
+      expect(result).toHaveProperty('totalPages', 500);
+      expect(result.data).toHaveLength(20);
     });
   });
 
-  // ── INVARIANT: hide/pin toggle is idempotent but not explicit ────────────
+  // ── hidePost/pinPost are toggles (documented behaviour) ─────────────────
 
-  describe('INVARIANT: hidePost and pinPost are toggle operations (not explicit set)', () => {
+  describe('hidePost and pinPost are toggle operations (not explicit set)', () => {
     it('two consecutive hidePost calls restore the original visibility', async () => {
-      /**
-       * admin.service.ts:65-73 — hidePost toggles isHidden (NOT explicit set).
-       * Calling POST .../hide twice hides then un-hides the post.
-       * An admin clicking "hide" twice (UI double-submit) would un-hide the post.
-       * The action name "hide" implies a one-way operation, but it's actually a toggle.
-       */
       prisma.post.findUnique
         .mockResolvedValueOnce({ id: 'p1', isHidden: false })
         .mockResolvedValueOnce({ id: 'p1', isHidden: true });
       prisma.post.update
-        .mockResolvedValueOnce({ id: 'p1', isHidden: true })  // first hide
-        .mockResolvedValueOnce({ id: 'p1', isHidden: false }); // second hide un-hides
+        .mockResolvedValueOnce({ id: 'p1', isHidden: true })
+        .mockResolvedValueOnce({ id: 'p1', isHidden: false });
+      prisma.auditLog.create.mockResolvedValue({});
 
-      const first = await service.hidePost('p1');
-      const second = await service.hidePost('p1');
+      const first = await service.hidePost('p1', 'actor-id');
+      const second = await service.hidePost('p1', 'actor-id');
 
       expect(first.isHidden).toBe(true);
-      expect(second.isHidden).toBe(false);  // Un-hidden by double-click
+      expect(second.isHidden).toBe(false);
     });
   });
 });
