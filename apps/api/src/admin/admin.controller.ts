@@ -1,15 +1,21 @@
-import { Controller, Get, Patch, Post, Param, Body, Query, Put } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Param, Body, Query, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UpdatePlatformSettingsDto } from './dto/update-platform-settings.dto';
+import { CreateInviteDto } from './dto/create-invite.dto';
+import { InvitesService } from '../invites/invites.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles('ADMIN')
 @Controller('admin')
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private invitesService: InvitesService,
+  ) {}
 
   @Get('stats')
   @ApiOperation({ summary: 'Get platform statistics' })
@@ -81,5 +87,26 @@ export class AdminController {
   @ApiOperation({ summary: 'Update platform settings' })
   updatePlatformSettings(@Body() dto: UpdatePlatformSettingsDto) {
     return this.adminService.updatePlatformSettings(dto);
+  }
+
+  @Post('invites')
+  @ApiOperation({ summary: 'Create an invite' })
+  createInvite(@Body() dto: CreateInviteDto, @CurrentUser() user: { id: string }) {
+    return this.invitesService.createInvite(dto.email, user.id);
+  }
+
+  @Get('invites')
+  @ApiOperation({ summary: 'List all invites' })
+  listInvites(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.invitesService.listInvites(Number(page), Number(limit));
+  }
+
+  @Delete('invites/:id')
+  @ApiOperation({ summary: 'Revoke an invite' })
+  revokeInvite(@Param('id') id: string) {
+    return this.invitesService.revokeInvite(id);
   }
 }

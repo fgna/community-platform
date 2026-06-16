@@ -8,6 +8,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { InvitesModule } from '../invites/invites.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RolesGuard } from './guards/roles.guard';
       secret: process.env.JWT_SECRET || 'default-secret',
       signOptions: { expiresIn: '15m' },
     }),
+    InvitesModule,
   ],
   providers: [
     AuthService,

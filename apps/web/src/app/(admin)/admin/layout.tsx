@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ClipboardList, ArrowLeft, BarChart2, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ClipboardList, ArrowLeft, BarChart2, Settings, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 
@@ -14,6 +14,7 @@ const adminNav = [
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/moderation', label: 'Moderation', icon: Flag },
   { href: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
+  { href: '/admin/invites', label: 'Invites', icon: Mail },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { InvitesService } from '../invites/invites.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -22,6 +23,11 @@ const mockJwt = {
   sign: vi.fn().mockReturnValue('mock-access-token'),
 };
 
+const mockInvites = {
+  validateInvite: vi.fn().mockResolvedValue({ valid: true, email: 'test@example.com' }),
+  consumeInvite: vi.fn().mockResolvedValue(null),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -31,6 +37,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
+        { provide: InvitesService, useValue: mockInvites },
       ],
     }).compile();
 

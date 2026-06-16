@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { InvitesService } from '../invites/invites.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as argon2 from 'argon2';
@@ -11,9 +12,14 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private invitesService: InvitesService,
   ) {}
 
   async register(dto: RegisterDto) {
+    if (dto.inviteToken) {
+      await this.invitesService.validateInvite(dto.inviteToken);
+    }
+
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -39,6 +45,10 @@ export class AuthService {
         createdAt: true,
       },
     });
+
+    if (dto.inviteToken) {
+      await this.invitesService.consumeInvite(dto.inviteToken);
+    }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 

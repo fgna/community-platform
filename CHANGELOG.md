@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] — 2026-06-16
+
+### Added (Sprint 7 — Invite System)
+- `Invite` model: UUID token, 7-day expiry, soft-delete via `usedAt` timestamp
+- `InvitesService`: `createInvite`, `listInvites`, `validateInvite`, `consumeInvite`, `revokeInvite`
+- `InvitesModule` exported and wired into `AppModule` and `AuthModule`
+- Admin invite endpoints: `POST /admin/invites`, `GET /admin/invites`, `DELETE /admin/invites/:id`
+- Admin Invites page (`/admin/invites`): send invites, list with status badges (Pending / Used / Expired), copy invite link, revoke, pagination
+- Invite token wired into auth registration: `POST /auth/register` accepts optional `inviteToken`, validates before creating account and consumes on success
+- Register page reads `?invite=` query param, pre-fills invite badge and auto-submits token
+- Admin nav updated with Invites link
+
+---
+
 ## [1.6.0] — 2026-06-15
 
 ### Added (Sprint 6 — Social Features & Platform Polish)
