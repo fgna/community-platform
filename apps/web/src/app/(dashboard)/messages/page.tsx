@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getInitials, formatDate } from '@community/shared';
 import type { Conversation } from '@community/shared';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function getOtherParticipant(conv: Conversation, myId: string) {
@@ -82,9 +82,13 @@ function ConversationList({
 function MessageThread({
   conversationId,
   myId,
+  otherName,
+  onBack,
 }: {
   conversationId: string;
   myId: string;
+  otherName?: string;
+  onBack: () => void;
 }) {
   const [text, setText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -102,45 +106,60 @@ function MessageThread({
     send.mutate(trimmed);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>Loading…</p>
-      </div>
-    );
-  }
-
-  const messages = data?.data ?? [];
-
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map(msg => {
-          const isMine = msg.senderId === myId;
-          return (
-            <div key={msg.id} className={cn('flex gap-2 items-end', isMine && 'flex-row-reverse')}>
-              {!isMine && (
-                <Avatar className="h-7 w-7 flex-shrink-0">
-                  <AvatarImage src={msg.sender.avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-xs">{getInitials(msg.sender.name)}</AvatarFallback>
-                </Avatar>
-              )}
-              <div
-                className="max-w-[70%] px-3 py-2 rounded-2xl text-sm"
-                style={{
-                  background: isMine ? 'var(--theme-primary)' : 'var(--theme-card)',
-                  color: isMine ? 'var(--theme-background)' : 'var(--theme-text)',
-                  borderBottomRightRadius: isMine ? 4 : undefined,
-                  borderBottomLeftRadius: !isMine ? 4 : undefined,
-                }}
-              >
-                {msg.content}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
+      {/* Thread header with back button on mobile */}
+      <div
+        className="flex items-center gap-3 px-4 h-14 flex-shrink-0"
+        style={{ borderBottom: '1px solid var(--theme-border)' }}
+      >
+        <button
+          className="md:hidden p-1.5 rounded-md hover:bg-white/5 flex-shrink-0"
+          onClick={onBack}
+          aria-label="Back to conversations"
+        >
+          <ArrowLeft size={18} style={{ color: 'var(--theme-text-muted)' }} />
+        </button>
+        {otherName && (
+          <span className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+            {otherName}
+          </span>
+        )}
       </div>
+
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>Loading…</p>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {(data?.data ?? []).map(msg => {
+            const isMine = msg.senderId === myId;
+            return (
+              <div key={msg.id} className={cn('flex gap-2 items-end', isMine && 'flex-row-reverse')}>
+                {!isMine && (
+                  <Avatar className="h-7 w-7 flex-shrink-0">
+                    <AvatarImage src={msg.sender.avatarUrl ?? undefined} />
+                    <AvatarFallback className="text-xs">{getInitials(msg.sender.name)}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div
+                  className="max-w-[75%] px-3 py-2 rounded-2xl text-sm"
+                  style={{
+                    background: isMine ? 'var(--theme-primary)' : 'var(--theme-card)',
+                    color: isMine ? 'var(--theme-background)' : 'var(--theme-text)',
+                    borderBottomRightRadius: isMine ? 4 : undefined,
+                    borderBottomLeftRadius: !isMine ? 4 : undefined,
+                  }}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+      )}
 
       <div
         className="p-3 flex items-center gap-2"
@@ -173,6 +192,9 @@ function MessagesPageInner() {
 
   if (!user) return null;
 
+  const selectedConv = conversations.find(c => c.id === selectedId);
+  const otherName = selectedConv ? getOtherParticipant(selectedConv, user.id)?.name : undefined;
+
   return (
     <div className="max-w-5xl mx-auto animate-fade-in" style={{ height: 'calc(100vh - 9rem)' }}>
       <div
@@ -182,8 +204,14 @@ function MessagesPageInner() {
           background: 'var(--theme-surface)',
         }}
       >
-        {/* Conversation list */}
-        <div className="w-72 flex-shrink-0" style={{ borderRight: '1px solid var(--theme-border)' }}>
+        {/* Conversation list — full width on mobile when no thread selected, hidden when thread open */}
+        <div
+          className={cn(
+            'flex-shrink-0 md:w-72',
+            selectedId ? 'hidden md:block' : 'w-full',
+          )}
+          style={{ borderRight: '1px solid var(--theme-border)' }}
+        >
           <ConversationList
             conversations={conversations}
             selectedId={selectedId}
@@ -192,10 +220,15 @@ function MessagesPageInner() {
           />
         </div>
 
-        {/* Thread */}
-        <div className="flex-1 flex flex-col">
+        {/* Thread — full width on mobile, flex-1 on desktop */}
+        <div className={cn('flex-1 flex flex-col', !selectedId && 'hidden md:flex')}>
           {selectedId ? (
-            <MessageThread conversationId={selectedId} myId={user.id} />
+            <MessageThread
+              conversationId={selectedId}
+              myId={user.id}
+              otherName={otherName}
+              onBack={() => setSelectedId(null)}
+            />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
               <MessageSquare size={40} style={{ color: 'var(--theme-text-muted)', opacity: 0.4 }} />
