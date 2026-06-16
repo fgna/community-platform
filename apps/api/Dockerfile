@@ -11,10 +11,11 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/themes/package.json ./packages/themes/
 COPY packages/ui/package.json ./packages/ui/
-RUN pnpm install --frozen-lockfile --filter @community/api... --ignore-scripts
-# Prisma client must be generated from source after packages are installed
+# Schema must be present before install so @prisma/client's postinstall hook
+# (prisma generate) runs against the current schema and writes into the correct
+# pnpm virtual-store path that TypeScript resolves via symlinks.
 COPY apps/api/prisma ./apps/api/prisma/
-RUN pnpm --filter @community/api exec prisma generate
+RUN pnpm install --frozen-lockfile --filter @community/api...
 
 # ── builder: compile TypeScript → dist/ ─────────────────────────────────────────
 FROM base AS builder
@@ -24,9 +25,6 @@ COPY . .
 # Make @nestjs/cli (nest binary) findable — pnpm copies it under apps/api/node_modules
 # but the .bin symlinks cross stage boundaries, so we expose them explicitly.
 ENV PATH="/app/apps/api/node_modules/.bin:/app/node_modules/.bin:${PATH}"
-# Re-generate Prisma client via pnpm so it writes into the correct pnpm virtual
-# store path that TypeScript resolves (deps layer may carry a stale cached client).
-RUN pnpm --filter @community/api exec prisma generate
 WORKDIR /app/apps/api
 RUN nest build
 
