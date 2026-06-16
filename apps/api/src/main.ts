@@ -3,12 +3,27 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+
+function validateRequiredSecrets() {
+  const logger = new Logger('Bootstrap');
+  const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    logger.fatal(`Missing required environment variables: ${missing.join(', ')}. Refusing to start.`);
+    process.exit(1);
+  }
+}
 
 async function bootstrap() {
+  validateRequiredSecrets();
+
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
+
+  app.enableShutdownHooks();
 
   // Security
   app.use(helmet());
@@ -23,8 +38,8 @@ async function bootstrap() {
     exposedHeaders: ['X-New-Access-Token'],
   });
 
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Global prefix (health excluded so infra/Docker can probe /health directly)
+  app.setGlobalPrefix('api', { exclude: ['health'] });
 
   // Validation
   app.useGlobalPipes(
@@ -37,6 +52,9 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global exception filter — prevents stack traces leaking in production
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Swagger
   if (process.env.NODE_ENV !== 'production') {

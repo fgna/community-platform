@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 
 interface RegisterForm {
   name: string;
@@ -16,9 +17,12 @@ interface RegisterForm {
   confirmPassword: string;
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const { register: registerUser, registerLoading, registerError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get('invite') ?? undefined;
+
   const {
     register,
     handleSubmit,
@@ -30,7 +34,12 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      await registerUser({ email: data.email, name: data.name, password: data.password });
+      await registerUser({
+        email: data.email,
+        name: data.name,
+        password: data.password,
+        inviteToken,
+      });
     } catch {
       // error handled by mutation state
     }
@@ -38,9 +47,19 @@ export default function RegisterPage() {
 
   return (
     <div className="glass rounded-2xl p-8" style={{ border: '1px solid var(--theme-border)' }}>
-      <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--theme-text)' }}>
+      <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--theme-text)' }}>
         Create your account
       </h2>
+
+      {inviteToken && (
+        <div
+          className="mb-4 flex items-center gap-2 p-3 rounded-lg text-sm"
+          style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
+        >
+          <Mail size={14} />
+          You&apos;ve been invited to join. Complete your registration below.
+        </div>
+      )}
 
       {registerError && (
         <div
@@ -170,5 +189,13 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

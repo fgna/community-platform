@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -35,7 +35,19 @@ export class UsersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.usersService.findOneWithFollow(id, user.id);
+  }
+
+  @Post(':id/follow')
+  @ApiOperation({ summary: 'Follow a user' })
+  follow(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.usersService.follow(user.id, id);
+  }
+
+  @Delete(':id/follow')
+  @ApiOperation({ summary: 'Unfollow a user' })
+  unfollow(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.usersService.unfollow(user.id, id);
   }
 }

@@ -11,7 +11,10 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth.store';
 
 function getInitials(name: string) {
   return name
@@ -25,9 +28,45 @@ function getInitials(name: string) {
 export function SettingsPage() {
   const { user, logout } = useAuth();
   const { themes, setTheme, theme: currentTheme } = useTheme();
+  const { updateUser } = useAuthStore();
+  const queryClient = useQueryClient();
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name ?? '');
+  const [profileBio, setProfileBio] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
+
+  const saveProfile = useMutation({
+    mutationFn: () =>
+      apiClient.patch('/users/me', {
+        name: profileName || undefined,
+        bio: profileBio || undefined,
+        avatarUrl: profileAvatar || undefined,
+      }).then((r) => r.data),
+    onSuccess: (data) => {
+      updateUser({ name: data.name, avatarUrl: data.avatarUrl });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+
+  const exportData = useMutation({
+    mutationFn: () => apiClient.get('/gdpr/export').then((r) => r.data),
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+
+  const deleteAccount = useMutation({
+    mutationFn: () => apiClient.delete('/gdpr/account'),
+    onSuccess: () => logout(),
+  });
 
   if (!user) return null;
 
@@ -91,7 +130,28 @@ export function SettingsPage() {
                   <Label htmlFor="name">Full name</Label>
                   <Input
                     id="name"
-                    defaultValue={user.name}
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bio">Bio</Label>
+                  <Input
+                    id="bio"
+                    value={profileBio}
+                    onChange={(e) => setProfileBio(e.target.value)}
+                    placeholder="Tell us about yourself"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="avatar">Avatar URL</Label>
+                  <Input
+                    id="avatar"
+                    value={profileAvatar}
+                    onChange={(e) => setProfileAvatar(e.target.value)}
+                    placeholder="https://..."
                     className="mt-1"
                   />
                 </div>
@@ -101,13 +161,20 @@ export function SettingsPage() {
                     id="email"
                     type="email"
                     defaultValue={user.email}
-                    className="mt-1"
+                    disabled
+                    className="mt-1 opacity-60"
                   />
                 </div>
               </div>
 
               <div className="flex justify-end">
-                <Button size="sm">Save changes</Button>
+                <Button
+                  size="sm"
+                  onClick={() => saveProfile.mutate()}
+                  disabled={saveProfile.isPending}
+                >
+                  {saveProfile.isPending ? 'Saving…' : 'Save changes'}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -245,14 +312,29 @@ export function SettingsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportData.mutate()}
+                  disabled={exportData.isPending}
+                  className="flex items-center gap-2"
+                >
+                  {exportData.isPending ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
                   Export my data
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   style={{ borderColor: 'rgba(239,68,68,0.3)', color: '#ef4444' }}
+                  disabled={deleteAccount.isPending}
+                  onClick={() => {
+                    if (confirm('Permanently delete your account? This cannot be undone.')) {
+                      deleteAccount.mutate();
+                    }
+                  }}
+                  className="flex items-center gap-2"
                 >
+                  {deleteAccount.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   Delete account
                 </Button>
               </div>

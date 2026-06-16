@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { InvitesService } from '../invites/invites.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -19,7 +20,12 @@ const mockPrisma = {
 };
 
 const mockJwt = {
-  sign: vi.fn().mockReturnValue('mock-access-token'),
+  sign: vi.fn().mockReturnValue('mock-jwt-token'),
+};
+
+const mockInvites = {
+  validateInvite: vi.fn().mockResolvedValue({ valid: true, email: 'test@example.com' }),
+  consumeInvite: vi.fn().mockResolvedValue(null),
 };
 
 describe('AuthService', () => {
@@ -31,6 +37,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
+        { provide: InvitesService, useValue: mockInvites },
       ],
     }).compile();
 
@@ -61,6 +68,12 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.email).toBe('test@example.com');
+      // jwtService.sign is called twice: once for the access token and once
+      // for the refresh token (which now carries a jti claim for uniqueness)
+      expect(mockJwt.sign).toHaveBeenCalledTimes(2);
+      // The second call includes jti so the DB unique constraint is never hit
+      const refreshCall = mockJwt.sign.mock.calls[1];
+      expect(refreshCall[0]).toHaveProperty('jti');
     });
 
     it('should throw ConflictException if email already exists', async () => {

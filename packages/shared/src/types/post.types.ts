@@ -31,6 +31,23 @@ export interface Comment {
   updatedAt: string;
 }
 
+export interface PollOption {
+  id: string;
+  text: string;
+  order: number;
+  _count: { votes: number };
+  votes?: { id: string }[];
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  endsAt?: string | null;
+  createdAt: string;
+  options: PollOption[];
+  votes?: { optionId: string }[];
+}
+
 export interface Post {
   id: string;
   content: string;
@@ -38,6 +55,7 @@ export interface Post {
   author: Author;
   comments: Comment[];
   reactions: Reaction[];
+  poll?: Poll | null;
   isPinned: boolean;
   isHidden: boolean;
   createdAt: string;

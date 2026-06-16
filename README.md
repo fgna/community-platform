@@ -1,25 +1,51 @@
 # Community Platform
 
-A production-ready, self-hosted community and learning platform with a premium dark executive dashboard experience. Built with Next.js 15, NestJS, PostgreSQL, and Docker.
+A production-ready, self-hosted community and learning platform with a premium dark executive dashboard. Built with Next.js 15, NestJS, PostgreSQL, and Docker.
 
 ---
 
-## ✨ Features
+## Features
 
-| Phase 1 (MVP) | Status |
+### Phase 1 — MVP (Complete)
+
+| Area | Feature | Status |
+|---|---|---|
+| Auth | Email/password login, JWT + refresh tokens, RBAC | ✅ |
+| Auth | Role-based access (Admin / Member), route protection | ✅ |
+| Auth | Invite-only registration (token-based, 7-day expiry) | ✅ |
+| Feed | Posts, comments, reactions (Like/Heart/Celebrate/Insightful) | ✅ |
+| Feed | Markdown support (bold, italic, code, blockquote, links) | ✅ |
+| Feed | Hashtag extraction and click-to-filter | ✅ |
+| Feed | Latest / Trending tabs, pinned posts | ✅ |
+| Courses | Course catalog, module/lesson accordion, progress tracking | ✅ |
+| Events | Event list, calendar view, RSVP (Going/Maybe/Not Going) | ✅ |
+| Members | Member directory, public profiles, activity badges | ✅ |
+| Members | Top Contributors leaderboard | ✅ |
+| Themes | 5 built-in themes, runtime switching (no page reload) | ✅ |
+| Admin | User management (roles, active/suspend) | ✅ |
+| Admin | Content moderation queue, post pin/hide | ✅ |
+| Admin | Course and event management | ✅ |
+| Admin | Audit log, analytics dashboard | ✅ |
+| Admin | Platform settings (name, logo, colours, signup toggle) | ✅ |
+| Admin | Invite management (send, copy link, revoke) | ✅ |
+| GDPR | Cookie consent banner, privacy settings | ✅ |
+| GDPR | Data export (JSON download), account deletion | ✅ |
+
+### Phase 2 — Post-MVP (Shipped)
+
+| Feature | Status |
 |---|---|
-| Authentication (email/password, JWT, RBAC) | ✅ |
-| Community Feed (posts, comments, reactions) | ✅ |
-| Learning Hub (courses, modules, progress) | ✅ |
-| Events (list, RSVP, calendar) | ✅ |
-| Member Directory | ✅ |
-| Theme Engine (5 themes, runtime switching) | ✅ |
-| Admin Panel (users, courses, events, moderation) | ✅ |
-| GDPR (consent, data export, account deletion) | ✅ |
+| In-app notifications (follow, comment, reaction alerts) | ✅ |
+| Follow / unfollow members | ✅ |
+| Private messaging (1:1 conversations, real-time polling) | ✅ |
+| Command palette (⌘K / Ctrl+K, live search, keyboard nav) | ✅ |
+| Platform-wide search (posts, users, courses, events) | ✅ |
+| Analytics dashboard (DAU, content, course, event, messaging stats) | ✅ |
+| White-labeling foundation (PlatformSettings model, admin UI) | ✅ |
 
 ---
 
-## 🚀 Quick Start (Docker — recommended)
+## Quick Start (Docker — recommended)
 
 ### Prerequisites
 - [Docker 24+](https://docs.docker.com/get-docker/) and Docker Compose v2
@@ -33,9 +59,9 @@ git clone <repo-url> community-platform && cd community-platform
 
 # 2. Configure env
 cp .env.example .env
-# Edit .env — at minimum set the JWT secrets:
-#   JWT_SECRET=<run: openssl rand -hex 32>
-#   JWT_REFRESH_SECRET=<run: openssl rand -hex 32>
+# Edit .env — at minimum set:
+#   JWT_SECRET=<openssl rand -hex 32>
+#   JWT_REFRESH_SECRET=<openssl rand -hex 32>
 
 # 3. Start everything (postgres + redis + api + web)
 docker compose up --build -d
@@ -45,23 +71,25 @@ docker compose exec api npx prisma migrate deploy
 docker compose exec api npx prisma db seed
 ```
 
-The platform is now live:
-
 | Service | URL |
 |---|---|
 | Web app | http://localhost:3000 |
 | API | http://localhost:3001 |
 | Health | http://localhost:3001/health |
+| API Docs | http://localhost:3001/api/docs |
 
-**Default admin account** (created by seed):
-- Email: `admin@example.com`
-- Password: `Admin1234!`
+**Default accounts (created by seed):**
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@example.com` | `Admin123!@#` |
+| Member | `alice@example.com` | `Member123!@#` |
 
 > Change these immediately in production.
 
 ---
 
-## 💻 Local Development
+## Local Development
 
 ### Prerequisites
 - Node.js 20+
@@ -72,38 +100,40 @@ The platform is now live:
 # Install all workspace dependencies
 pnpm install
 
-# Start only the infrastructure services
+# Start infrastructure services
 docker compose up postgres redis -d
 
-# Copy and configure .env
+# Copy and configure env
 cp .env.example .env
 
 # Run database migrations and seed
 pnpm db:migrate
 pnpm db:seed
 
-# Start both api and web with hot reload
+# Start API + web with hot reload
 pnpm dev
 ```
 
 - Web: http://localhost:3000
-- API: http://localhost:3001
+- API: http://localhost:3001/api
 
-### Useful dev commands
+### Development commands
 
 ```bash
-pnpm build          # Build all workspaces
-pnpm test           # Run all unit tests
-pnpm test:e2e       # Run Playwright e2e tests
-pnpm lint           # Lint all workspaces
-pnpm db:studio      # Open Prisma Studio (visual DB browser)
-pnpm db:migrate     # Create and apply a new migration
-pnpm docker:logs    # Follow all container logs
+pnpm build            # Build all workspaces
+pnpm test             # Run all unit tests
+pnpm test:coverage    # Tests with coverage report
+pnpm lint             # Lint all workspaces
+pnpm typecheck        # TypeScript check (no emit)
+pnpm db:migrate       # Create + apply migration
+pnpm db:seed          # Seed database
+pnpm db:studio        # Open Prisma Studio
+pnpm docker:logs      # Follow all container logs
 ```
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
 ```
 community-platform/
@@ -111,168 +141,125 @@ community-platform/
 │   ├── api/                  # NestJS backend
 │   │   ├── src/
 │   │   │   ├── auth/         # JWT auth, guards, strategies
-│   │   │   ├── users/        # User profiles, member directory
-│   │   │   ├── posts/        # Community feed, comments, reactions
-│   │   │   ├── courses/      # Learning hub, progress tracking
+│   │   │   ├── users/        # Profiles, follow system
+│   │   │   ├── posts/        # Feed, comments, reactions, hashtags
+│   │   │   ├── courses/      # Learning hub, progress
 │   │   │   ├── events/       # Events, RSVP
-│   │   │   ├── admin/        # Admin endpoints
+│   │   │   ├── messages/     # 1:1 private messaging
+│   │   │   ├── notifications/# In-app notification system
+│   │   │   ├── invites/      # Token-based invite system
+│   │   │   ├── search/       # Platform-wide search
+│   │   │   ├── admin/        # Admin endpoints + settings
 │   │   │   ├── gdpr/         # GDPR compliance
-│   │   │   ├── health/       # Health check
+│   │   │   ├── health/       # Health check (no /api prefix)
 │   │   │   └── prisma/       # Database service
 │   │   └── prisma/
 │   │       ├── schema.prisma # Full DB schema
-│   │       └── seed.ts       # Initial data
+│   │       ├── seed.ts       # Initial data
+│   │       └── migrations/   # Migration history
 │   └── web/                  # Next.js 15 frontend
 │       └── src/
-│           ├── app/          # App Router pages
-│           │   ├── (auth)/   # Login, register
-│           │   ├── (dashboard)/ # Main app shell
-│           │   └── (admin)/ # Admin panel
-│           ├── components/   # UI components
-│           ├── hooks/        # TanStack Query hooks
-│           ├── lib/          # Theme engine, API client
-│           └── store/        # Zustand state
+│           ├── app/
+│           │   ├── (auth)/       # Login, register (invite-aware)
+│           │   ├── (dashboard)/  # Feed, courses, events, members,
+│           │   │                   messages, settings
+│           │   └── (admin)/      # Admin panel (users, moderation,
+│           │                       analytics, settings, invites)
+│           ├── components/
+│           │   ├── command-palette/  # ⌘K global search
+│           │   ├── feed/             # Post cards, composer, reactions
+│           │   ├── members/          # Member cards, leaderboard
+│           │   ├── notifications/    # Notification bell
+│           │   └── common/           # Shared UI primitives
+│           ├── hooks/          # TanStack Query hooks per domain
+│           ├── lib/            # API client, markdown renderer, themes
+│           └── store/          # Zustand: auth, theme
 ├── packages/
-│   ├── shared/               # TypeScript types + utilities
-│   ├── themes/               # Theme tokens (5 built-in themes)
-│   └── ui/                   # Shared UI components
+│   ├── shared/                 # TypeScript types + utilities
+│   ├── themes/                 # Theme tokens (5 built-in themes)
+│   └── ui/                    # Shared UI components
 ├── docker-compose.yml
-├── BACKLOG.md                # Full product backlog with sprint plan
+├── .env.example
+├── BACKLOG.md
 ├── ARCHITECTURE.md
-├── DEPLOYMENT.md
-└── CHANGELOG.md
+├── CHANGELOG.md
+└── DEPLOYMENT.md
 ```
 
 ---
 
-## 🎨 Themes
+## Themes
 
-Switch theme at runtime (no page reload) from the Settings page:
+Switch at runtime from Settings → Appearance (no page reload):
 
-| Theme | Description |
+| Theme | Look |
 |---|---|
-| **Executive Glass** *(default)* | Dark UI, gold accents, glassmorphism |
-| **Executive Red** | Dark UI, deep red accents |
-| **Growth Green** | Dark UI, green accents |
+| **Executive Glass** *(default)* | Dark, gold accents, glassmorphism |
+| **Executive Red** | Dark, deep red accents |
+| **Growth Green** | Dark, emerald accents |
 | **Corporate Light** | Light, professional |
 | **High Contrast** | WCAG AAA, accessibility-first |
 
 ---
 
-## 🗓 Sprint Roadmap — What Ships Each Sprint
+## Production Deployment
 
-Each sprint produces **deployable, useable software**. The main branch is always releasable.
-
-### Sprint 1 — Auth + Shell (Week 1)
-Ships: Working login/register, JWT token management, protected routes, glassmorphism dashboard shell with sidebar and topbar.
-
-**Useable**: Users can sign up, log in, and navigate a fully themed dashboard.
-
-### Sprint 2 — Theme Engine (Week 1–2)
-Ships: 5 runtime-switchable themes applied via CSS variables with no reload.
-
-**Useable**: Platform looks polished across all 5 themes. Settings page lets users pick their theme.
-
-### Sprint 3 — Community Feed (Week 2)
-Ships: Full community feed — create posts, comment, react with Like/Heart/Celebrate/Insightful, paginated feed with load more.
-
-**Useable**: Members can have real conversations in the community feed.
-
-### Sprint 4 — Learning Hub (Week 3)
-Ships: Course catalog, course detail with module/lesson accordion, progress tracking per lesson.
-
-**Useable**: Admins can publish courses; members can enroll and track their progress.
-
-### Sprint 5 — Events + Members (Week 3–4)
-Ships: Events list and detail with RSVP (going/maybe/not going). Member directory with search.
-
-**Useable**: Members can find events, RSVP, and browse the community directory.
-
-### Sprint 6 — Admin Panel (Week 4)
-Ships: Admin dashboard with KPIs, user management (roles, deactivation), content moderation (hide posts), course and event management.
-
-**Useable**: Admins have full control over users and content without touching the database.
-
-### Sprint 7 — GDPR + Settings (Week 4–5)
-Ships: Cookie consent banner, data export (JSON), account deletion, privacy controls.
-
-**Useable**: Platform is GDPR-compliant for EU deployments.
-
-### Sprint 8 — QA + CI/CD (Week 5)
-Ships: 90%+ test coverage, GitHub Actions CI pipeline, optimised Docker images.
-
-**Useable**: Every PR is automatically validated. Production deployment is hardened.
-
----
-
-## 🏗 Production Deployment
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full guide including:
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
 - VPS setup (Hetzner, DigitalOcean, AWS, Azure)
-- nginx reverse proxy with TLS
+- nginx reverse proxy with TLS (Let's Encrypt)
 - Automated database migration on deploy
 - Horizontal scaling notes
 - Backup and restore procedures
 
-### Minimum VPS spec
-- 1 vCPU, 2 GB RAM, 20 GB disk
-- Ubuntu 22.04 LTS recommended
-
-### Quick VPS deploy
+**Minimum VPS:** 1 vCPU · 2 GB RAM · 20 GB disk · Ubuntu 22.04
 
 ```bash
-# On your server (Ubuntu 22.04):
+# Quick VPS deploy
 curl -fsSL https://get.docker.com | sh
-git clone <repo-url> /opt/community-platform
-cd /opt/community-platform
+git clone <repo-url> /opt/community-platform && cd /opt/community-platform
 cp .env.example .env && nano .env   # set secrets + CORS_ORIGINS
 docker compose up --build -d
 docker compose exec api npx prisma migrate deploy
 docker compose exec api npx prisma db seed
 ```
 
-Put nginx in front with Let's Encrypt for TLS (see [DEPLOYMENT.md](./DEPLOYMENT.md#reverse-proxy)).
-
 ---
 
-## 🔐 Security
+## Security
 
-- Passwords hashed with Argon2id
+- Argon2id password hashing
 - JWT access tokens (15 min) + rotating refresh tokens (7 days)
-- CSRF protection via SameSite cookies
-- Rate limiting on all endpoints (100 req/min per IP, 10 req/min on auth)
+- SameSite cookie CSRF protection
+- Rate limiting: 100 req/min per IP, 10 req/min on auth endpoints
 - Helmet.js security headers
-- Input validation via class-validator on all DTOs
+- class-validator DTO validation on all inputs
 - Audit log for sensitive admin actions
 
 See [SECURITY.md](./SECURITY.md).
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
-# Unit tests (all workspaces)
-pnpm test
-
-# Unit tests with coverage
-pnpm test -- --coverage
-
-# E2E tests (app must be running)
-cd apps/web && pnpm test:e2e
+pnpm test                    # All unit tests
+pnpm test:coverage           # With coverage report
+cd apps/web && pnpm test:e2e # Playwright E2E (app must be running)
 ```
 
-Coverage targets: 90% overall · 95% business logic · 100% critical services.
+Coverage targets: **90% overall · 95% business logic · 100% critical services**
+
+CI runs on every PR: lint → typecheck → unit tests → build → E2E.
 
 ---
 
-## 📄 Documentation
+## Documentation
 
-| Doc | Description |
+| Doc | Contents |
 |---|---|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, component diagram, data flow |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data flow, component diagram |
 | [API.md](./API.md) | Full REST API reference |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Deploy to VPS, Docker, and cloud providers |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | VPS, Docker, cloud provider guides |
 | [SECURITY.md](./SECURITY.md) | Security model, threat mitigations |
 | [GDPR.md](./GDPR.md) | GDPR compliance features |
 | [THEMING.md](./THEMING.md) | Theme system and customisation |
@@ -281,7 +268,7 @@ Coverage targets: 90% overall · 95% business logic · 100% critical services.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Branch from `develop`: `git checkout -b feature/my-feature`
 2. Write tests first (TDD — RED → GREEN → REFACTOR)
@@ -289,7 +276,7 @@ Coverage targets: 90% overall · 95% business logic · 100% critical services.
 4. Update `CHANGELOG.md`
 5. Open a PR against `develop`
 
-See [BACKLOG.md](./BACKLOG.md) for open items ready to pick up.
+See [BACKLOG.md](./BACKLOG.md) for open items.
 
 ---
 

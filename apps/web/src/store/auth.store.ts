@@ -9,6 +9,7 @@ interface AuthStore {
   isAuthenticated: boolean;
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   setAccessToken: (token: string) => void;
+  updateUser: (partial: Partial<AuthUser>) => void;
   clearAuth: () => void;
 }
 
@@ -22,6 +23,8 @@ export const useAuthStore = create<AuthStore>()(
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken, isAuthenticated: true }),
       setAccessToken: (token) => set({ accessToken: token }),
+      updateUser: (partial) =>
+        set((state) => ({ user: state.user ? { ...state.user, ...partial } : null })),
       clearAuth: () =>
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
     }),

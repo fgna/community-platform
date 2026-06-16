@@ -1,13 +1,26 @@
 'use client';
 
+import { useState } from 'react';
 import { useEvents, useRsvp, useCancelRsvp } from '@/hooks/use-events';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, MapPin, Users, Video, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, List, MapPin, Users, Video, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  isToday,
+} from 'date-fns';
 import type { CommunityEvent } from '@community/shared';
 
 function EventCard({ event }: { event: CommunityEvent }) {
@@ -141,18 +154,142 @@ function EventCard({ event }: { event: CommunityEvent }) {
   );
 }
 
+function CalendarView({ events }: { events: CommunityEvent[] }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const days = eachDayOfInterval({ start: calStart, end: calEnd });
+
+  const eventsByDay = (day: Date) =>
+    events.filter((e) => isSameDay(new Date(e.startsAt), day));
+
+  return (
+    <div className="space-y-3">
+      {/* Month nav */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+          <ChevronLeft size={16} />
+        </Button>
+        <span className="font-semibold text-sm" style={{ color: 'var(--theme-text)' }}>
+          {format(currentMonth, 'MMMM yyyy')}
+        </span>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+          <ChevronRight size={16} />
+        </Button>
+      </div>
+
+      {/* Grid */}
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ border: '1px solid var(--theme-border)', background: 'var(--theme-card)' }}
+      >
+        {/* Day headers */}
+        <div className="grid grid-cols-7">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+            <div
+              key={d}
+              className="py-2 text-center text-xs font-semibold"
+              style={{ color: 'var(--theme-text-muted)', borderBottom: '1px solid var(--theme-border)' }}
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Day cells */}
+        <div className="grid grid-cols-7">
+          {days.map((day, idx) => {
+            const dayEvents = eventsByDay(day);
+            const inMonth = isSameMonth(day, currentMonth);
+            const today = isToday(day);
+            return (
+              <div
+                key={idx}
+                className="min-h-[80px] p-1.5"
+                style={{
+                  borderRight: (idx + 1) % 7 !== 0 ? '1px solid var(--theme-border)' : undefined,
+                  borderBottom: idx < days.length - 7 ? '1px solid var(--theme-border)' : undefined,
+                  background: today ? 'rgba(197,168,128,0.05)' : undefined,
+                  opacity: inMonth ? 1 : 0.35,
+                }}
+              >
+                <span
+                  className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${today ? 'font-bold' : ''}`}
+                  style={{
+                    color: today ? 'var(--theme-background)' : 'var(--theme-text-muted)',
+                    background: today ? 'var(--theme-primary)' : 'transparent',
+                  }}
+                >
+                  {format(day, 'd')}
+                </span>
+                <div className="space-y-0.5">
+                  {dayEvents.slice(0, 2).map((e) => (
+                    <div
+                      key={e.id}
+                      className="text-[10px] px-1.5 py-0.5 rounded truncate"
+                      style={{ background: 'rgba(197,168,128,0.15)', color: 'var(--theme-primary)' }}
+                      title={e.title}
+                    >
+                      {e.title}
+                    </div>
+                  ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-[10px] px-1.5" style={{ color: 'var(--theme-text-muted)' }}>
+                      +{dayEvents.length - 2} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function EventsPage() {
   const { data, isLoading, error } = useEvents();
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+
+  const events: CommunityEvent[] = data?.data ?? [];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text)' }}>
-          Events
-        </h2>
-        <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>
-          Connect with your community at upcoming events.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text)' }}>
+            Events
+          </h2>
+          <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>
+            Connect with your community at upcoming events.
+          </p>
+        </div>
+        <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}>
+          <button
+            onClick={() => setView('list')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+            style={{
+              background: view === 'list' ? 'var(--theme-primary)' : 'transparent',
+              color: view === 'list' ? 'var(--theme-background)' : 'var(--theme-text-muted)',
+            }}
+          >
+            <List size={13} /> List
+          </button>
+          <button
+            onClick={() => setView('calendar')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+            style={{
+              background: view === 'calendar' ? 'var(--theme-primary)' : 'transparent',
+              color: view === 'calendar' ? 'var(--theme-background)' : 'var(--theme-text-muted)',
+            }}
+          >
+            <Calendar size={13} /> Calendar
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -179,7 +316,9 @@ export function EventsPage() {
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load events.</p>
           </CardContent>
         </Card>
-      ) : !data?.data?.length ? (
+      ) : view === 'calendar' ? (
+        <CalendarView events={events} />
+      ) : !events.length ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Calendar size={40} className="mx-auto mb-3" style={{ color: 'var(--theme-text-muted)' }} />
@@ -191,7 +330,7 @@ export function EventsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {data.data.map((event) => (
+          {events.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

@@ -1,29 +1,12 @@
-version: '3.9'
-
+# Local development overrides.
+# The production CMD ("node dist/main") is intentionally left intact.
+# For hot-reloading, run `pnpm dev` locally instead of docker compose.
 services:
-  postgres:
-    ports:
-      - "5432:5432"
-
-  redis:
-    ports:
-      - "6379:6379"
-
   api:
-    build:
-      target: development
     environment:
       NODE_ENV: development
-    volumes:
-      - ./apps/api/src:/app/src
-      - ./apps/api/prisma:/app/prisma
-    command: pnpm run start:dev
+      LOG_LEVEL: debug
 
   web:
-    build:
-      target: development
     environment:
       NODE_ENV: development
-    volumes:
-      - ./apps/web/src:/app/src
-      - ./apps/web/public:/app/public

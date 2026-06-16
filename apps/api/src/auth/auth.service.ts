@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { InvitesService } from '../invites/invites.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as argon2 from 'argon2';
@@ -11,11 +12,18 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private invitesService: InvitesService,
   ) {}
 
   async register(dto: RegisterDto) {
+    const email = dto.email.toLowerCase().trim();
+
+    if (dto.inviteToken) {
+      await this.invitesService.validateInvite(dto.inviteToken);
+    }
+
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (existing) {
@@ -26,7 +34,7 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         name: dto.name,
         passwordHash,
       },
@@ -40,6 +48,10 @@ export class AuthService {
       },
     });
 
+    if (dto.inviteToken) {
+      await this.invitesService.consumeInvite(dto.inviteToken);
+    }
+
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
     return {
@@ -49,8 +61,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    const email = dto.email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (!user || !user.isActive) {
@@ -101,13 +114,23 @@ export class AuthService {
       secret: process.env.JWT_SECRET || 'default-secret',
     });
 
-    const refreshTokenValue = uuidv4();
+    // jti (JWT ID) makes every refresh token unique even when signed within
+    // the same second for the same user, preventing DB unique-constraint
+    // collisions and enabling per-token revocation.
+    const refreshToken = this.jwtService.sign(
+      { ...payload, jti: uuidv4() },
+      {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+        secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+      },
+    );
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.prisma.refreshToken.create({
       data: {
-        token: refreshTokenValue,
+        token: refreshToken,
         userId,
         expiresAt,
       },
@@ -115,7 +138,7 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken: refreshTokenValue,
+      refreshToken,
     };
   }
 }

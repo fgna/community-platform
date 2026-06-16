@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionBar } from './reaction-bar';
 import { CommentList } from './comment-list';
+import { PollCard } from './poll-card';
 import { useDeletePost } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
 import { timeAgo, getInitials } from '@community/shared';
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface PostCardProps {
   post: Post;
@@ -90,12 +92,21 @@ export function PostCard({ post }: PostCardProps) {
         )}
       </div>
 
-      <p
-        className="text-sm leading-relaxed whitespace-pre-wrap"
+      <div
+        className="text-sm leading-relaxed md-content"
         style={{ color: 'var(--theme-text)' }}
-      >
-        {post.content}
-      </p>
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.classList.contains('md-hashtag')) {
+            window.dispatchEvent(new CustomEvent('feed:hashtag', { detail: target.textContent?.toLowerCase() }));
+          }
+        }}
+      />
+
+      {post.poll && (
+        <PollCard poll={post.poll} postId={post.id} />
+      )}
 
       <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--theme-border)' }}>
         <ReactionBar post={post} />

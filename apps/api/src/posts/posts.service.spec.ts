@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { PostsService } from './posts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 const mockPrisma = {
@@ -26,11 +27,16 @@ const mockPrisma = {
 describe('PostsService', () => {
   let service: PostsService;
 
+  const mockNotifications = {
+    create: vi.fn().mockResolvedValue(null),
+  };
+
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         PostsService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationsService, useValue: mockNotifications },
       ],
     }).compile();
 

@@ -108,6 +108,10 @@ jobs:
         working-directory: apps/api
         run: pnpm test:coverage
 
+      - name: Run API integration tests
+        working-directory: apps/api
+        run: pnpm test:integration
+
       - name: Upload API coverage
         uses: actions/upload-artifact@v4
         if: always()

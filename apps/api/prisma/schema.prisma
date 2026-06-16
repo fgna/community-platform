@@ -26,6 +26,14 @@ model User {
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
   cookieConsents CookieConsent[]
+  notifications        Notification[] @relation("UserNotifications")
+  triggeredNotifications Notification[] @relation("ActorNotifications")
+  following     Follow[]       @relation("Following")
+  followers     Follow[]       @relation("Followers")
+  conversationParticipants ConversationParticipant[]
+  sentMessages  Message[]
+  sentInvites   Invite[]
+  pollVotes     PollVote[]
 }
 
 enum Role {
@@ -40,6 +48,7 @@ model Post {
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   reactions Reaction[]
+  poll      Poll?
   isPinned  Boolean    @default(false)
   isHidden  Boolean    @default(false)
   createdAt DateTime   @default(now())
@@ -182,4 +191,128 @@ model CookieConsent {
   analytics Boolean  @default(false)
   marketing Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actorId    String?
+  actor      User?            @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+  type       NotificationType
+  entityId   String?
+  entityType String?
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+enum NotificationType {
+  REACTION
+  COMMENT
+  MENTION
+  EVENT_REMINDER
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model PlatformSettings {
+  id           String   @id @default("default")
+  platformName String   @default("Community")
+  logoUrl      String?
+  primaryColor String   @default("#c5a880")
+  accentColor  String   @default("#6366f1")
+  allowSignups Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
+
+model Poll {
+  id        String       @id @default(cuid())
+  postId    String       @unique
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  question  String
+  endsAt    DateTime?
+  options   PollOption[]
+  votes     PollVote[]
+  createdAt DateTime     @default(now())
+}
+
+model PollOption {
+  id     String     @id @default(cuid())
+  pollId String
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text   String
+  order  Int        @default(0)
+  votes  PollVote[]
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId  String
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([pollId, userId])
 }

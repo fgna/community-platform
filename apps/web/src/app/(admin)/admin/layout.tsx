@@ -2,16 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ClipboardList, ArrowLeft, BarChart2, Settings, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 
 const adminNav = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/moderation', label: 'Moderation', icon: Flag },
+  { href: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
+  { href: '/admin/invites', label: 'Invites', icon: Mail },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -42,8 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1">
           {adminNav.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href) && href !== '/admin';
-            const isExactActive = exact && pathname === href;
+              const isExactActive = exact && pathname === href;
             const isActive = isExactActive || (!exact && pathname.startsWith(href));
             return (
               <Link
