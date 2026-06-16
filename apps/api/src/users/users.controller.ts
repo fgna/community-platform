@@ -1,5 +1,9 @@
-import { Controller, Get, Patch, Post, Delete, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseInterceptors, UploadedFile, BadRequestException, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -31,6 +35,38 @@ export class UsersController {
   @ApiOperation({ summary: 'Update current user profile' })
   updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Post('me/avatar')
+  @ApiOperation({ summary: 'Upload avatar image' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: join(process.cwd(), 'uploads', 'avatars'),
+      filename: (req: any, file, cb) => {
+        const userId = req.user?.id ?? 'unknown';
+        cb(null, `${userId}-${Date.now()}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (_req, file, cb) => {
+      if (!file.mimetype.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+        return cb(new BadRequestException('Only image files are allowed'), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 },
+  }))
+  async uploadAvatar(
+    @CurrentUser() user: any,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+    const host = (req.headers['x-forwarded-host'] as string) || req.get('host');
+    const avatarUrl = `${protocol}://${host}/uploads/avatars/${file.filename}`;
+    await this.usersService.updateProfile(user.id, { avatarUrl });
+    return { avatarUrl };
   }
 
   @Get(':id')

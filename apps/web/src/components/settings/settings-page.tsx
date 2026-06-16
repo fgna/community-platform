@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/lib/theme-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,6 +30,7 @@ export function SettingsPage() {
   const { themes, setTheme, theme: currentTheme } = useTheme();
   const { updateUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
@@ -57,6 +58,21 @@ export function SettingsPage() {
     const t = setTimeout(() => setSavedProfile(false), 2000);
     return () => clearTimeout(t);
   }, [savedProfile]);
+
+  const uploadAvatar = useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return apiClient.post('/users/me/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
+    onSuccess: (data) => {
+      setProfileAvatar(data.avatarUrl);
+      updateUser({ avatarUrl: data.avatarUrl });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
 
   const exportData = useMutation({
     mutationFn: () => apiClient.get('/gdpr/export').then((r) => r.data),
@@ -125,8 +141,27 @@ export function SettingsPage() {
                   <p className="text-xs capitalize" style={{ color: 'var(--theme-text-muted)' }}>
                     {user.role}
                   </p>
-                  <Button variant="outline" size="sm" className="mt-2 text-xs h-7">
-                    Change photo
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadAvatar.mutate(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 text-xs h-7"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadAvatar.isPending}
+                  >
+                    {uploadAvatar.isPending ? (
+                      <><Loader2 size={11} className="animate-spin mr-1" />Uploading…</>
+                    ) : 'Change photo'}
                   </Button>
                 </div>
               </div>
