@@ -71,48 +71,37 @@ describe('AuthService — adversarial', () => {
 
   // ── INVARIANT: token refresh is non-duplicable ──────────────────────────
 
-  describe('INVARIANT: refresh token rotation prevents token duplication', () => {
-    it('concurrent refreshes with same token produce independent new token pairs', async () => {
+  describe('FIXED SEC-005: refresh token rotation prevents ghost sessions', () => {
+    it('second concurrent refresh with same token is rejected with UnauthorizedException', async () => {
       /**
-       * TOCTOU ATTACK: Two simultaneous refresh calls with the same refreshToken.
-       * Both pass strategy validation before either deletes the row.
-       * Both then call service.refresh(), which deletes (no-op on 2nd) and
-       * creates a NEW token each time.
-       *
-       * Expected invariant: a refresh token can only be exchanged ONCE.
-       * Actual behaviour: both succeed → two independent active sessions.
-       * This is a GHOST SESSION vulnerability.
+       * The DB deleteMany is atomic. The first call deletes the row (count=1);
+       * the second call finds nothing (count=0) and receives UnauthorizedException.
+       * This prevents ghost sessions — only one refresh exchange succeeds.
        */
-      let callCount = 0;
-      mockJwt.sign.mockImplementation(() => `access-token-${++callCount}`);
-      prisma.refreshToken.create
-        .mockResolvedValueOnce({ id: 'rt-A' })
-        .mockResolvedValueOnce({ id: 'rt-B' });
+      let deleteCallCount = 0;
+      prisma.refreshToken.deleteMany.mockImplementation(({ where }: any) => {
+        if (where.token === 'old-refresh-token') {
+          deleteCallCount++;
+          return Promise.resolve({ count: deleteCallCount === 1 ? 1 : 0 });
+        }
+        return Promise.resolve({ count: 1 }); // expired-token purge
+      });
+      mockJwt.sign.mockReturnValue('access-token-A');
+      prisma.refreshToken.create.mockResolvedValue({ id: 'rt-A' });
 
-      const [resultA, resultB] = await Promise.all([
+      const [resultA, resultB] = await Promise.allSettled([
         service.refresh('user-1', 'user@example.com', 'MEMBER', 'old-refresh-token'),
         service.refresh('user-1', 'user@example.com', 'MEMBER', 'old-refresh-token'),
       ]);
 
-      // Both succeed — ghost session confirmed
-      expect(resultA.accessToken).toBeDefined();
-      expect(resultB.accessToken).toBeDefined();
-
-      // Both received DIFFERENT tokens → two independent live sessions
-      expect(resultA.accessToken).not.toBe(resultB.accessToken);
-      expect(resultA.refreshToken).not.toBe(resultB.refreshToken);
-
-      // Each refresh() call: 1× deleteMany for old token + 1× deleteMany in generateTokens()
-      // purging expired tokens (SEC-009 fix) = 2 per call × 2 concurrent calls = 4 total.
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(4);
+      expect(resultA.status).toBe('fulfilled');
+      expect(resultB.status).toBe('rejected');
+      if (resultB.status === 'rejected') {
+        expect(resultB.reason).toBeInstanceOf(UnauthorizedException);
+      }
     });
 
-    it('refresh deletes the OLD token but never revokes the just-issued one', async () => {
-      /**
-       * After refresh() there is no mechanism to revoke the new token except
-       * explicit logout with that specific token. An attacker who captured the
-       * original refresh token and triggers the race owns a permanent ghost session.
-       */
+    it('refresh deletes the OLD token before issuing new tokens', async () => {
       prisma.refreshToken.create.mockResolvedValue({ id: 'new-rt' });
 
       await service.refresh('user-1', 'user@example.com', 'MEMBER', 'captured-refresh-token');
@@ -124,15 +113,10 @@ describe('AuthService — adversarial', () => {
     });
   });
 
-  // ── INVARIANT: login does not accumulate unbounded refresh tokens ───────
+  // ── FIXED SEC-009: expired tokens are purged on every token generation ──
 
-  describe('INVARIANT: login does not accumulate stale refresh tokens', () => {
-    it('login creates a new refresh token WITHOUT deleting previous tokens', async () => {
-      /**
-       * BLAST RADIUS: An attacker who drives 1000 login calls before logout
-       * will leave 1000 valid refresh tokens in the DB for 7 days.
-       * No cleanup mechanism exists in generateTokens().
-       */
+  describe('FIXED SEC-009: generateTokens purges expired tokens on every call', () => {
+    it('each login purges expired tokens — 3 logins = 3 deleteMany calls', async () => {
       const passwordHash = await argon2.hash('password123');
       prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
@@ -149,11 +133,14 @@ describe('AuthService — adversarial', () => {
       await service.login({ email: 'user@example.com', password: 'password123' });
       await service.login({ email: 'user@example.com', password: 'password123' });
 
-      // Three logins → three refresh tokens created; SEC-009: each generateTokens()
-      // purges expired tokens for the user — 1 deleteMany per login = 3 total.
-      // Active (non-expired) tokens for the user are NOT deleted — sessions preserved.
+      // One expired-token purge per generateTokens() call → 3 total.
+      // Active (non-expired) tokens are NOT deleted — multi-session is preserved.
       expect(prisma.refreshToken.create).toHaveBeenCalledTimes(3);
       expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(3);
+      // Each purge targets this user's expired tokens only
+      const purgeCall = prisma.refreshToken.deleteMany.mock.calls[0][0];
+      expect(purgeCall.where).toHaveProperty('userId', 'user-1');
+      expect(purgeCall.where).toHaveProperty('expiresAt');
     });
   });
 
@@ -175,16 +162,15 @@ describe('AuthService — adversarial', () => {
     });
   });
 
-  // ── INVARIANT: default secrets must not reach production ────────────────
+  // ── FIXED SEC-004: no default secret fallback ───────────────────────────
 
-  describe('INVARIANT: hardcoded default secrets are dangerous', () => {
-    it('generateTokens falls back to "default-secret" when JWT_SECRET is absent', async () => {
+  describe('FIXED SEC-004: generateTokens uses env secret with no hardcoded fallback', () => {
+    it('jwtService.sign is called with process.env.JWT_SECRET (undefined if unset, not a fallback)', async () => {
       /**
-       * auth.service.ts line 101: secret: process.env.JWT_SECRET || 'default-secret'
-       * If the env var is missing (mis-configured deployment, leaked .env.example),
-       * any attacker who knows the default can mint arbitrary JWTs.
-       *
-       * This test verifies the fallback path IS used — exposing the risk.
+       * The || 'default-secret' fallback has been removed. Startup validation
+       * (main.ts) exits with code 1 if JWT_SECRET is missing, so undefined
+       * only occurs in misconfigured environments that should never reach this path.
+       * The mock jwtService ignores the secret value, but we verify no fallback string is passed.
        */
       const original = process.env.JWT_SECRET;
       delete process.env.JWT_SECRET;
@@ -200,32 +186,41 @@ describe('AuthService — adversarial', () => {
       });
       prisma.refreshToken.create.mockResolvedValue({ id: 'rt' });
 
-      // This must NOT throw — it uses the fallback secret silently
-      const result = await service.register({ email: 'new@example.com', name: 'New', password: 'password123' });
-      expect(result.accessToken).toBeDefined();
+      await service.register({ email: 'new@example.com', name: 'New', password: 'password123' });
 
-      // Verify jwtService.sign was called with the dangerous fallback
       const signArgs = mockJwt.sign.mock.calls[0];
-      expect(signArgs[1].secret).toBe('default-secret');
+      // No hardcoded fallback — secret is undefined (startup validation prevents this in production)
+      expect(signArgs[1].secret).toBeUndefined();
 
       if (original !== undefined) process.env.JWT_SECRET = original;
     });
   });
 
-  // ── INVARIANT: email uniqueness is case-independent ────────────────────
+  // ── FIXED SEC-022: email is normalised before lookup ────────────────────
 
-  describe('INVARIANT: email collision with different case', () => {
-    it('allows registration of USER@EXAMPLE.COM when user@example.com exists', async () => {
+  describe('FIXED SEC-022: email is lowercased before registration lookup', () => {
+    it('USER@EXAMPLE.COM is normalised to user@example.com — finds existing account and rejects', async () => {
       /**
-       * The DB has a unique constraint on email, but it's case-sensitive (PostgreSQL default).
-       * A user could register user@example.com and USER@EXAMPLE.COM as separate accounts.
-       * This breaks the "one account per email" invariant and allows duplicate identities.
+       * register() lowercases + trims the email before calling findUnique.
+       * USER@EXAMPLE.COM → user@example.com → findUnique returns the existing user → ConflictException.
        */
-      // First user registered fine
-      prisma.user.findUnique.mockResolvedValueOnce(null);
+      const existingUser = { id: 'u1', email: 'user@example.com' };
+      prisma.user.findUnique.mockResolvedValue(existingUser);
+
+      await expect(
+        service.register({ email: 'USER@EXAMPLE.COM', name: 'Upper', password: 'password123' }),
+      ).rejects.toThrow(ConflictException);
+
+      // Confirm the lookup used the normalised (lowercased) address
+      const lookupArg = prisma.user.findUnique.mock.calls[0][0];
+      expect(lookupArg.where.email).toBe('user@example.com');
+    });
+
+    it('new registration with uppercase email is stored in lowercase', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({
         id: 'u2',
-        email: 'USER@EXAMPLE.COM',
+        email: 'user@example.com', // stored lowercase
         name: 'Upper',
         role: 'MEMBER',
         avatarUrl: null,
@@ -233,16 +228,16 @@ describe('AuthService — adversarial', () => {
       });
       prisma.refreshToken.create.mockResolvedValue({ id: 'rt' });
 
-      // findUnique for 'USER@EXAMPLE.COM' returns null even though
-      // 'user@example.com' already exists (Prisma query is exact-match)
       const result = await service.register({
         email: 'USER@EXAMPLE.COM',
         name: 'Upper',
         password: 'password123',
       });
 
-      // Registration succeeded — two accounts for the same mailbox
-      expect(result.user.email).toBe('USER@EXAMPLE.COM');
+      // Confirm create was called with normalised email
+      const createArg = prisma.user.create.mock.calls[0][0];
+      expect(createArg.data.email).toBe('user@example.com');
+      expect(result.user.email).toBe('user@example.com');
     });
   });
 

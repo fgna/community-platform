@@ -49,8 +49,11 @@ export default function LoginPage() {
             color: '#ef4444',
           }}
         >
-          {(loginError as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message || 'Invalid credentials'}
+          {(() => {
+            const msg = (loginError as { response?: { data?: { message?: string | string[] } } })
+              ?.response?.data?.message;
+            return Array.isArray(msg) ? msg[0] : (msg || 'Invalid credentials');
+          })()}
         </div>
       )}
 

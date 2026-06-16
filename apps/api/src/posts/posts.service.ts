@@ -184,6 +184,9 @@ export class PostsService {
     if (post.authorId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Cannot edit this post');
     }
+    if (post.isHidden && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Post is not available');
+    }
 
     return this.prisma.post.update({
       where: { id },
@@ -197,6 +200,9 @@ export class PostsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.authorId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Cannot delete this post');
+    }
+    if (post.isHidden && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Post is not available');
     }
 
     await this.prisma.post.delete({ where: { id } });

