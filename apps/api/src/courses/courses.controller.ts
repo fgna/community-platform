@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -13,13 +13,13 @@ export class CoursesController {
   constructor(private coursesService: CoursesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all published courses' })
+  @ApiOperation({ summary: 'Get courses (all for admins, published-only for members)' })
   findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @CurrentUser() user: any,
   ) {
-    return this.coursesService.findAll(Number(page), Number(limit), user?.id);
+    return this.coursesService.findAll(Number(page), Number(limit), user?.id, user?.role);
   }
 
   @Get(':id')
@@ -36,6 +36,7 @@ export class CoursesController {
   }
 
   @Put(':id')
+  @Patch(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update a course (Admin only)' })
   update(@Param('id') id: string, @Body() dto: Partial<CreateCourseDto>) {
@@ -54,6 +55,17 @@ export class CoursesController {
   getProgress(@Param('id') id: string, @CurrentUser() user: any) {
     return this.coursesService.getProgress(id, user.id);
   }
+
+  @Put(':id/progress')
+  @ApiOperation({ summary: 'Set course progress by percentage' })
+  setProgress(
+    @Param('id') id: string,
+    @Body() body: { percentage: number },
+    @CurrentUser() user: any,
+  ) {
+    return this.coursesService.updateProgress(id, user.id, body.percentage);
+  }
+
 
   @Post(':id/progress')
   @ApiOperation({ summary: 'Mark a lesson as complete' })

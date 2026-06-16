@@ -6,13 +6,14 @@ import { CreateCourseDto } from './dto/create-course.dto';
 export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(page = 1, limit = 20, userId?: string) {
+  async findAll(page = 1, limit = 20, userId?: string, userRole?: string) {
     limit = Math.max(1, Math.min(limit, 100));
     page = Math.max(1, page);
     const skip = (page - 1) * limit;
+    const where = userRole === 'ADMIN' ? {} : { isPublished: true };
     const [data, total] = await Promise.all([
       this.prisma.course.findMany({
-        where: { isPublished: true },
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -21,7 +22,7 @@ export class CoursesService {
           progress: userId ? { where: { userId } } : false,
         },
       }),
-      this.prisma.course.count({ where: { isPublished: true } }),
+      this.prisma.course.count({ where }),
     ]);
 
     return {
@@ -104,6 +105,19 @@ export class CoursesService {
       completedLessons,
       completedAt: progress?.completedAt ?? null,
     };
+  }
+
+  async updateProgress(courseId: string, userId: string, percentage: number) {
+    if (percentage < 0 || percentage > 100) {
+      throw new BadRequestException('Percentage must be between 0 and 100');
+    }
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) throw new NotFoundException('Course not found');
+    return this.prisma.progress.upsert({
+      where: { userId_courseId: { userId, courseId } },
+      update: { percentage, completedAt: percentage >= 100 ? new Date() : null },
+      create: { userId, courseId, percentage, completedAt: percentage >= 100 ? new Date() : null },
+    });
   }
 
   async completeLesson(courseId: string, userId: string, lessonId: string) {

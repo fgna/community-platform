@@ -14,7 +14,7 @@ import { PostSkeleton } from '@/components/common/loading-skeleton';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { data: feedData, isLoading: feedLoading } = useFeed(1, 3);
+  const { data: feedData, isLoading: feedLoading, isError: feedError } = useFeed(1, 3);
   const { data: coursesData } = useCourses(1, 1);
   const { data: eventsData } = useEvents(1, 3);
   const { data: membersData } = useMembers(1, 1);
@@ -65,9 +65,11 @@ export default function DashboardPage() {
             RECENT POSTS
           </h3>
           {feedLoading ? (
-            <div className="space-y-4">
-              {[1, 2].map((i) => <PostSkeleton key={i} />)}
-            </div>
+            <div className="space-y-4">{[1, 2].map((i) => <PostSkeleton key={i} />)}</div>
+          ) : feedError ? (
+            <p className="text-sm py-4" style={{ color: 'var(--theme-danger, #ef4444)' }}>
+              Failed to load posts. <button className="underline" onClick={() => window.location.reload()}>Retry</button>
+            </p>
           ) : (
             <div className="space-y-4">
               {feedData?.data?.slice(0, 3).map((post) => (

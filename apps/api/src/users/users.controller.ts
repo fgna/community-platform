@@ -2,7 +2,7 @@ import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseIntercepto
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname, join } from 'path';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
