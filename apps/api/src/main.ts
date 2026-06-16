@@ -23,8 +23,8 @@ async function bootstrap() {
     exposedHeaders: ['X-New-Access-Token'],
   });
 
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Global prefix (health excluded so infra/Docker can probe /health directly)
+  app.setGlobalPrefix('api', { exclude: ['health'] });
 
   // Validation
   app.useGlobalPipes(
