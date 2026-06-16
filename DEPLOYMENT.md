@@ -63,6 +63,7 @@ pnpm dev
 ### After a git pull
 
 ```bash
+git pull
 nvm use 20
 pnpm install       # picks up any new or changed dependencies
 pnpm db:migrate    # applies any new migrations (safe to run even if none pending)
