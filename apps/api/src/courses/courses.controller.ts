@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateProgressDto } from './dto/update-progress.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -24,7 +25,7 @@ export class CoursesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get course by ID' })
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.coursesService.findOne(id, user?.id);
+    return this.coursesService.findOne(id, user?.id, user?.role);
   }
 
   @Post()
@@ -52,15 +53,15 @@ export class CoursesController {
   @ApiOperation({ summary: 'Update course progress' })
   updateProgress(
     @Param('id') id: string,
-    @Body() body: { percentage: number },
+    @Body() dto: UpdateProgressDto,
     @CurrentUser() user: any,
   ) {
-    return this.coursesService.updateProgress(id, user.id, body.percentage);
+    return this.coursesService.updateProgress(id, user.id, dto.percentage);
   }
 
   @Get('lessons/:lessonId')
   @ApiOperation({ summary: 'Get a specific lesson' })
-  getLesson(@Param('lessonId') lessonId: string) {
-    return this.coursesService.getLesson(lessonId);
+  getLesson(@Param('lessonId') lessonId: string, @CurrentUser() user: any) {
+    return this.coursesService.getLesson(lessonId, user?.role);
   }
 }

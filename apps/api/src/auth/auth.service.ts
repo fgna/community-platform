@@ -90,13 +90,16 @@ export class AuthService {
   }
 
   async refresh(userId: string, email: string, role: string, oldRefreshToken: string) {
-    // Invalidate old refresh token
-    await this.prisma.refreshToken.deleteMany({
+    const deleted = await this.prisma.refreshToken.deleteMany({
       where: { token: oldRefreshToken },
     });
 
-    const tokens = await this.generateTokens(userId, email, role);
-    return tokens;
+    // If the token was already consumed by a concurrent request, reject to prevent ghost sessions.
+    if (deleted.count === 0) {
+      throw new UnauthorizedException('Refresh token already used or revoked');
+    }
+
+    return this.generateTokens(userId, email, role);
   }
 
   async logout(refreshToken: string) {
@@ -124,6 +127,11 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
       },
     );
+
+    // Purge expired tokens for this user to prevent unbounded table growth.
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId, expiresAt: { lt: new Date() } },
+    });
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);

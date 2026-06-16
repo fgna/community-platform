@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 
@@ -7,6 +7,8 @@ export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, userId?: string) {
+    limit = Math.max(1, Math.min(limit, 100));
+    page = Math.max(1, page);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.course.findMany({
@@ -31,9 +33,12 @@ export class CoursesService {
     };
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, userId?: string, userRole?: string) {
+    const where: any = { id };
+    if (userRole !== 'ADMIN') where.isPublished = true;
+
     const course = await this.prisma.course.findUnique({
-      where: { id },
+      where,
       include: {
         modules: {
           orderBy: { order: 'asc' },
@@ -81,30 +86,38 @@ export class CoursesService {
   }
 
   async updateProgress(courseId: string, userId: string, percentage: number) {
+    if (percentage < 0 || percentage > 100) {
+      throw new BadRequestException('Percentage must be between 0 and 100');
+    }
+    const clamped = Math.max(0, Math.min(100, percentage));
+
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
 
     return this.prisma.progress.upsert({
       where: { userId_courseId: { userId, courseId } },
       update: {
-        percentage,
-        completedAt: percentage >= 100 ? new Date() : null,
+        percentage: clamped,
+        completedAt: clamped >= 100 ? new Date() : null,
       },
       create: {
         userId,
         courseId,
-        percentage,
-        completedAt: percentage >= 100 ? new Date() : null,
+        percentage: clamped,
+        completedAt: clamped >= 100 ? new Date() : null,
       },
     });
   }
 
-  async getLesson(lessonId: string) {
+  async getLesson(lessonId: string, userRole?: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
       include: { module: { include: { course: true } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
+    if (!lesson.module.course.isPublished && userRole !== 'ADMIN') {
+      throw new NotFoundException('Lesson not found');
+    }
     return lesson;
   }
 }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { RsvpDto } from './dto/rsvp.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -52,10 +53,10 @@ export class EventsController {
   @ApiOperation({ summary: 'RSVP to an event' })
   rsvp(
     @Param('id') id: string,
-    @Body() body: { status: string },
+    @Body() dto: RsvpDto,
     @CurrentUser() user: any,
   ) {
-    return this.eventsService.rsvp(id, user.id, body.status);
+    return this.eventsService.rsvp(id, user.id, dto.status);
   }
 
   @Delete(':id/rsvp')

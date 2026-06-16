@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -13,12 +13,29 @@ export class GdprService {
   }
 
   async updateConsent(userId: string, analytics: boolean, marketing: boolean) {
+    const existing = await this.prisma.cookieConsent.findFirst({ where: { userId } });
+    if (existing) {
+      return this.prisma.cookieConsent.update({
+        where: { id: existing.id },
+        data: { analytics, marketing },
+      });
+    }
     return this.prisma.cookieConsent.create({
       data: { userId, analytics, marketing },
     });
   }
 
   async saveAnonymousConsent(sessionId: string, analytics: boolean, marketing: boolean) {
+    if (sessionId.length > 128) {
+      throw new BadRequestException('Invalid session ID');
+    }
+    const existing = await this.prisma.cookieConsent.findFirst({ where: { sessionId } });
+    if (existing) {
+      return this.prisma.cookieConsent.update({
+        where: { id: existing.id },
+        data: { analytics, marketing },
+      });
+    }
     return this.prisma.cookieConsent.create({
       data: { sessionId, analytics, marketing },
     });
@@ -28,12 +45,19 @@ export class GdprService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        posts: { include: { comments: true, reactions: true } },
-        comments: true,
-        reactions: true,
-        courseProgress: { include: { course: true } },
-        eventRsvps: { include: { event: true } },
-        cookieConsents: true,
+        posts: {
+          take: 1000,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            comments: { take: 100 },
+            reactions: { take: 100 },
+          },
+        },
+        comments: { take: 1000, orderBy: { createdAt: 'desc' } },
+        reactions: { take: 1000, orderBy: { createdAt: 'desc' } },
+        courseProgress: { include: { course: { select: { id: true, title: true } } } },
+        eventRsvps: { include: { event: { select: { id: true, title: true, startsAt: true } } } },
+        cookieConsents: { take: 10, orderBy: { createdAt: 'desc' } },
       },
     });
 
