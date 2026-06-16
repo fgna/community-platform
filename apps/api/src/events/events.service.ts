@@ -25,8 +25,15 @@ export class EventsService {
       this.prisma.event.count(),
     ]);
 
+    const events = data.map((event) => ({
+      ...event,
+      userRsvp: userId
+        ? ((event.rsvps as any[])?.find((r) => r.userId === userId) ?? null)
+        : null,
+    }));
+
     return {
-      data,
+      data: events,
       total,
       page,
       limit,
@@ -60,33 +67,18 @@ export class EventsService {
 
   async create(dto: CreateEventDto) {
     if (new Date(dto.startsAt) >= new Date(dto.endsAt)) {
-      throw new BadRequestException('Event must end after it starts');
+      throw new BadRequestException('startsAt must be before endsAt');
     }
-
-    return this.prisma.event.create({
-      data: {
-        ...dto,
-        startsAt: new Date(dto.startsAt),
-        endsAt: new Date(dto.endsAt),
-      },
-    });
+    return this.prisma.event.create({ data: dto });
   }
 
   async update(id: string, dto: Partial<CreateEventDto>) {
+    if (dto.startsAt && dto.endsAt && new Date(dto.startsAt) >= new Date(dto.endsAt)) {
+      throw new BadRequestException('startsAt must be before endsAt');
+    }
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException('Event not found');
-
-    const updateData: any = { ...dto };
-    if (dto.startsAt) updateData.startsAt = new Date(dto.startsAt);
-    if (dto.endsAt) updateData.endsAt = new Date(dto.endsAt);
-
-    const startsAt = updateData.startsAt ?? event.startsAt;
-    const endsAt = updateData.endsAt ?? event.endsAt;
-    if (startsAt >= endsAt) {
-      throw new BadRequestException('Event must end after it starts');
-    }
-
-    return this.prisma.event.update({ where: { id }, data: updateData });
+    return this.prisma.event.update({ where: { id }, data: dto });
   }
 
   async delete(id: string) {
