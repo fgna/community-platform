@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -19,8 +20,15 @@ import { InvitesModule } from './invites/invites.module';
   imports: [
     ThrottlerModule.forRoot([
       {
+        name: 'default',
         ttl: parseInt(process.env.THROTTLE_TTL || '60000'),
         limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
+      },
+      {
+        // Stricter limits for auth endpoints — overridden per-route via @Throttle
+        name: 'auth',
+        ttl: 900_000,  // 15 minutes
+        limit: 5,
       },
     ]),
     PrismaModule,
@@ -38,7 +46,9 @@ import { InvitesModule } from './invites/invites.module';
     InvitesModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // UserThrottlerGuard uses authenticated userId as throttle key (falls back to IP),
+    // which is more accurate than IP-based limiting behind a reverse proxy.
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
   ],
 })
 export class AppModule {}

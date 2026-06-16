@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] — 2026-06-16
+
+### Added (Sprint 8 — Security Hardening)
+- Global `ExceptionFilter` prevents stack trace / internal error detail leakage in production responses
+- JWT secret startup validation: API exits with code 1 if `JWT_SECRET` or `JWT_REFRESH_SECRET` are missing
+- Graceful shutdown hooks enabled (`app.enableShutdownHooks()`)
+- `UpdateUserRoleDto` with `@IsEnum(UserRole)` validation replaces raw string for admin role updates
+- Audit logging for admin actions: `updateUserRole`, `toggleUserActive`, `hidePost`, `pinPost` each write an `AuditLog` entry with the acting admin's ID
+- Per-user rate limiting: `UserThrottlerGuard` uses authenticated `userId` as throttle key (falls back to IP for unauthenticated requests) — accurate behind reverse proxies
+- Named `auth` throttler with tighter limits: login 5 req / 15 min, register 3 req / hour
+- Password strength enforcement on registration: must contain uppercase, lowercase, and a digit
+- Email normalization: lowercased and trimmed before any DB lookup in `register` and `login`
+- Avatar URL validation: `@IsUrl()` applied to `avatarUrl` in `UpdateProfileDto`
+
+### Security
+- Member directory (`GET /users`) no longer exposes email addresses in public listing
+- Auth endpoint throttling tightened at both controller level (`@Throttle` decorator) and module level (named throttler)
+
+---
+
 ## [1.7.0] — 2026-06-16
 
 ### Added (Sprint 7 — Invite System)

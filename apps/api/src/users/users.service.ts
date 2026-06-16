@@ -15,7 +15,6 @@ export class UsersService {
         take: limit,
         select: {
           id: true,
-          email: true,
           name: true,
           bio: true,
           avatarUrl: true,

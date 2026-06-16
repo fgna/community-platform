@@ -263,7 +263,7 @@
 | P2-017 | Post bookmarks / saved items | P2 | `[ ]` |
 | P2-018 | Polls within posts | P2 | `[ ]` |
 | P2-019 | Public community landing page (pre-login) | P1 | `[ ]` |
-| P2-020 | API rate limiting per user (not just per IP) | P1 | `[ ]` |
+| P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
 
 ---
 
