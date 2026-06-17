@@ -314,7 +314,7 @@
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| CI-001 | **E2E job: API server at `:3001` never becomes available** — `wait-on` times out every run | Pre-existing issue in the E2E workflow; API startup hangs before Playwright runs | M | `[ ]` |
+| CI-001 | **E2E job: API server at `:3001` never becomes available** — `wait-on` times out every run | `HealthModule` missing `PrismaModule` import — NestJS DI fails, API never starts | M | `[x]` |
 
 ---
 
