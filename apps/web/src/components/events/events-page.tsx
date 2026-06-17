@@ -252,7 +252,7 @@ function CalendarView({ events }: { events: CommunityEvent[] }) {
 }
 
 export function EventsPage() {
-  const { data, isLoading, error } = useEvents();
+  const { data, isLoading, error, refetch } = useEvents();
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
   const events: CommunityEvent[] = data?.data ?? [];
@@ -312,8 +312,14 @@ export function EventsPage() {
         </div>
       ) : error ? (
         <Card>
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-8 text-center space-y-3">
             <p style={{ color: 'var(--theme-danger)' }}>Failed to load events.</p>
+            <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+              {(error as { message?: string })?.message || 'Unknown error'}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
           </CardContent>
         </Card>
       ) : view === 'calendar' ? (

@@ -30,34 +30,6 @@ export default function DashboardPage() {
         description="Here's what's happening in your community"
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Members"
-          value={membersData?.total ?? '—'}
-          icon={Users}
-          description="Active community members"
-        />
-        <StatsCard
-          title="Community Posts"
-          value={feedData?.total ?? '—'}
-          icon={MessageCircle}
-          description="Conversations this month"
-        />
-        <StatsCard
-          title="Available Courses"
-          value={coursesData?.total ?? '—'}
-          icon={BookOpen}
-          description="Learn something new"
-        />
-        <StatsCard
-          title="Upcoming Events"
-          value={upcomingEvents.length}
-          icon={Calendar}
-          description="Events this month"
-        />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent posts */}
         <div className="lg:col-span-2 space-y-4">
@@ -94,6 +66,34 @@ export default function DashboardPage() {
             <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>No upcoming events</p>
           )}
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total Members"
+          value={membersData?.total ?? '—'}
+          icon={Users}
+          description="Active community members"
+        />
+        <StatsCard
+          title="Community Posts"
+          value={feedData?.total ?? '—'}
+          icon={MessageCircle}
+          description="Conversations this month"
+        />
+        <StatsCard
+          title="Available Courses"
+          value={coursesData?.total ?? '—'}
+          icon={BookOpen}
+          description="Learn something new"
+        />
+        <StatsCard
+          title="Upcoming Events"
+          value={upcomingEvents.length}
+          icon={Calendar}
+          description="Events this month"
+        />
       </div>
     </div>
   );
