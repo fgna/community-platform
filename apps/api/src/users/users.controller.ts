@@ -45,7 +45,10 @@ export class UsersController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: join(process.cwd(), 'uploads', 'avatars'),
+      destination: (_req: any, _file: any, cb: any) => {
+        const dir = join(process.cwd(), 'uploads', 'avatars');
+        cb(null, dir);
+      },
       filename: (req: any, file: any, cb: any) => {
         const userId = req.user?.id ?? 'unknown';
         cb(null, `${userId}-${Date.now()}${extname(file.originalname)}`);

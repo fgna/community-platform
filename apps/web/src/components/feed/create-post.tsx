@@ -42,8 +42,12 @@ export function CreatePost() {
           }
         : undefined;
 
-    await createPost.mutateAsync({ content: content.trim(), poll: pollPayload });
-    resetForm();
+    try {
+      await createPost.mutateAsync({ content: content.trim(), poll: pollPayload });
+      resetForm();
+    } catch {
+      // mutation error — feed will refetch via onSettled
+    }
   };
 
   const addPollOption = () => {

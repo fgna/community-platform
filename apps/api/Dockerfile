@@ -49,11 +49,18 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
-RUN mkdir -p /app/apps/api/uploads/avatars && chown -R nestjs:nodejs /app/apps/api/uploads
-USER nestjs
+RUN apk add --no-cache su-exec \
+ && addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nestjs \
+ && mkdir -p /app/apps/api/uploads/avatars \
+ && chown -R nestjs:nodejs /app/apps/api/uploads
+
+COPY apps/api/entrypoint.sh /app/apps/api/entrypoint.sh
+RUN chmod +x /app/apps/api/entrypoint.sh
+
 WORKDIR /app/apps/api
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
+ENTRYPOINT ["/app/apps/api/entrypoint.sh"]
 CMD ["node", "dist/main"]

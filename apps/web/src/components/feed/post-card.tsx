@@ -34,7 +34,11 @@ export function PostCard({ post }: PostCardProps) {
 
   const handleDelete = async () => {
     if (confirm('Delete this post?')) {
-      await deletePost.mutateAsync(post.id);
+      try {
+        await deletePost.mutateAsync(post.id);
+      } catch {
+        // mutation error — feed will refetch via onSettled
+      }
     }
   };
 
