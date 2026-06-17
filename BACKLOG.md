@@ -42,8 +42,8 @@
 |----|-------|----------|------|--------|
 | T-001 | Theme token interface (`packages/themes`) | P0 | S | `[x]` |
 | T-002 | Executive Glass theme (dark, gold accents) | P0 | S | `[x]` |
-| T-003 | Executive Red theme | P1 | S | `[x]` |
-| T-004 | Growth Green theme | P1 | S | `[x]` |
+| T-003 | ~~Executive Red theme~~ (removed) | P1 | S | `[-]` |
+| T-004 | ~~Growth Green theme~~ (removed) | P1 | S | `[-]` |
 | T-005 | Corporate Light theme | P1 | S | `[x]` |
 | T-006 | High Contrast theme | P1 | S | `[x]` |
 | T-007 | ThemeProvider (CSS var injection, no page reload) | P0 | M | `[x]` |

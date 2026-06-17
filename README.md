@@ -195,8 +195,6 @@ Switch at runtime from Settings → Appearance (no page reload):
 | Theme | Look |
 |---|---|
 | **Executive Glass** *(default)* | Dark, gold accents, glassmorphism |
-| **Executive Red** | Dark, deep red accents |
-| **Growth Green** | Dark, emerald accents |
 | **Corporate Light** | Light, professional |
 | **High Contrast** | WCAG AAA, accessibility-first |
 

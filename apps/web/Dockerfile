@@ -40,7 +40,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3000 || exit 1
+  CMD wget -qO /dev/null http://localhost:3000/api/health || exit 1
 # server.js is at apps/web/server.js within the standalone bundle
 WORKDIR /app/apps/web
 CMD ["node", "server.js"]
