@@ -6,11 +6,11 @@ export class SearchService {
   constructor(private prisma: PrismaService) {}
 
   async search(q: string, limit = 10) {
-    if (!q || q.trim().length < 2) return { posts: [], users: [], courses: [], events: [] };
+    if (!q || q.trim().length < 2) return { posts: [], users: [], courses: [], events: [], recordings: [] };
 
     const term = q.trim();
 
-    const [posts, users, courses, events] = await Promise.all([
+    const [posts, users, courses, events, recordings] = await Promise.all([
       this.prisma.post.findMany({
         where: {
           isHidden: false,
@@ -58,8 +58,26 @@ export class SearchService {
         orderBy: { startsAt: 'asc' },
         select: { id: true, title: true, description: true, startsAt: true, isVirtual: true },
       }),
+      this.prisma.recording.findMany({
+        where: {
+          OR: [
+            { title: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+          ],
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          url: true,
+          duration: true,
+          event: { select: { id: true, title: true, startsAt: true } },
+        },
+      }),
     ]);
 
-    return { posts, users, courses, events };
+    return { posts, users, courses, events, recordings };
   }
 }

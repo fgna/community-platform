@@ -267,6 +267,7 @@
 | P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | M | `[x]` |
 | P2-022 | Event recordings page (browse past meeting recordings) | P1 | `[x]` |
 | P2-023 | Calendar invites (.ics) on event RSVP with opt-out setting | P1 | `[x]` |
+| P2-024 | Dedicated search page with category filters (posts, members, events, courses, recordings) | P1 | `[x]` |
 
 ---
 
