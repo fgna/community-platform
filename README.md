@@ -21,7 +21,7 @@ A production-ready, self-hosted community and learning platform with a premium d
 | Events | Event list, calendar view, RSVP (Going/Maybe/Not Going) | ✅ |
 | Members | Member directory, public profiles, activity badges | ✅ |
 | Members | Top Contributors leaderboard | ✅ |
-| Themes | 5 built-in themes, runtime switching (no page reload) | ✅ |
+| Themes | 3 built-in themes, runtime switching (no page reload) | ✅ |
 | Admin | User management (roles, active/suspend) | ✅ |
 | Admin | Content moderation queue, post pin/hide | ✅ |
 | Admin | Course and event management | ✅ |
@@ -69,6 +69,10 @@ docker compose up --build -d
 # 4. Run DB migrations + seed (first run only)
 docker compose exec api npx prisma migrate deploy
 docker compose exec api npx prisma db seed
+
+# 5. (Optional) Enable HTTPS — requires a domain with DNS pointed to your server
+#    Set DOMAIN and SSL_EMAIL in .env first
+./nginx/init-ssl.sh
 ```
 
 | Service | URL |
@@ -77,6 +81,7 @@ docker compose exec api npx prisma db seed
 | API | http://localhost:3001 |
 | Health | http://localhost:3001/health |
 | API Docs | http://localhost:3001/api/docs |
+| HTTPS (with proxy profile) | https://yourdomain.com |
 
 **Default accounts (created by seed):**
 
@@ -174,9 +179,13 @@ community-platform/
 │           ├── hooks/          # TanStack Query hooks per domain
 │           ├── lib/            # API client, markdown renderer, themes
 │           └── store/          # Zustand: auth, theme
+├── nginx/
+│   ├── default.conf.template       # HTTPS config (TLS + proxy)
+│   ├── default-no-ssl.conf.template # HTTP-only proxy config
+│   └── init-ssl.sh                 # One-command cert provisioning
 ├── packages/
 │   ├── shared/                 # TypeScript types + utilities
-│   ├── themes/                 # Theme tokens (5 built-in themes)
+│   ├── themes/                 # Theme tokens (3 built-in themes)
 │   └── ui/                    # Shared UI components
 ├── docker-compose.yml
 ├── .env.example
@@ -202,23 +211,26 @@ Switch at runtime from Settings → Appearance (no page reload):
 
 ## Production Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
-- VPS setup (Hetzner, DigitalOcean, AWS, Azure)
-- nginx reverse proxy with TLS (Let's Encrypt)
-- Automated database migration on deploy
-- Horizontal scaling notes
-- Backup and restore procedures
+**Recommended**: Hetzner CX22 (~€5/month) — see the step-by-step guide in [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-**Minimum VPS:** 1 vCPU · 2 GB RAM · 20 GB disk · Ubuntu 22.04
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
+- Hetzner quick-start (cheapest production option)
+- Generic VPS setup (DigitalOcean, Contabo, AWS Lightsail, Azure)
+- Built-in Nginx reverse proxy with automatic Let's Encrypt HTTPS
+- Automated database migrations and backups
+- Horizontal scaling notes
+
+**Minimum VPS:** 1 vCPU · 2 GB RAM · 20 GB disk · Ubuntu 24.04
 
 ```bash
 # Quick VPS deploy
 curl -fsSL https://get.docker.com | sh
 git clone <repo-url> /opt/community-platform && cd /opt/community-platform
-cp .env.example .env && nano .env   # set secrets + CORS_ORIGINS
+cp .env.example .env && nano .env   # set secrets, DOMAIN, CORS_ORIGINS
 docker compose up --build -d
 docker compose exec api npx prisma migrate deploy
 docker compose exec api npx prisma db seed
+./nginx/init-ssl.sh                 # enable HTTPS (requires domain + DNS)
 ```
 
 ---
@@ -228,7 +240,7 @@ docker compose exec api npx prisma db seed
 - Argon2id password hashing
 - JWT access tokens (15 min) + rotating refresh tokens (7 days)
 - SameSite cookie CSRF protection
-- Rate limiting: 100 req/min per IP, 10 req/min on auth endpoints
+- Tiered rate limiting: 100 req/min default, 10 req/15min on login, per-user throttle keys
 - Helmet.js security headers
 - class-validator DTO validation on all inputs
 - Audit log for sensitive admin actions

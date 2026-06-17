@@ -131,7 +131,126 @@ THROTTLE_LIMIT=100
 
 ---
 
-## Production deployment (VPS / cloud)
+## Hetzner Quick Start (Recommended)
+
+The cheapest production-ready option. A Hetzner CX22 (2 vCPU, 4 GB RAM, ~€4.50/month) comfortably runs the full stack.
+
+### 1. Create a server
+
+1. Sign up at [hetzner.com/cloud](https://www.hetzner.com/cloud/)
+2. Create a new project → Add Server
+3. **Location**: Falkenstein or Helsinki (EU, GDPR-friendly)
+4. **Image**: Ubuntu 24.04
+5. **Type**: CX22 (2 vCPU, 4 GB RAM, 40 GB disk) — shared CPU is fine
+6. **SSH key**: Add your public key (recommended over password)
+7. **Networking**: Enable public IPv4
+8. **Firewall**: Create one allowing inbound TCP on ports 22 (SSH), 80 (HTTP), 443 (HTTPS)
+9. Create the server and note the IP address
+
+### 2. Initial server setup
+
+```bash
+# SSH in
+ssh root@YOUR_SERVER_IP
+
+# Update system
+apt update && apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Create a non-root deploy user (optional but recommended)
+adduser deploy
+usermod -aG docker deploy
+```
+
+### 3. Deploy the platform
+
+```bash
+# Switch to deploy user (or stay as root)
+su - deploy
+
+# Clone
+git clone https://github.com/fgna/community-platform.git
+cd community-platform
+
+# Configure
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+
+```env
+# Generate secrets (run each command, paste output into .env)
+# openssl rand -hex 32
+
+JWT_SECRET=<paste-64-char-hex>
+JWT_REFRESH_SECRET=<paste-64-char-hex>
+POSTGRES_PASSWORD=<paste-strong-password>
+
+DOMAIN=yourdomain.com
+SSL_EMAIL=you@yourdomain.com
+
+CORS_ORIGINS=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+```
+
+### 4. Point DNS and start
+
+Point your domain's A record to the server IP, then:
+
+```bash
+# Build and start the core services
+docker compose up --build -d
+
+# Run migrations and seed
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma db seed
+
+# Provision SSL certificate and start nginx
+./nginx/init-ssl.sh
+
+# Verify
+docker compose --profile proxy ps   # all containers healthy
+curl https://yourdomain.com         # should load the login page
+```
+
+### 5. Set up automatic certificate renewal and backups
+
+```bash
+# Add to crontab (crontab -e)
+# Renew SSL every Sunday at 3am
+0 3 * * 0  cd /home/deploy/community-platform && docker compose run --rm certbot renew --quiet && docker compose exec nginx nginx -s reload
+
+# Daily backup at 2am
+0 2 * * *  cd /home/deploy/community-platform && docker compose --profile backup run --rm backup
+```
+
+### 6. Updating
+
+```bash
+cd /home/deploy/community-platform
+git pull
+docker compose up --build -d
+docker compose exec api npx prisma migrate deploy
+```
+
+### Cost breakdown
+
+| Resource | Cost |
+|----------|------|
+| Hetzner CX22 (2 vCPU, 4 GB) | ~€4.50/month |
+| 20 GB volume (optional, for data) | ~€0.88/month |
+| Domain name | ~€10/year |
+| Let's Encrypt TLS | Free |
+| **Total** | **~€5.50/month** |
+
+---
+
+## Generic VPS deployment
+
+Works on any VPS provider (DigitalOcean, Contabo, AWS Lightsail, Azure, etc.). Minimum: 1 vCPU, 2 GB RAM, 20 GB disk.
 
 ### First deploy
 
@@ -145,16 +264,19 @@ cd community-platform
 
 # 3. Configure secrets
 cp .env.example .env
-# Set JWT_SECRET, JWT_REFRESH_SECRET, DATABASE_URL, CORS_ORIGINS, NEXT_PUBLIC_API_URL
+# Set JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, DOMAIN, CORS_ORIGINS, NEXT_PUBLIC_API_URL
 
 # 4. Build and start
 docker compose up --build -d
 
 # 5. Migrate and seed (first deploy only)
-docker compose exec api pnpm prisma migrate deploy
-docker compose exec api pnpm prisma db seed
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma db seed
 
-# 6. Verify
+# 6. Enable HTTPS (optional — requires domain + DNS pointed to server)
+./nginx/init-ssl.sh
+
+# 7. Verify
 docker compose ps                  # all containers should show "healthy"
 curl http://localhost:3001/health  # {"status":"ok"}
 ```
@@ -164,18 +286,18 @@ curl http://localhost:3001/health  # {"status":"ok"}
 ```bash
 git pull
 docker compose up --build -d
-docker compose exec api pnpm prisma migrate deploy
+docker compose exec api npx prisma migrate deploy
 ```
 
 ### Services
 
 | Service  | URL                             | Notes                              |
 |----------|---------------------------------|------------------------------------|
-| Web      | http://localhost:3000           |                                    |
-| API      | http://localhost:3001           |                                    |
+| Web      | http://localhost:3000           | (via nginx: https://yourdomain.com) |
+| API      | http://localhost:3001           | (via nginx: https://yourdomain.com/api) |
 | API Docs | http://localhost:3001/api/docs  | Swagger UI (non-production only)   |
-| Postgres | localhost:5432                  |                                    |
-| Redis    | localhost:6379                  |                                    |
+| Postgres | localhost:5432                  | Not exposed when using nginx       |
+| Redis    | localhost:6379                  | Not exposed when using nginx       |
 
 ```bash
 docker compose ps        # check health status
