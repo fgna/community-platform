@@ -52,7 +52,7 @@ export function useCreatePost() {
       const { data } = await apiClient.post('/posts', payload);
       return data;
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
@@ -93,7 +93,7 @@ export function useDeletePost() {
       const { data } = await apiClient.delete(`/posts/${postId}`);
       return data;
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });

@@ -42,8 +42,8 @@
 |----|-------|----------|------|--------|
 | T-001 | Theme token interface (`packages/themes`) | P0 | S | `[x]` |
 | T-002 | Executive Glass theme (dark, gold accents) | P0 | S | `[x]` |
-| T-003 | Executive Red theme | P1 | S | `[x]` |
-| T-004 | Growth Green theme | P1 | S | `[x]` |
+| T-003 | ~~Executive Red theme~~ (removed) | P1 | S | `[-]` |
+| T-004 | ~~Growth Green theme~~ (removed) | P1 | S | `[-]` |
 | T-005 | Corporate Light theme | P1 | S | `[x]` |
 | T-006 | High Contrast theme | P1 | S | `[x]` |
 | T-007 | ThemeProvider (CSS var injection, no page reload) | P0 | M | `[x]` |
@@ -348,6 +348,28 @@
 
 ---
 
+
+## User-Reported Bugs (June 2026)
+
+> Reported during manual testing of Docker deployment.
+
+| ID | Bug | Root cause | Size | Status |
+|----|-----|------------|------|--------|
+| BUG-001 | **Menu not working from Events page** — hamburger menu unresponsive on mobile | Events `page.tsx` rendered a duplicate `<Topbar>` without `onMenuClick`, overlaying the layout's Topbar | S | `[x]` |
+| BUG-002 | **Menu not working from Members page** — same as BUG-001 | Members `page.tsx` rendered a duplicate `<Topbar>` without `onMenuClick` | S | `[x]` |
+| BUG-003 | **Calendar: failed to load events** — error shown on Events page | Likely caused by duplicate Topbar layout issue (BUG-001); API endpoint itself is correct | S | `[x]` |
+| BUG-004 | **Delete post breaks feed** — "failed to load posts" after admin deletes a post | `handleDelete` had no try-catch; `useDeletePost` only invalidated feed on `onSuccess` (not `onSettled`); `authorId` missing from API response | S | `[x]` |
+| BUG-005 | **Create post not working** — post form submits but nothing happens | `handleSubmit` had no try-catch; `useCreatePost` only invalidated feed on `onSuccess` (not `onSettled`) | S | `[x]` |
+| BUG-006 | **Docker API crash: EACCES on uploads** — container restart loop | Bind-mount replaces Dockerfile-created uploads dir with root-owned host dir; multer `diskStorage` crashes at module load | M | `[x]` |
+| BUG-007 | **Data loss on `docker compose down -v`** — named volumes destroyed | Switched to host bind mounts under `DATA_DIR` | M | `[x]` |
+| BUG-008 | **Docker web healthcheck always fails** — web container never becomes "healthy" | Healthcheck hit `/` which redirects to `/login`; BusyBox wget doesn't follow redirects | S | `[x]` |
+| BUG-009 | **Menu not working from Settings page** — same duplicate Topbar pattern as BUG-001/002 | Settings `page.tsx` rendered its own `<Topbar>` without `onMenuClick` | S | `[x]` |
+| BUG-010 | **No way to start a message from Messages page** — must navigate to member profile first | Messages panel had no "New Message" button or member picker | M | `[x]` |
+| BUG-011 | **User avatar in topbar should be clickable** — no way to access profile or settings from topbar | Avatar was a static element with no dropdown menu; added dropdown with profile, settings, sign out | S | `[x]` |
+| BUG-012 | **Remove Growth Green and Executive Red themes** — only 3 themes should remain | Deleted `executive-red.ts` and `growth-green.ts` from `packages/themes`; removed from theme switcher and index. Three themes remain: Executive Glass, Corporate Light, High Contrast | S | `[x]` |
+| BUG-013 | **Events page shows "Failed to load events"** — all API calls fail after ~5 requests | `auth` named throttler had global limit of 5 req/15min applied to ALL endpoints; dashboard loads exhaust the quota, then events and other pages get 429'd. Fixed: auth throttler now permissive globally (100/15min), strict only on login (5/15min) and register (3/hour) | M | `[x]` |
+
+---
 
 ## Definition of Done
 

@@ -15,7 +15,7 @@ export class AuthController {
 
   @Post('register')
   @SetMetadata(IS_PUBLIC_KEY, true)
-  @Throttle({ auth: { limit: 10, ttl: 3_600_000 } })
+  @Throttle({ auth: { limit: 5, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Register a new user' })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);

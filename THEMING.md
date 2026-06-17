@@ -9,8 +9,6 @@ Community Platform uses a runtime CSS variable-based theme system. Themes switch
 | Theme | Key | Description |
 |-------|-----|-------------|
 | Executive Glass | `executive-glass` | Dark luxury with gold accents and glassmorphism (default) |
-| Executive Red | `executive-red` | Dark theme with bold crimson accents |
-| Growth Green | `growth-green` | Nature-inspired dark with emerald accents |
 | Corporate Light | `corporate-light` | Clean professional light theme |
 | High Contrast | `high-contrast` | Maximum accessibility, stark contrast |
 
@@ -85,8 +83,8 @@ function MyComponent() {
   const { theme, setTheme, themes } = useTheme();
   
   return (
-    <button onClick={() => setTheme('growth-green')}>
-      Switch to Growth Green
+    <button onClick={() => setTheme('corporate-light')}>
+      Switch to Corporate Light
     </button>
   );
 }

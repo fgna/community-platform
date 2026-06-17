@@ -1,18 +1,7 @@
-import { Topbar } from '@/components/layout/topbar';
-import { EventsPage } from '@/components/events/events-page';
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Events',
-};
+import { EventsPage } from '@/components/events/events-page';
 
 export default function Events() {
-  return (
-    <>
-      <Topbar title="Events" />
-      <div className="flex-1 overflow-y-auto p-6">
-        <EventsPage />
-      </div>
-    </>
-  );
+  return <EventsPage />;
 }
