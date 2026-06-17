@@ -52,8 +52,7 @@ test('UX-004: member profile has a Message button for other users', async ({ pag
   // Fetch user list from the API to find a non-admin member's ID
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const memberId = await page.evaluate(async (baseUrl) => {
-    const token = localStorage.getItem('auth-token') ??
-      JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.accessToken;
+    const token = JSON.parse(localStorage.getItem('community-auth') || '{}')?.state?.accessToken;
     const res = await fetch(
       baseUrl + '/api/users?page=1&limit=50',
       { headers: token ? { Authorization: `Bearer ${token}` } : {} },
