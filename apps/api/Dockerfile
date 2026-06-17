@@ -49,6 +49,7 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+RUN mkdir -p /app/apps/api/uploads/avatars && chown -R nestjs:nodejs /app/apps/api/uploads
 USER nestjs
 WORKDIR /app/apps/api
 EXPOSE 3001
