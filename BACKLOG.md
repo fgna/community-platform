@@ -365,7 +365,8 @@
 | BUG-008 | **Docker web healthcheck always fails** — web container never becomes "healthy" | Healthcheck hit `/` which redirects to `/login`; BusyBox wget doesn't follow redirects | S | `[x]` |
 | BUG-009 | **Menu not working from Settings page** — same duplicate Topbar pattern as BUG-001/002 | Settings `page.tsx` rendered its own `<Topbar>` without `onMenuClick` | S | `[x]` |
 | BUG-010 | **No way to start a message from Messages page** — must navigate to member profile first | Messages panel had no "New Message" button or member picker | M | `[x]` |
-| BUG-011 | **User avatar in topbar not clickable** — no way to access profile or settings from topbar | Avatar was a static element with no dropdown menu | S | `[x]` |
+| BUG-011 | **User avatar in topbar should be clickable** — no way to access profile or settings from topbar | Avatar was a static element with no dropdown menu; added dropdown with profile, settings, sign out | S | `[x]` |
+| BUG-012 | **Remove Growth Green and Executive Red themes** — only 3 themes should remain | Deleted `executive-red.ts` and `growth-green.ts` from `packages/themes`; removed from theme switcher | S | `[x]` |
 
 ---
 
