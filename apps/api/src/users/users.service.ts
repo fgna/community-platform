@@ -97,6 +97,7 @@ export class UsersService {
         role: true,
         createdAt: true,
         emailDigest: true,
+        calendarInvites: true,
         _count: {
           select: { posts: true, courseProgress: true, eventRsvps: true },
         },
@@ -147,6 +148,14 @@ export class UsersService {
   async unfollow(followerId: string, followingId: string) {
     await this.prisma.follow.deleteMany({ where: { followerId, followingId } });
     return { following: false };
+  }
+
+  async updateCalendarInvites(userId: string, calendarInvites: boolean) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { calendarInvites },
+      select: { id: true, calendarInvites: true },
+    });
   }
 
   async updateDigestPreference(userId: string, frequency: string) {

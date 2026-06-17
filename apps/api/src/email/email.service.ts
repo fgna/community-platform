@@ -1,10 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
+export interface EmailAttachment {
+  filename: string;
+  content: string | Buffer;
+  contentType?: string;
+}
+
 export interface EmailPayload {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
+  icalEvent?: string;
 }
 
 @Injectable()
@@ -35,15 +43,43 @@ export class EmailService {
 
     if (!this.transporter) {
       this.logger.log(`[DRY RUN] To: ${payload.to} | Subject: ${payload.subject}`);
+      if (payload.icalEvent) {
+        this.logger.log(`[DRY RUN] ICS attachment included`);
+      }
       return true;
     }
 
     try {
+      const attachments: any[] = (payload.attachments || []).map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      }));
+
+      if (payload.icalEvent) {
+        attachments.push({
+          filename: 'invite.ics',
+          content: payload.icalEvent,
+          contentType: 'text/calendar; method=REQUEST',
+        });
+      }
+
       await this.transporter.sendMail({
         from,
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
+        attachments,
+        ...(payload.icalEvent
+          ? {
+              alternatives: [
+                {
+                  contentType: 'text/calendar; method=REQUEST',
+                  content: payload.icalEvent,
+                },
+              ],
+            }
+          : {}),
       });
       this.logger.log(`Email sent to ${payload.to}: ${payload.subject}`);
       return true;

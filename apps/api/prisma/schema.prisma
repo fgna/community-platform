@@ -34,8 +34,9 @@ model User {
   sentMessages  Message[]
   sentInvites   Invite[]
   pollVotes     PollVote[]
-  emailDigest   EmailDigestFrequency @default(WEEKLY)
-  lastDigestAt  DateTime?
+  emailDigest      EmailDigestFrequency @default(WEEKLY)
+  lastDigestAt     DateTime?
+  calendarInvites  Boolean              @default(true)
 }
 
 enum Role {

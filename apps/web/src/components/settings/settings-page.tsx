@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -348,6 +348,37 @@ export function SettingsPage() {
                   </div>
                 </button>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CalendarDays size={16} /> Calendar Invites
+              </CardTitle>
+              <CardDescription>
+                Receive .ics calendar invites when you RSVP to events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+                    Send calendar invites
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
+                    Attach an .ics file to the RSVP confirmation email so it appears in your calendar app.
+                  </p>
+                </div>
+                <Switch
+                  checked={profile?.calendarInvites ?? true}
+                  onCheckedChange={(checked) => {
+                    apiClient.patch('/users/me/calendar-invites', { calendarInvites: checked }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['me'] });
+                    });
+                  }}
+                />
+              </div>
             </CardContent>
           </Card>
 

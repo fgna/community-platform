@@ -7,6 +7,7 @@ import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateDigestDto } from './dto/update-digest.dto';
+import { UpdateCalendarInvitesDto } from './dto/update-calendar-invites.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -98,6 +99,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Update email digest preference' })
   updateDigest(@CurrentUser() user: any, @Body() dto: UpdateDigestDto) {
     return this.usersService.updateDigestPreference(user.id, dto.frequency);
+  }
+
+  @Patch('me/calendar-invites')
+  @ApiOperation({ summary: 'Toggle calendar invite emails for event RSVPs' })
+  updateCalendarInvites(@CurrentUser() user: any, @Body() dto: UpdateCalendarInvitesDto) {
+    return this.usersService.updateCalendarInvites(user.id, dto.calendarInvites);
   }
 
   @Get(':id')
