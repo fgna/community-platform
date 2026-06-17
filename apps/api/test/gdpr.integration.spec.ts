@@ -96,7 +96,8 @@ describe('GDPR — integration', () => {
         .set(bearer(memberToken))
         .expect(200);
 
-      expect(res.body).toHaveProperty('consent');
+      expect(res.body).toHaveProperty('analytics');
+      expect(res.body).toHaveProperty('marketing');
     });
   });
 
