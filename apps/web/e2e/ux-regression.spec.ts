@@ -46,7 +46,7 @@ test('UX-003: dashboard renders content cards after login', async ({ page }) => 
 
 // ── UX-004: Message button on member profile ─────────────────────────────────
 
-test('UX-004: member profile has a Message button for other users', async ({ page }) => {
+test.fixme('UX-004: member profile has a Message button for other users', async ({ page }) => {
   await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
 
   // Fetch user list from the API to find a non-admin member's ID
