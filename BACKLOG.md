@@ -367,6 +367,7 @@
 | BUG-010 | **No way to start a message from Messages page** — must navigate to member profile first | Messages panel had no "New Message" button or member picker | M | `[x]` |
 | BUG-011 | **User avatar in topbar should be clickable** — no way to access profile or settings from topbar | Avatar was a static element with no dropdown menu; added dropdown with profile, settings, sign out | S | `[x]` |
 | BUG-012 | **Remove Growth Green and Executive Red themes** — only 3 themes should remain | Need to delete `executive-red.ts` and `growth-green.ts` from `packages/themes`; remove from theme switcher | S | `[ ]` |
+| BUG-013 | **Events page shows "Failed to load events"** — events endpoint returns error | Under investigation — API code and tests pass; may be runtime/environment issue. Added error detail display and retry button | S | `[~]` |
 
 ---
 
