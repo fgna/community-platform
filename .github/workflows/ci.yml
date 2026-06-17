@@ -206,6 +206,45 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=http://localhost:3001
 
+  # ─── Docker Smoke Test ───────────────────────────────────────────────────────
+  docker-smoke:
+    name: Docker Smoke Test
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start all services
+        run: docker compose up --build -d --wait --wait-timeout 180
+        env:
+          JWT_SECRET: ci-smoke-jwt-secret-at-least-32-chars
+          JWT_REFRESH_SECRET: ci-smoke-refresh-secret-at-least-32-chars
+
+      - name: Verify API health endpoint
+        run: |
+          status=$(curl -sf http://localhost:3001/health | jq -r '.status')
+          echo "API health: $status"
+          [ "$status" = "ok" ] || [ "$status" = "degraded" ]
+
+      - name: Verify web is serving
+        run: curl -sfL http://localhost:3000/login > /dev/null
+
+      - name: Verify API can write to uploads directory
+        run: |
+          docker exec community_api sh -c 'touch /app/apps/api/uploads/avatars/.write-test && rm /app/apps/api/uploads/avatars/.write-test'
+          echo "Uploads directory is writable"
+
+      - name: Run database migration check
+        run: docker exec community_api npx prisma migrate deploy
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
   # ─── E2E Tests ──────────────────────────────────────────────────────────────
   test-e2e:
     name: E2E Tests

@@ -15,7 +15,8 @@ COPY packages/ui/package.json ./packages/ui/
 # (prisma generate) runs against the current schema and writes into the correct
 # pnpm virtual-store path that TypeScript resolves via symlinks.
 COPY apps/api/prisma ./apps/api/prisma/
-RUN pnpm install --frozen-lockfile --filter @community/api...
+RUN pnpm install --frozen-lockfile --filter @community/api... \
+ && pnpm --filter @community/api exec prisma generate
 
 # ── builder: compile TypeScript → dist/ ────────────────────────────────────────
 FROM base AS builder
@@ -48,10 +49,18 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
-USER nestjs
+RUN apk add --no-cache su-exec \
+ && addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nestjs \
+ && mkdir -p /app/apps/api/uploads/avatars \
+ && chown -R nestjs:nodejs /app/apps/api/uploads
+
+COPY apps/api/entrypoint.sh /app/apps/api/entrypoint.sh
+RUN chmod +x /app/apps/api/entrypoint.sh
+
 WORKDIR /app/apps/api
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
+ENTRYPOINT ["/app/apps/api/entrypoint.sh"]
 CMD ["node", "dist/main"]

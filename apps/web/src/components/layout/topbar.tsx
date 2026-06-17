@@ -1,9 +1,17 @@
 'use client';
 
-import { Search, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Menu, User, Settings, LogOut } from 'lucide-react';
 import { ThemeSwitcher } from './theme-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@community/shared';
 
@@ -13,7 +21,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ title, onMenuClick }: TopbarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const openPalette = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
@@ -67,11 +75,45 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
 
       <NotificationBell />
 
-      {/* User avatar */}
-      <Avatar className="h-8 w-8 cursor-pointer flex-shrink-0">
-        <AvatarImage src={user?.avatarUrl || undefined} />
-        <AvatarFallback className="text-xs">{getInitials(user?.name || 'U')}</AvatarFallback>
-      </Avatar>
+      {/* User menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex-shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+            <Avatar className="h-8 w-8 cursor-pointer">
+              <AvatarImage src={user?.avatarUrl || undefined} />
+              <AvatarFallback className="text-xs">{getInitials(user?.name || 'U')}</AvatarFallback>
+            </Avatar>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <div className="px-3 py-2">
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>{user?.name}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--theme-text-muted)' }}>{user?.email}</p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+            <Link href={`/members/${user?.id}`}>
+              <User size={14} />
+              My Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+            <Link href="/settings">
+              <Settings size={14} />
+              Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => logout()}
+            className="gap-2 cursor-pointer"
+            style={{ color: 'var(--theme-danger)' }}
+          >
+            <LogOut size={14} />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 }

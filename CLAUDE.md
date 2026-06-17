@@ -133,14 +133,6 @@ Inspired by the reference website:
 - Gold accents
 - Elegant typography
 
-### Executive Red
-- Dark background
-- Premium red accents
-
-### Growth Green
-- Dark background
-- Green growth-focused accents
-
 ### Corporate Light
 
 ### High Contrast
@@ -325,6 +317,19 @@ GDPR.md
 THEMING.md
 CHANGELOG.md
 ```
+
+---
+
+# Backlog (Mandatory)
+
+`BACKLOG.md` is the single source of truth for all work items. Use it systematically:
+
+- **Before starting work**: Read `BACKLOG.md` to understand current status and priorities.
+- **New features**: Add a backlog entry before implementing. Mark `[~]` while in progress, `[x]` when done.
+- **Bug reports**: Immediately add to the "User-Reported Bugs" section with an ID (BUG-NNN), description, root cause (once identified), size, and status.
+- **Bug fixes**: Update the corresponding backlog entry to `[x]` when the fix is committed.
+- **Security findings**: Add to the "Security & Reliability Fixes" section with a SEC-NNN ID.
+- **Never skip**: Every piece of work — feature, bug, fix, refactor — must be tracked in the backlog. If it's not in `BACKLOG.md`, it didn't happen.
 
 ---
 

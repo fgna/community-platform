@@ -22,3 +22,4 @@ BACKLOG.md
 apps/web/playwright-report
 apps/web/coverage
 apps/api/coverage
+data

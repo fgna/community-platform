@@ -2,18 +2,120 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useConversations, useMessages, useSendMessage } from '@/hooks/use-messages';
+import { useConversations, useMessages, useSendMessage, useGetOrCreateConversation } from '@/hooks/use-messages';
+import { useMembers } from '@/hooks/use-members';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getInitials, formatDate } from '@community/shared';
 import type { Conversation } from '@community/shared';
-import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft, PenSquare, Search, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function getOtherParticipant(conv: Conversation, myId: string) {
   return conv.participants.find(p => p.userId !== myId)?.user;
+}
+
+function NewMessageModal({
+  myId,
+  onConversationCreated,
+  onClose,
+}: {
+  myId: string;
+  onConversationCreated: (convId: string) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const { data: membersData, isLoading } = useMembers(1, 50);
+  const startConversation = useGetOrCreateConversation();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const members = (membersData?.data ?? membersData?.users ?? []).filter(
+    (m: any) => m.id !== myId && m.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleSelect = (userId: string) => {
+    startConversation.mutate(userId, {
+      onSuccess: (data: any) => {
+        onConversationCreated(data.id);
+      },
+    });
+  };
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col" style={{ background: 'var(--theme-surface)' }}>
+      <div
+        className="flex items-center gap-2 p-3"
+        style={{ borderBottom: '1px solid var(--theme-border)' }}
+      >
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-md hover:bg-white/5 flex-shrink-0"
+          aria-label="Cancel"
+        >
+          <X size={18} style={{ color: 'var(--theme-text-muted)' }} />
+        </button>
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+          New Message
+        </h3>
+      </div>
+
+      <div className="p-3" style={{ borderBottom: '1px solid var(--theme-border)' }}>
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-text-muted)' }} />
+          <Input
+            ref={inputRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search members…"
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={20} className="animate-spin" style={{ color: 'var(--theme-text-muted)' }} />
+          </div>
+        ) : members.length === 0 ? (
+          <p className="p-4 text-xs text-center" style={{ color: 'var(--theme-text-muted)' }}>
+            {search ? 'No members found.' : 'No other members yet.'}
+          </p>
+        ) : (
+          members.map((member: any) => (
+            <button
+              key={member.id}
+              onClick={() => handleSelect(member.id)}
+              disabled={startConversation.isPending}
+              className="flex items-center gap-3 p-3 w-full text-left transition-colors hover:bg-white/5 disabled:opacity-50"
+              style={{ borderBottom: '1px solid var(--theme-border)' }}
+            >
+              <Avatar className="h-9 w-9 flex-shrink-0">
+                <AvatarImage src={member.avatarUrl ?? undefined} />
+                <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>
+                  {member.name}
+                </p>
+                {member.bio && (
+                  <p className="text-xs truncate" style={{ color: 'var(--theme-text-muted)' }}>
+                    {member.bio}
+                  </p>
+                )}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
 }
 
 function ConversationList({
@@ -21,23 +123,40 @@ function ConversationList({
   selectedId,
   myId,
   onSelect,
+  onNewMessage,
 }: {
   conversations: Conversation[];
   selectedId: string | null;
   myId: string;
   onSelect: (id: string) => void;
+  onNewMessage: () => void;
 }) {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="p-4" style={{ borderBottom: '1px solid var(--theme-border)' }}>
+      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--theme-border)' }}>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
           Messages
         </h2>
+        <button
+          onClick={onNewMessage}
+          className="p-1.5 rounded-md hover:bg-white/5 transition-colors"
+          aria-label="New message"
+          title="New message"
+        >
+          <PenSquare size={16} style={{ color: 'var(--theme-primary)' }} />
+        </button>
       </div>
       {conversations.length === 0 && (
-        <p className="p-4 text-xs" style={{ color: 'var(--theme-text-muted)' }}>
-          No conversations yet. Start one from a member's profile.
-        </p>
+        <div className="flex flex-col items-center gap-3 p-6 text-center">
+          <MessageSquare size={32} style={{ color: 'var(--theme-text-muted)', opacity: 0.4 }} />
+          <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+            No conversations yet.
+          </p>
+          <Button size="sm" variant="outline" onClick={onNewMessage} className="gap-1.5">
+            <PenSquare size={13} />
+            Start a conversation
+          </Button>
+        </div>
       )}
       {conversations.map(conv => {
         const other = getOtherParticipant(conv, myId);
@@ -108,7 +227,6 @@ function MessageThread({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Thread header with back button on mobile */}
       <div
         className="flex items-center gap-3 px-4 h-14 flex-shrink-0"
         style={{ borderBottom: '1px solid var(--theme-border)' }}
@@ -188,6 +306,7 @@ function MessagesPageInner() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('conv'));
+  const [showNewMessage, setShowNewMessage] = useState(false);
   const { data: conversations = [] } = useConversations();
 
   if (!user) return null;
@@ -195,19 +314,24 @@ function MessagesPageInner() {
   const selectedConv = conversations.find(c => c.id === selectedId);
   const otherName = selectedConv ? getOtherParticipant(selectedConv, user.id)?.name : undefined;
 
+  const handleConversationCreated = (convId: string) => {
+    setShowNewMessage(false);
+    setSelectedId(convId);
+  };
+
   return (
     <div className="max-w-5xl mx-auto animate-fade-in" style={{ height: 'calc(100vh - 9rem)' }}>
       <div
-        className="rounded-2xl overflow-hidden flex h-full"
+        className="rounded-2xl overflow-hidden flex h-full relative"
         style={{
           border: '1px solid var(--theme-border)',
           background: 'var(--theme-surface)',
         }}
       >
-        {/* Conversation list — full width on mobile when no thread selected, hidden when thread open */}
+        {/* Conversation list */}
         <div
           className={cn(
-            'flex-shrink-0 md:w-72',
+            'flex-shrink-0 md:w-72 relative',
             selectedId ? 'hidden md:block' : 'w-full',
           )}
           style={{ borderRight: '1px solid var(--theme-border)' }}
@@ -217,10 +341,18 @@ function MessagesPageInner() {
             selectedId={selectedId}
             myId={user.id}
             onSelect={setSelectedId}
+            onNewMessage={() => setShowNewMessage(true)}
           />
+          {showNewMessage && (
+            <NewMessageModal
+              myId={user.id}
+              onConversationCreated={handleConversationCreated}
+              onClose={() => setShowNewMessage(false)}
+            />
+          )}
         </div>
 
-        {/* Thread — full width on mobile, flex-1 on desktop */}
+        {/* Thread */}
         <div className={cn('flex-1 flex flex-col', !selectedId && 'hidden md:flex')}>
           {selectedId ? (
             <MessageThread
@@ -235,6 +367,10 @@ function MessagesPageInner() {
               <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
                 Select a conversation to start messaging
               </p>
+              <Button size="sm" variant="outline" onClick={() => setShowNewMessage(true)} className="gap-1.5">
+                <PenSquare size={13} />
+                New message
+              </Button>
             </div>
           )}
         </div>

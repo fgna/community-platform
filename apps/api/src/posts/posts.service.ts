@@ -23,6 +23,7 @@ const pollSelect = {
 const postSelect = {
   id: true,
   content: true,
+  authorId: true,
   isPinned: true,
   isHidden: true,
   createdAt: true,
