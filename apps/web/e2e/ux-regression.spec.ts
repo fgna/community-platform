@@ -50,11 +50,12 @@ test('UX-004: member profile has a Message button for other users', async ({ pag
   await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
 
   // Fetch user list from the API to find a non-admin member's ID
-  const memberId = await page.evaluate(async () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const memberId = await page.evaluate(async (baseUrl) => {
     const token = localStorage.getItem('auth-token') ??
       JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.accessToken;
     const res = await fetch(
-      (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/api/users?page=1&limit=50',
+      baseUrl + '/api/users?page=1&limit=50',
       { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     );
     if (!res.ok) return null;
@@ -62,7 +63,7 @@ test('UX-004: member profile has a Message button for other users', async ({ pag
     const users: Array<{ id: string; role: string }> = json.data ?? json.users ?? json;
     const member = users.find((u) => u.role !== 'ADMIN');
     return member?.id ?? null;
-  });
+  }, apiUrl);
 
   expect(memberId, 'Seed data must contain a non-admin member').toBeTruthy();
 
