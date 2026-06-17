@@ -39,8 +39,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 USER nextjs
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO /dev/null http://localhost:3000/login || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
+  CMD node -e "require('http').get('http://localhost:3000/login',(r)=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))"
 # server.js is at apps/web/server.js within the standalone bundle
 WORKDIR /app/apps/web
 CMD ["node", "server.js"]
