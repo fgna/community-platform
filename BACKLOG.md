@@ -339,24 +339,24 @@
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useQuery` returns profile data but form is never re-initialised once data arrives; call `form.reset(data)` inside `useEffect` on query success | S | `[ ]` |
-| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | NestJS ThrottlerModule defaults to `$remote_addr`; behind Nginx all users share one IP and 100 req/min is hit in <15 page loads | S | `[ ]` |
-| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | TanStack Query `isError` branch never renders; skeleton shown while `isLoading \|\| !data` which includes error states | S | `[ ]` |
+| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useEffect` populated form from query but ran on every profile refetch; added `profileInitialized` ref guard + disabled inputs while loading | S | `[x]` |
+| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | Already fixed: custom `UserThrottlerGuard` uses authenticated user ID as throttle key; `trust proxy` enabled in main.ts | S | `[x]` |
+| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | Added `isError` destructuring for all dashboard queries; stats cards show error indicator; events section has error/retry state | S | `[x]` |
 
 ### 🟡 Medium (P1)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Profile page (`/members/[id]`) missing CTA that routes to `/messages?userId=…` | S | `[ ]` |
-| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | No `<Link href="/feed/[id]">` on post titles or bodies; post detail route may exist but is unreachable from the feed | S | `[ ]` |
-| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Consent state stored in Zustand but not persisted fast enough; modal renders before store rehydrates from localStorage | S | `[ ]` |
+| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Already fixed: Send Message button exists on `/members/[id]` using `useGetOrCreateConversation` hook | S | `[x]` |
+| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | Wrapped post content area in `<Link href="/feed/[id]">` so clicking post body navigates to detail page; timestamp was already linked | S | `[x]` |
+| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Already fixed: CookieBanner is in root layout (persists across navigations), uses localStorage directly, and only shows after 800ms delay if no consent found | S | `[x]` |
 
 ### 🟢 Low (P2)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Sidebar user card logout button missing `aria-label="Sign out"` | XS | `[ ]` |
-| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | `/members` page missing a name/role filter input; admin `/admin/users` has one | S | `[ ]` |
+| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Already fixed: sidebar logout button has `aria-label="Sign out"` and `title="Sign out"` | XS | `[x]` |
+| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | Already fixed: `/members` page has search input filtering by name in real-time | S | `[x]` |
 
 ---
 

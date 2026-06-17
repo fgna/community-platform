@@ -97,17 +97,20 @@ export function PostCard({ post }: PostCardProps) {
         )}
       </div>
 
-      <div
-        className="text-sm leading-relaxed md-content"
-        style={{ color: 'var(--theme-text)' }}
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.classList.contains('md-hashtag')) {
-            window.dispatchEvent(new CustomEvent('feed:hashtag', { detail: target.textContent?.toLowerCase() }));
-          }
-        }}
-      />
+      <Link href={`/feed/${post.id}`} className="block">
+        <div
+          className="text-sm leading-relaxed md-content cursor-pointer"
+          style={{ color: 'var(--theme-text)' }}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('md-hashtag')) {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('feed:hashtag', { detail: target.textContent?.toLowerCase() }));
+            }
+          }}
+        />
+      </Link>
 
       {post.poll && (
         <PollCard poll={post.poll} postId={post.id} />

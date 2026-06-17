@@ -38,13 +38,15 @@ export function SettingsPage() {
   const [profileBio, setProfileBio] = useState('');
   const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['me'],
     queryFn: () => apiClient.get('/users/me').then((r) => r.data),
   });
 
+  const profileInitialized = useRef(false);
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || profileInitialized.current) return;
+    profileInitialized.current = true;
     setProfileName(profile.name ?? '');
     setProfileBio(profile.bio ?? '');
     setProfileAvatar(profile.avatarUrl ?? '');
@@ -188,6 +190,7 @@ export function SettingsPage() {
                     id="name"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
+                    disabled={profileLoading}
                     className="mt-1"
                   />
                 </div>
@@ -197,7 +200,8 @@ export function SettingsPage() {
                     id="bio"
                     value={profileBio}
                     onChange={(e) => setProfileBio(e.target.value)}
-                    placeholder="Tell us about yourself"
+                    disabled={profileLoading}
+                    placeholder={profileLoading ? 'Loading…' : 'Tell us about yourself'}
                     className="mt-1"
                   />
                 </div>
@@ -207,6 +211,7 @@ export function SettingsPage() {
                     id="avatar"
                     value={profileAvatar}
                     onChange={(e) => setProfileAvatar(e.target.value)}
+                    disabled={profileLoading}
                     placeholder="https://..."
                     className="mt-1"
                   />
