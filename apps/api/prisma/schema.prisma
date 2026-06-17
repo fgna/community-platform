@@ -152,8 +152,23 @@ model Event {
   meetingUrl  String?
   maxRsvps    Int?
   rsvps       EventRsvp[]
+  recordings  Recording[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+model Recording {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  url         String
+  duration    Int?
+  thumbnailUrl String?
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
 }
 
 model EventRsvp {

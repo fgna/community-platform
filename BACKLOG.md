@@ -265,6 +265,8 @@
 | P2-019 | Public community landing page (pre-login) | P1 | `[x]` |
 | P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
 | P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | M | `[x]` |
+| P2-022 | Event recordings page (browse past meeting recordings) | P1 | `[x]` |
+| P2-023 | Calendar invites (.ics) on event RSVP with opt-out setting | P1 | `[x]` |
 
 ---
 

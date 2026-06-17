@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { generateIcs } from '../email/ics.util';
 import { CreateEventDto } from './dto/create-event.dto';
+import { CreateRecordingDto } from './dto/create-recording.dto';
 
 @Injectable()
 export class EventsService {
@@ -137,6 +138,54 @@ export class EventsService {
     }
 
     return result.rsvp;
+  }
+
+  // ── Recordings ─────────────────────────────────────────────────────────
+
+  async findAllRecordings(page = 1, limit = 20) {
+    limit = Math.max(1, Math.min(limit, 100));
+    page = Math.max(1, page);
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.recording.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          event: { select: { id: true, title: true, startsAt: true, isVirtual: true } },
+        },
+      }),
+      this.prisma.recording.count(),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async findRecordingsByEvent(eventId: string) {
+    return this.prisma.recording.findMany({
+      where: { eventId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createRecording(eventId: string, dto: CreateRecordingDto) {
+    const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found');
+
+    return this.prisma.recording.create({
+      data: { ...dto, eventId },
+      include: {
+        event: { select: { id: true, title: true, startsAt: true } },
+      },
+    });
+  }
+
+  async deleteRecording(id: string) {
+    const recording = await this.prisma.recording.findUnique({ where: { id } });
+    if (!recording) throw new NotFoundException('Recording not found');
+    await this.prisma.recording.delete({ where: { id } });
+    return { message: 'Recording deleted' };
   }
 
   private async sendCalendarInvite(userId: string, event: any) {
