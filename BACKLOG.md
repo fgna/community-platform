@@ -182,7 +182,7 @@
 | Q-003 | Playwright e2e: feed (post, comment, react) | P0 | M | `[x]` |
 | Q-004 | Playwright e2e: course enroll + progress | P1 | M | `[x]` |
 | Q-005 | Playwright e2e: event RSVP | P1 | S | `[x]` |
-| Q-006 | API integration tests (Supertest) | P0 | L | `[ ]` |
+| Q-006 | API integration tests (Supertest) | P0 | L | `[x]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) | P0 | S | `[x]` |
 | D-001 | GitHub Actions CI pipeline (lint, typecheck, test, build, e2e) | P0 | M | `[x]` |
 | D-002 | Dockerfile optimisation (multi-stage, non-root user) | P0 | S | `[x]` |
