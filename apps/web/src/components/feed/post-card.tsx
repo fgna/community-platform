@@ -37,7 +37,7 @@ export function PostCard({ post }: PostCardProps) {
       try {
         await deletePost.mutateAsync(post.id);
       } catch {
-        // mutation error — feed will refetch via onSettled
+        alert('Failed to delete post. Please try again.');
       }
     }
   };

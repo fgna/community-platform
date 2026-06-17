@@ -2,10 +2,25 @@ import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseIntercepto
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname, join } from 'path';
+import { readFileSync, unlinkSync } from 'fs';
 import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
+const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png': [[0x89, 0x50, 0x4E, 0x47]],
+  'image/gif': [[0x47, 0x49, 0x46, 0x38]],
+  'image/webp': [[0x52, 0x49, 0x46, 0x46]],
+};
+
+function validateMagicBytes(filePath: string, mimetype: string): boolean {
+  const sigs = IMAGE_MAGIC_BYTES[mimetype];
+  if (!sigs) return false;
+  const header = readFileSync(filePath, { flag: 'r' }).subarray(0, 12);
+  return sigs.some((sig) => sig.every((b, i) => header[i] === b));
+}
 
 // multer is a transitive dep of @nestjs/platform-express; types are optional
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -68,9 +83,12 @@ export class UsersController {
     @Req() req: Request,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol;
-    const host = (req.headers['x-forwarded-host'] as string) || req.get('host');
-    const avatarUrl = `${protocol}://${host}/uploads/avatars/${file.filename}`;
+    const filePath = join(process.cwd(), 'uploads', 'avatars', file.filename);
+    if (!validateMagicBytes(filePath, file.mimetype)) {
+      try { unlinkSync(filePath); } catch { /* best effort cleanup */ }
+      throw new BadRequestException('File content does not match declared image type');
+    }
+    const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${file.filename}`;
     await this.usersService.updateProfile(user.id, { avatarUrl });
     return { avatarUrl };
   }

@@ -40,8 +40,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-community_platform}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-in-production}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       NODE_ENV: production
@@ -97,11 +97,13 @@ services:
     environment:
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER:-postgres}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-password}
       PGDATABASE: ${POSTGRES_DB:-community_platform}
+      _PGPASS: ${POSTGRES_PASSWORD:-password}
     volumes:
       - ${DATA_DIR:-./data}/backups:/backups
     entrypoint: >
-      sh -c 'pg_dump -Fc > /backups/community_$$(date +%Y%m%d_%H%M%S).dump
-      && echo "Backup saved to /backups/community_$$(date +%Y%m%d_%H%M%S).dump"
+      sh -c 'printf "%s:%s:%s:%s:%s" "$$PGHOST" "5432" "$$PGDATABASE" "$$PGUSER" "$$_PGPASS" > ~/.pgpass
+      && chmod 600 ~/.pgpass && unset _PGPASS
+      && pg_dump -Fc > /backups/community_$$(date +%Y%m%d_%H%M%S).dump
+      && echo "Backup complete" && rm -f ~/.pgpass
       && ls -lh /backups/'

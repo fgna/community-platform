@@ -309,6 +309,14 @@
 | SEC-020 | **`limit=0` produces `Infinity` totalPages across all paginated endpoints** | `Math.ceil(n / 0) = Infinity` serialises to `null` in JSON; `page=0` produces negative `skip` rejected by Prisma | S | `[x]` |
 | SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[x]` |
 | SEC-022 | **Email uniqueness is case-sensitive** — `USER@EXAMPLE.COM` and `user@example.com` can co-exist | `register` does not normalise email to lowercase before the uniqueness check | XS | `[x]` |
+| SEC-023 | **Auth throttler globally permissive at 100 req/15min** | Reduced global auth throttler limit from 100 to 60 per 15 minutes | XS | `[x]` |
+| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** | Replaced `:-` defaults with `:?` error syntax — compose now fails fast if secrets unset | XS | `[x]` |
+| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** | Tightened login throttle from 20 to 10 per 15 min | XS | `[x]` |
+| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** | Removed raw header reads; use `req.protocol` and `req.get('host')` which respect Express trust proxy | S | `[x]` |
+| SEC-027 | **Post delete error silently swallowed** | Added `alert()` feedback on delete failure instead of empty catch block | XS | `[x]` |
+| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** | Added `@Throttle` decorators: refresh 30/15min, logout 10/15min | XS | `[x]` |
+| SEC-029 | **Avatar upload MIME check uses Content-Type, not file magic bytes** | Added magic byte validation post-upload; rejects and deletes files that don't match declared MIME | S | `[x]` |
+| SEC-030 | **Backup service exposes PGPASSWORD in environment** | Replaced `PGPASSWORD` env var with `.pgpass` file created at runtime with 600 perms, deleted after use | S | `[x]` |
 
 ### 🟡 Medium — Regressions from PR #14 / #15
 
