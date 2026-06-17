@@ -264,6 +264,7 @@
 | P2-018 | Polls within posts | P2 | `[ ]` |
 | P2-019 | Public community landing page (pre-login) | P1 | `[ ]` |
 | P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
+| P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | M | `[x]` |
 
 ---
 
@@ -317,18 +318,6 @@
 | SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** | Added `@Throttle` decorators: refresh 30/15min, logout 10/15min | XS | `[x]` |
 | SEC-029 | **Avatar upload MIME check uses Content-Type, not file magic bytes** | Added magic byte validation post-upload; rejects and deletes files that don't match declared MIME | S | `[x]` |
 | SEC-030 | **Backup service exposes PGPASSWORD in environment** | Replaced `PGPASSWORD` env var with `.pgpass` file created at runtime with 600 perms, deleted after use | S | `[x]` |
-
-### 🟡 Medium — Regressions from PR #14 / #15
-
-| ID | Finding | Root cause | Size | Status |
-|----|---------|------------|------|--------|
-| SEC-023 | **Auth throttler globally permissive at 100 req/15min** — `refresh` and `logout` endpoints lost rate protection | BUG-013 fix raised `auth` named throttler from `limit: 5` to `limit: 100`; correct fix is to exclude non-auth endpoints from the auth throttler | S | `[ ]` |
-| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** — bypass startup validation | `JWT_SECRET:-change-me-in-production` is injected by docker-compose before API reads env vars; startup check only rejects empty/undefined, not known defaults | S | `[ ]` |
-| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** — 80 attempts/hour against known email | `@Throttle({ auth: { limit: 20, ttl: 900_000 } })` on login endpoint; should be ≤5 | XS | `[ ]` |
-| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** — stored URL serves attacker domain | `users.controller.ts` constructs avatarUrl from `x-forwarded-host` and `x-forwarded-proto` headers without validation; attacker uploads avatar with forged headers → evil.com URL stored in DB → served to all viewers | S | `[ ]` |
-| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** — inherit permissive global limit of 100/15min | No `@Throttle({ auth: ... })` decorator on `refresh()` or `logout()` methods in `auth.controller.ts` | XS | `[ ]` |
-| SEC-029 | **Avatar upload MIME check uses Content-Type header, not file magic bytes** — attacker can upload SVG with `Content-Type: image/jpeg` | `fileFilter` checks `file.mimetype` which is client-controlled; should verify file magic bytes | S | `[ ]` |
-| SEC-030 | **Backup service exposes PGPASSWORD in container environment** — visible via `docker inspect` | `docker-compose.yml` backup service sets `PGPASSWORD` as plain env var | XS | `[ ]` |
 
 ### CI Infrastructure
 

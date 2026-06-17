@@ -185,55 +185,76 @@ docker compose down      # stop and remove containers
 
 ---
 
-## Reverse proxy (nginx + TLS)
+## HTTPS with Nginx + Let's Encrypt
 
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com api.yourdomain.com;
-    return 301 https://$host$request_uri;
-}
+The platform includes a built-in Nginx reverse proxy with automatic TLS via Let's Encrypt. It runs behind the `proxy` Docker Compose profile so it doesn't interfere with local development.
 
-server {
-    listen 443 ssl;
-    server_name yourdomain.com;
+### Setup
 
-    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+**1. Configure your domain in `.env`**
 
-    location / {
-        proxy_pass         http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header   Upgrade $http_upgrade;
-        proxy_set_header   Connection 'upgrade';
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
+```env
+DOMAIN=yourdomain.com
+SSL_EMAIL=admin@yourdomain.com
+SSL_STAGING=0
 
-server {
-    listen 443 ssl;
-    server_name api.yourdomain.com;
-
-    ssl_certificate     /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
-
-    location / {
-        proxy_pass       http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+CORS_ORIGINS=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 
+**2. Point DNS to your server**
+
+Create an A record for `yourdomain.com` pointing to your server's IP.
+
+**3. Provision certificates and start**
+
 ```bash
-certbot --nginx -d yourdomain.com -d api.yourdomain.com
+# First time — provisions Let's Encrypt certificate and starts nginx
+./nginx/init-ssl.sh
+
+# Start everything (subsequent runs)
+docker compose --profile proxy up -d
+```
+
+**4. Certificate renewal**
+
+Certificates are valid for 90 days. Renew with:
+
+```bash
+docker compose run --rm certbot renew
+docker compose exec nginx nginx -s reload
+```
+
+Add this to a cron job for automatic renewal:
+
+```bash
+0 3 * * 0  cd /path/to/community-platform && docker compose run --rm certbot renew --quiet && docker compose exec nginx nginx -s reload
+```
+
+### How it works
+
+| URL path      | Proxied to    | Notes                                         |
+|---------------|---------------|-----------------------------------------------|
+| `/api/*`      | `api:3001`    | Strips `/api` prefix                          |
+| `/uploads/*`  | `api:3001`    | Static file caching (7 days)                  |
+| `/*`          | `web:3000`    | Next.js frontend                              |
+
+- HTTP (port 80) redirects to HTTPS (port 443)
+- TLS 1.2+ only, HSTS enabled, OCSP stapling
+- Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`
+- WebSocket upgrade supported (for future real-time features)
+
+### Testing with staging certificates
+
+Set `SSL_STAGING=1` in `.env` to use Let's Encrypt staging servers (avoids rate limits during testing). Browsers will show a certificate warning — this is expected.
+
+### Without HTTPS (HTTP-only proxy)
+
+To use nginx as a reverse proxy without TLS (e.g., behind a cloud load balancer that terminates TLS):
+
+```bash
+NGINX_CONF_TEMPLATE=default-no-ssl.conf.template docker compose --profile proxy up -d nginx
 ```
 
 ---

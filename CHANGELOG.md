@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] — 2026-06-17
+
+### Added
+- **HTTPS**: Nginx reverse proxy with automatic Let's Encrypt TLS via `--profile proxy`
+- **HTTPS**: `init-ssl.sh` script for one-command certificate provisioning
+- **HTTPS**: HTTP-only proxy mode for deployments behind a cloud load balancer
+- **HTTPS**: Security headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+- **HTTPS**: Certbot service for certificate renewal
+
+---
+
 ## [1.11.0] — 2026-06-17
 
 ### Added
