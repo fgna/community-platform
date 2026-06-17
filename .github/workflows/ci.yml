@@ -227,7 +227,7 @@ jobs:
           [ "$status" = "ok" ] || [ "$status" = "degraded" ]
 
       - name: Verify web is serving
-        run: curl -sf http://localhost:3000/api/health > /dev/null
+        run: curl -sfL http://localhost:3000/login > /dev/null
 
       - name: Verify API can write to uploads directory
         run: |
