@@ -349,6 +349,23 @@
 ---
 
 
+## User-Reported Bugs (June 2026)
+
+> Reported during manual testing of Docker deployment.
+
+| ID | Bug | Root cause | Size | Status |
+|----|-----|------------|------|--------|
+| BUG-001 | **Menu not working from Events page** — hamburger menu unresponsive on mobile | Events `page.tsx` rendered a duplicate `<Topbar>` without `onMenuClick`, overlaying the layout's Topbar | S | `[x]` |
+| BUG-002 | **Menu not working from Members page** — same as BUG-001 | Members `page.tsx` rendered a duplicate `<Topbar>` without `onMenuClick` | S | `[x]` |
+| BUG-003 | **Calendar: failed to load events** — error shown on Events page | Likely caused by duplicate Topbar layout issue (BUG-001); API endpoint itself is correct | S | `[x]` |
+| BUG-004 | **Delete post breaks feed** — "failed to load posts" after admin deletes a post | `handleDelete` had no try-catch; `useDeletePost` only invalidated feed on `onSuccess` (not `onSettled`); `authorId` missing from API response | S | `[x]` |
+| BUG-005 | **Create post not working** — post form submits but nothing happens | `handleSubmit` had no try-catch; `useCreatePost` only invalidated feed on `onSuccess` (not `onSettled`) | S | `[x]` |
+| BUG-006 | **Docker API crash: EACCES on uploads** — container restart loop | Bind-mount replaces Dockerfile-created uploads dir with root-owned host dir; multer `diskStorage` crashes at module load | M | `[x]` |
+| BUG-007 | **Data loss on `docker compose down -v`** — named volumes destroyed | Switched to host bind mounts under `DATA_DIR` | M | `[x]` |
+| BUG-008 | **Docker web healthcheck always fails** — web container never becomes "healthy" | Healthcheck hit `/` which redirects to `/login`; BusyBox wget doesn't follow redirects | S | `[x]` |
+
+---
+
 ## Definition of Done
 
 A story is **Done** when:
