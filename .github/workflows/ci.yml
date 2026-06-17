@@ -215,18 +215,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and start all services
-        run: docker compose up --build -d
+        run: docker compose up --build -d --wait --wait-timeout 180
         env:
           JWT_SECRET: ci-smoke-jwt-secret-at-least-32-chars
           JWT_REFRESH_SECRET: ci-smoke-refresh-secret-at-least-32-chars
-
-      - name: Wait for healthy containers (up to 90s)
-        run: |
-          for svc in community_postgres community_redis community_api community_web; do
-            echo "Waiting for $svc..."
-            timeout 90 bash -c "until docker inspect --format='{{.State.Health.Status}}' $svc 2>/dev/null | grep -q healthy; do sleep 2; done"
-            echo "$svc is healthy"
-          done
 
       - name: Verify API health endpoint
         run: |
