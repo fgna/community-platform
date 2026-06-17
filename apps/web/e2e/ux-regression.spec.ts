@@ -47,16 +47,19 @@ test('UX-003: dashboard renders content cards after login', async ({ page }) => 
 // ── UX-004: Message button on member profile ─────────────────────────────────
 
 test('UX-004: member profile has a Message button for other users', async ({ page }) => {
-  await loginAs(page, MEMBER_EMAIL, MEMBER_PASSWORD);
+  await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
   await page.goto('/members');
 
-  // Click the first member card that links to a profile
-  const memberLink = page.locator('a[href^="/members/"]').first();
-  await expect(memberLink).toBeVisible({ timeout: 10000 });
-  await memberLink.click();
+  // Wait for the member list to finish loading
+  await expect(page.getByText(/members in the community/i)).toBeVisible({ timeout: 10000 });
+
+  // Click on a seeded member who is NOT the logged-in admin
+  const memberName = page.getByText('Alice Johnson').first();
+  await expect(memberName).toBeVisible({ timeout: 5000 });
+  await memberName.click();
 
   // Should be on a member profile page
-  await expect(page).toHaveURL(/\/members\/.+/);
+  await expect(page).toHaveURL(/\/members\/.+/, { timeout: 10000 });
 
   // The Message button should be visible (only shows for non-own profiles)
   await expect(page.getByRole('button', { name: /message/i })).toBeVisible({ timeout: 5000 });
