@@ -15,7 +15,8 @@ COPY packages/ui/package.json ./packages/ui/
 # (prisma generate) runs against the current schema and writes into the correct
 # pnpm virtual-store path that TypeScript resolves via symlinks.
 COPY apps/api/prisma ./apps/api/prisma/
-RUN pnpm install --frozen-lockfile --filter @community/api...
+RUN pnpm install --frozen-lockfile --filter @community/api... \
+ && pnpm --filter @community/api exec prisma generate
 
 # ── builder: compile TypeScript → dist/ ────────────────────────────────────────
 FROM base AS builder
