@@ -7,17 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.0] — 2026-06-17
 
+### Added
+- **Messages**: "New Message" button in messages panel — search and pick a member to start a conversation without leaving the page
+- **Topbar**: User avatar dropdown menu with links to profile, settings, and sign out
+- **Docker**: Backup service profile — run `docker compose --profile backup run backup` for on-demand pg_dump
+- **Docker**: Configurable `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` in `.env`
+
 ### Fixed
-- **Navigation**: Events and Members pages no longer render a duplicate Topbar that blocks the mobile hamburger menu
+- **Navigation**: Events, Members, and Settings pages no longer render a duplicate Topbar that blocks the mobile hamburger menu
 - **Docker healthcheck**: Web container healthcheck now hits `/api/health` instead of `/` which redirects unauthenticated users and fails BusyBox wget
+- **Docker uploads**: `entrypoint.sh` with `su-exec` fixes bind-mount ownership so the uploads directory is writable
+- **Feed**: Post create and delete mutations now handle errors gracefully and always refresh the feed
+- **API**: `authorId` included in post API responses for frontend ownership checks
 
 ### Changed
 - **Docker**: Switched from named volumes to host bind mounts under `DATA_DIR` (default `./data`) — community data now survives `docker compose down -v`
 - **Themes**: Removed Executive Red and Growth Green themes; three themes remain (Executive Glass, Corporate Light, High Contrast)
-
-### Added
-- **Docker**: Backup service profile — run `docker compose --profile backup run backup` for on-demand pg_dump
-- **Docker**: Configurable `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` in `.env`
 
 ---
 
