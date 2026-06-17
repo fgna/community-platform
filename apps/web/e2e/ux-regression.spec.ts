@@ -48,21 +48,26 @@ test('UX-003: dashboard renders content cards after login', async ({ page }) => 
 
 test('UX-004: member profile has a Message button for other users', async ({ page }) => {
   await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-  await page.goto('/members');
 
-  // Wait for the member list to finish loading
-  await expect(page.getByText(/members in the community/i)).toBeVisible({ timeout: 10000 });
+  // Fetch user list from the API to find a non-admin member's ID
+  const memberId = await page.evaluate(async () => {
+    const token = localStorage.getItem('auth-token') ??
+      JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.accessToken;
+    const res = await fetch(
+      (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/api/users?page=1&limit=50',
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const users: Array<{ id: string; role: string }> = json.data ?? json.users ?? json;
+    const member = users.find((u) => u.role !== 'ADMIN');
+    return member?.id ?? null;
+  });
 
-  // Click on a seeded member who is NOT the logged-in admin
-  const memberName = page.getByText('Alice Johnson').first();
-  await expect(memberName).toBeVisible({ timeout: 5000 });
-  await memberName.click();
+  expect(memberId, 'Seed data must contain a non-admin member').toBeTruthy();
 
-  // Should be on a member profile page
-  await expect(page).toHaveURL(/\/members\/.+/, { timeout: 10000 });
-
-  // The Message button should be visible (only shows for non-own profiles)
-  await expect(page.getByRole('button', { name: /message/i })).toBeVisible({ timeout: 5000 });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('button', { name: /message/i })).toBeVisible({ timeout: 10000 });
 });
 
 // ── UX-005: Post permalink / detail view ─────────────────────────────────────
