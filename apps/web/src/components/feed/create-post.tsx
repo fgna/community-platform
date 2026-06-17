@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Send, Loader2, BarChart3, Plus, X } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Send, Loader2, BarChart3, Plus, X, Type, PenLine } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,15 +9,20 @@ import { Input } from '@/components/ui/input';
 import { useCreatePost } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@community/shared';
+import { RichTextEditor } from './rich-text-editor';
 
 interface PollDraft {
   question: string;
   options: string[];
 }
 
+type EditorMode = 'plain' | 'rich';
+
 export function CreatePost() {
   const [content, setContent] = useState('');
+  const [richContent, setRichContent] = useState('');
   const [focused, setFocused] = useState(false);
+  const [editorMode, setEditorMode] = useState<EditorMode>('rich');
   const [showPoll, setShowPoll] = useState(false);
   const [poll, setPoll] = useState<PollDraft>({ question: '', options: ['', ''] });
   const { user } = useAuth();
@@ -25,14 +30,24 @@ export function CreatePost() {
 
   const resetForm = () => {
     setContent('');
+    setRichContent('');
     setFocused(false);
     setShowPoll(false);
     setPoll({ question: '', options: ['', ''] });
   };
 
+  const getSubmitContent = () => {
+    if (editorMode === 'rich') {
+      const stripped = richContent.replace(/<[^>]*>/g, '').trim();
+      return stripped ? richContent : '';
+    }
+    return content.trim();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    const submitContent = getSubmitContent();
+    if (!submitContent) return;
 
     const pollPayload =
       showPoll && poll.question.trim() && poll.options.filter((o) => o.trim()).length >= 2
@@ -43,12 +58,16 @@ export function CreatePost() {
         : undefined;
 
     try {
-      await createPost.mutateAsync({ content: content.trim(), poll: pollPayload });
+      await createPost.mutateAsync({ content: submitContent, poll: pollPayload });
       resetForm();
     } catch {
       // mutation error — feed will refetch via onSettled
     }
   };
+
+  const handleRichChange = useCallback((html: string) => {
+    setRichContent(html);
+  }, []);
 
   const addPollOption = () => {
     if (poll.options.length < 10) {
@@ -70,6 +89,10 @@ export function CreatePost() {
     });
   };
 
+  const hasContent = editorMode === 'rich'
+    ? richContent.replace(/<[^>]*>/g, '').trim().length > 0
+    : content.trim().length > 0;
+
   return (
     <div
       className="rounded-xl p-4"
@@ -84,14 +107,25 @@ export function CreatePost() {
           <AvatarFallback className="text-xs">{getInitials(user?.name || 'U')}</AvatarFallback>
         </Avatar>
         <form onSubmit={handleSubmit} className="flex-1 space-y-3">
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onFocus={() => setFocused(true)}
-            placeholder="Share something with the community..."
-            rows={focused ? 4 : 2}
-            className="transition-all duration-200"
-          />
+          {editorMode === 'rich' ? (
+            <div onClick={() => setFocused(true)}>
+              <RichTextEditor
+                content={richContent}
+                onChange={handleRichChange}
+                placeholder="Share something with the community..."
+                compact={!focused}
+              />
+            </div>
+          ) : (
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onFocus={() => setFocused(true)}
+              placeholder="Share something with the community..."
+              rows={focused ? 4 : 2}
+              className="transition-all duration-200"
+            />
+          )}
 
           {focused && showPoll && (
             <div
@@ -139,21 +173,33 @@ export function CreatePost() {
 
           {focused && (
             <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setShowPoll((v) => !v)}
-                className="flex items-center gap-1.5 text-xs py-1 px-2 rounded-md hover:bg-white/5 transition-colors"
-                style={{ color: showPoll ? 'var(--theme-primary)' : 'var(--theme-text-muted)' }}
-              >
-                <BarChart3 size={13} />
-                Poll
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode(editorMode === 'rich' ? 'plain' : 'rich')}
+                  className="flex items-center gap-1.5 text-xs py-1 px-2 rounded-md hover:bg-white/5 transition-colors"
+                  style={{ color: 'var(--theme-text-muted)' }}
+                  title={editorMode === 'rich' ? 'Switch to plain text' : 'Switch to rich editor'}
+                >
+                  {editorMode === 'rich' ? <Type size={13} /> : <PenLine size={13} />}
+                  {editorMode === 'rich' ? 'Plain' : 'Rich'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPoll((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs py-1 px-2 rounded-md hover:bg-white/5 transition-colors"
+                  style={{ color: showPoll ? 'var(--theme-primary)' : 'var(--theme-text-muted)' }}
+                >
+                  <BarChart3 size={13} />
+                  Poll
+                </button>
+              </div>
 
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={!content.trim() || createPost.isPending}>
+                <Button type="submit" size="sm" disabled={!hasContent || createPost.isPending}>
                   {createPost.isPending ? (
                     <><Loader2 size={14} className="mr-1.5 animate-spin" />Posting...</>
                   ) : (

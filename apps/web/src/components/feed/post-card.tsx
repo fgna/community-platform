@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { renderMarkdown } from '@/lib/markdown';
+import { renderPostContent } from '@/lib/render-post-content';
 
 interface PostCardProps {
   post: Post;
@@ -99,9 +100,9 @@ export function PostCard({ post }: PostCardProps) {
 
       <Link href={`/feed/${post.id}`} className="block">
         <div
-          className="text-sm leading-relaxed md-content cursor-pointer"
+          className={`text-sm leading-relaxed cursor-pointer ${renderPostContent(post.content).className}`}
           style={{ color: 'var(--theme-text)' }}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+          dangerouslySetInnerHTML={{ __html: renderPostContent(post.content).html }}
           onClick={(e) => {
             const target = e.target as HTMLElement;
             if (target.classList.contains('md-hashtag')) {

@@ -194,3 +194,120 @@ body {
 .md-content .md-hashtag:hover {
   background: rgba(197,168,128,0.12);
 }
+
+/* Tiptap rich-text editor */
+.prose-editor {
+  padding: 12px 16px;
+  min-height: 80px;
+  outline: none;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--theme-text);
+}
+.prose-editor.compact {
+  min-height: 48px;
+}
+.prose-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--theme-text-muted);
+  pointer-events: none;
+  height: 0;
+}
+.prose-editor h2 { font-size: 1.25rem; font-weight: 600; margin: 0.75em 0 0.25em; }
+.prose-editor h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75em 0 0.25em; }
+.prose-editor strong { font-weight: 600; }
+.prose-editor em { font-style: italic; }
+.prose-editor code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: var(--theme-primary);
+}
+.prose-editor pre {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.prose-editor pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--theme-text);
+}
+.prose-editor blockquote {
+  border-left: 3px solid var(--theme-primary);
+  padding-left: 12px;
+  margin: 8px 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+.prose-editor a {
+  color: var(--theme-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-editor ul { list-style: disc; padding-left: 1.5em; margin: 4px 0; }
+.prose-editor ol { list-style: decimal; padding-left: 1.5em; margin: 4px 0; }
+.prose-editor li { margin: 2px 0; }
+.prose-editor hr {
+  border: none;
+  border-top: 1px solid var(--theme-border);
+  margin: 12px 0;
+}
+.prose-editor p { margin: 0 0 0.5em; }
+.prose-editor p:last-child { margin-bottom: 0; }
+
+/* Tiptap rendered content in post cards */
+.tiptap-content h2 { font-size: 1.2rem; font-weight: 600; margin: 0.5em 0 0.25em; }
+.tiptap-content h3 { font-size: 1.05rem; font-weight: 600; margin: 0.5em 0 0.25em; }
+.tiptap-content strong { font-weight: 600; }
+.tiptap-content em { font-style: italic; }
+.tiptap-content code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: var(--theme-primary);
+}
+.tiptap-content pre {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.tiptap-content pre code {
+  background: none;
+  padding: 0;
+  color: var(--theme-text);
+}
+.tiptap-content blockquote {
+  border-left: 3px solid var(--theme-primary);
+  padding-left: 12px;
+  margin: 8px 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+.tiptap-content a {
+  color: var(--theme-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content ul { list-style: disc; padding-left: 1.5em; margin: 4px 0; }
+.tiptap-content ol { list-style: decimal; padding-left: 1.5em; margin: 4px 0; }
+.tiptap-content li { margin: 2px 0; }
+.tiptap-content hr {
+  border: none;
+  border-top: 1px solid var(--theme-border);
+  margin: 8px 0;
+}
+.tiptap-content p { margin: 0 0 0.25em; }
+.tiptap-content p:last-child { margin-bottom: 0; }

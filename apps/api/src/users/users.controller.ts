@@ -6,6 +6,7 @@ import { readFileSync, unlinkSync } from 'fs';
 import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateDigestDto } from './dto/update-digest.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -91,6 +92,12 @@ export class UsersController {
     const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${file.filename}`;
     await this.usersService.updateProfile(user.id, { avatarUrl });
     return { avatarUrl };
+  }
+
+  @Patch('me/digest')
+  @ApiOperation({ summary: 'Update email digest preference' })
+  updateDigest(@CurrentUser() user: any, @Body() dto: UpdateDigestDto) {
+    return this.usersService.updateDigestPreference(user.id, dto.frequency);
   }
 
   @Get(':id')

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] — 2026-06-17
+
+### Added
+- **Landing Page**: Public community landing page at `/` with hero, feature grid, and CTA — visible to unauthenticated visitors; authenticated users redirect to dashboard
+- **Rich-Text Editor**: Tiptap-based post editor with toolbar (heading, bold, italic, code, lists, blockquote, links, divider) replacing the plain textarea; plain-text mode toggle available
+- **Email Digest**: Daily and weekly email digest with trending posts, event count, and unread notifications; configurable per user via Settings → Notifications; uses nodemailer with SMTP; logs to console when SMTP is not configured
+- **Email Digest Settings**: Radio-button selector in Settings → Notifications for Daily / Weekly / Off preference
+
+### Changed
+- **Middleware**: Root path `/` is now public (was redirecting to `/dashboard` for all visitors)
+- **Post Rendering**: Post cards detect HTML (from rich editor) vs plain markdown and apply the correct CSS class
+
+---
+
 ## [1.13.0] — 2026-06-17
 
 ### Added

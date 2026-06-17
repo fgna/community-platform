@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,9 +16,12 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
 import { SearchModule } from './search/search.module';
 import { InvitesModule } from './invites/invites.module';
+import { EmailModule } from './email/email.module';
+import { DigestService } from './email/digest.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -43,8 +47,10 @@ import { InvitesModule } from './invites/invites.module';
     MessagesModule,
     SearchModule,
     InvitesModule,
+    EmailModule,
   ],
   providers: [
+    DigestService,
     // UserThrottlerGuard uses authenticated userId as throttle key (falls back to IP),
     // which is more accurate than IP-based limiting behind a reverse proxy.
     { provide: APP_GUARD, useClass: UserThrottlerGuard },

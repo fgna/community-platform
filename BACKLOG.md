@@ -255,14 +255,14 @@
 | P2-009 | Advanced reporting (CSV/PDF exports, scheduled reports) | P2 | `[ ]` |
 | P2-010 | Stripe billing (subscription plans, seat management) | P2 | `[ ]` |
 | P2-011 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | `[ ]` |
-| P2-012 | Rich-text post editor (Tiptap — bold, tables, embeds) | P1 | `[ ]` |
+| P2-012 | Rich-text post editor (Tiptap — bold, tables, embeds) | P1 | `[x]` |
 | P2-013 | File / image uploads to S3-compatible storage | P1 | `[ ]` |
 | P2-014 | Video lessons (HLS streaming, chapter markers) | P2 | `[ ]` |
 | P2-015 | Live events / webinar integration | P2 | `[ ]` |
-| P2-016 | Email digest (daily / weekly notification summary) | P1 | `[ ]` |
+| P2-016 | Email digest (daily / weekly notification summary) | P1 | `[x]` |
 | P2-017 | Post bookmarks / saved items | P2 | `[ ]` |
 | P2-018 | Polls within posts | P2 | `[ ]` |
-| P2-019 | Public community landing page (pre-login) | P1 | `[ ]` |
+| P2-019 | Public community landing page (pre-login) | P1 | `[x]` |
 | P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
 | P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | M | `[x]` |
 

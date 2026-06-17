@@ -34,11 +34,19 @@ model User {
   sentMessages  Message[]
   sentInvites   Invite[]
   pollVotes     PollVote[]
+  emailDigest   EmailDigestFrequency @default(WEEKLY)
+  lastDigestAt  DateTime?
 }
 
 enum Role {
   ADMIN
   MEMBER
+}
+
+enum EmailDigestFrequency {
+  DAILY
+  WEEKLY
+  NONE
 }
 
 model Post {

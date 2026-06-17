@@ -86,7 +86,24 @@ export class UsersService {
   }
 
   async getProfile(id: string) {
-    return this.findOne(id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        role: true,
+        createdAt: true,
+        emailDigest: true,
+        _count: {
+          select: { posts: true, courseProgress: true, eventRsvps: true },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   async findOneWithFollow(id: string, requesterId: string) {
@@ -130,5 +147,13 @@ export class UsersService {
   async unfollow(followerId: string, followingId: string) {
     await this.prisma.follow.deleteMany({ where: { followerId, followingId } });
     return { following: false };
+  }
+
+  async updateDigestPreference(userId: string, frequency: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { emailDigest: frequency as any },
+      select: { id: true, emailDigest: true },
+    });
   }
 }
