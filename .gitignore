@@ -40,6 +40,9 @@ test-results/
 # Docker
 docker-compose.override.local.yml
 
+# Persistent data (bind mounts)
+data/
+
 # Prisma
 apps/api/prisma/migrations/*.sql
 
