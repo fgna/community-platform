@@ -310,6 +310,18 @@
 | SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[x]` |
 | SEC-022 | **Email uniqueness is case-sensitive** — `USER@EXAMPLE.COM` and `user@example.com` can co-exist | `register` does not normalise email to lowercase before the uniqueness check | XS | `[x]` |
 
+### 🟡 Medium — Regressions from PR #14 / #15
+
+| ID | Finding | Root cause | Size | Status |
+|----|---------|------------|------|--------|
+| SEC-023 | **Auth throttler globally permissive at 100 req/15min** — `refresh` and `logout` endpoints lost rate protection | BUG-013 fix raised `auth` named throttler from `limit: 5` to `limit: 100`; correct fix is to exclude non-auth endpoints from the auth throttler | S | `[ ]` |
+| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** — bypass startup validation | `JWT_SECRET:-change-me-in-production` is injected by docker-compose before API reads env vars; startup check only rejects empty/undefined, not known defaults | S | `[ ]` |
+| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** — 80 attempts/hour against known email | `@Throttle({ auth: { limit: 20, ttl: 900_000 } })` on login endpoint; should be ≤5 | XS | `[ ]` |
+| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** — stored URL serves attacker domain | `users.controller.ts` constructs avatarUrl from `x-forwarded-host` and `x-forwarded-proto` headers without validation; attacker uploads avatar with forged headers → evil.com URL stored in DB → served to all viewers | S | `[ ]` |
+| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** — inherit permissive global limit of 100/15min | No `@Throttle({ auth: ... })` decorator on `refresh()` or `logout()` methods in `auth.controller.ts` | XS | `[ ]` |
+| SEC-029 | **Avatar upload MIME check uses Content-Type header, not file magic bytes** — attacker can upload SVG with `Content-Type: image/jpeg` | `fileFilter` checks `file.mimetype` which is client-controlled; should verify file magic bytes | S | `[ ]` |
+| SEC-030 | **Backup service exposes PGPASSWORD in container environment** — visible via `docker inspect` | `docker-compose.yml` backup service sets `PGPASSWORD` as plain env var | XS | `[ ]` |
+
 ### CI Infrastructure
 
 | ID | Finding | Root cause | Size | Status |
