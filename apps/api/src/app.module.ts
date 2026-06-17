@@ -25,10 +25,9 @@ import { InvitesModule } from './invites/invites.module';
         limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
       },
       {
-        // Auth throttler — permissive globally, strict on auth routes via @Throttle
         name: 'auth',
         ttl: 900_000,  // 15 minutes
-        limit: 100,
+        limit: 60,
       },
     ]),
     PrismaModule,

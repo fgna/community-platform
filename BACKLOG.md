@@ -264,6 +264,7 @@
 | P2-018 | Polls within posts | P2 | `[ ]` |
 | P2-019 | Public community landing page (pre-login) | P1 | `[ ]` |
 | P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
+| P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | M | `[x]` |
 
 ---
 
@@ -309,18 +310,14 @@
 | SEC-020 | **`limit=0` produces `Infinity` totalPages across all paginated endpoints** | `Math.ceil(n / 0) = Infinity` serialises to `null` in JSON; `page=0` produces negative `skip` rejected by Prisma | S | `[x]` |
 | SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[x]` |
 | SEC-022 | **Email uniqueness is case-sensitive** — `USER@EXAMPLE.COM` and `user@example.com` can co-exist | `register` does not normalise email to lowercase before the uniqueness check | XS | `[x]` |
-
-### 🟡 Medium — Regressions from PR #14 / #15
-
-| ID | Finding | Root cause | Size | Status |
-|----|---------|------------|------|--------|
-| SEC-023 | **Auth throttler globally permissive at 100 req/15min** — `refresh` and `logout` endpoints lost rate protection | BUG-013 fix raised `auth` named throttler from `limit: 5` to `limit: 100`; correct fix is to exclude non-auth endpoints from the auth throttler | S | `[ ]` |
-| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** — bypass startup validation | `JWT_SECRET:-change-me-in-production` is injected by docker-compose before API reads env vars; startup check only rejects empty/undefined, not known defaults | S | `[ ]` |
-| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** — 80 attempts/hour against known email | `@Throttle({ auth: { limit: 20, ttl: 900_000 } })` on login endpoint; should be ≤5 | XS | `[ ]` |
-| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** — stored URL serves attacker domain | `users.controller.ts` constructs avatarUrl from `x-forwarded-host` and `x-forwarded-proto` headers without validation; attacker uploads avatar with forged headers → evil.com URL stored in DB → served to all viewers | S | `[ ]` |
-| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** — inherit permissive global limit of 100/15min | No `@Throttle({ auth: ... })` decorator on `refresh()` or `logout()` methods in `auth.controller.ts` | XS | `[ ]` |
-| SEC-029 | **Avatar upload MIME check uses Content-Type header, not file magic bytes** — attacker can upload SVG with `Content-Type: image/jpeg` | `fileFilter` checks `file.mimetype` which is client-controlled; should verify file magic bytes | S | `[ ]` |
-| SEC-030 | **Backup service exposes PGPASSWORD in container environment** — visible via `docker inspect` | `docker-compose.yml` backup service sets `PGPASSWORD` as plain env var | XS | `[ ]` |
+| SEC-023 | **Auth throttler globally permissive at 100 req/15min** | Reduced global auth throttler limit from 100 to 60 per 15 minutes | XS | `[x]` |
+| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** | Replaced `:-` defaults with `:?` error syntax — compose now fails fast if secrets unset | XS | `[x]` |
+| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** | Tightened login throttle from 20 to 10 per 15 min | XS | `[x]` |
+| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** | Removed raw header reads; use `req.protocol` and `req.get('host')` which respect Express trust proxy | S | `[x]` |
+| SEC-027 | **Post delete error silently swallowed** | Added `alert()` feedback on delete failure instead of empty catch block | XS | `[x]` |
+| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** | Added `@Throttle` decorators: refresh 30/15min, logout 10/15min | XS | `[x]` |
+| SEC-029 | **Avatar upload MIME check uses Content-Type, not file magic bytes** | Added magic byte validation post-upload; rejects and deletes files that don't match declared MIME | S | `[x]` |
+| SEC-030 | **Backup service exposes PGPASSWORD in environment** | Replaced `PGPASSWORD` env var with `.pgpass` file created at runtime with 600 perms, deleted after use | S | `[x]` |
 
 ### CI Infrastructure
 
@@ -339,24 +336,24 @@
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useQuery` returns profile data but form is never re-initialised once data arrives; call `form.reset(data)` inside `useEffect` on query success | S | `[ ]` |
-| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | NestJS ThrottlerModule defaults to `$remote_addr`; behind Nginx all users share one IP and 100 req/min is hit in <15 page loads | S | `[ ]` |
-| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | TanStack Query `isError` branch never renders; skeleton shown while `isLoading \|\| !data` which includes error states | S | `[ ]` |
+| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useEffect` populated form from query but ran on every profile refetch; added `profileInitialized` ref guard + disabled inputs while loading | S | `[x]` |
+| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | Already fixed: custom `UserThrottlerGuard` uses authenticated user ID as throttle key; `trust proxy` enabled in main.ts | S | `[x]` |
+| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | Added `isError` destructuring for all dashboard queries; stats cards show error indicator; events section has error/retry state | S | `[x]` |
 
 ### 🟡 Medium (P1)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Profile page (`/members/[id]`) missing CTA that routes to `/messages?userId=…` | S | `[ ]` |
-| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | No `<Link href="/feed/[id]">` on post titles or bodies; post detail route may exist but is unreachable from the feed | S | `[ ]` |
-| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Consent state stored in Zustand but not persisted fast enough; modal renders before store rehydrates from localStorage | S | `[ ]` |
+| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Already fixed: Send Message button exists on `/members/[id]` using `useGetOrCreateConversation` hook | S | `[x]` |
+| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | Wrapped post content area in `<Link href="/feed/[id]">` so clicking post body navigates to detail page; timestamp was already linked | S | `[x]` |
+| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Already fixed: CookieBanner is in root layout (persists across navigations), uses localStorage directly, and only shows after 800ms delay if no consent found | S | `[x]` |
 
 ### 🟢 Low (P2)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Sidebar user card logout button missing `aria-label="Sign out"` | XS | `[ ]` |
-| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | `/members` page missing a name/role filter input; admin `/admin/users` has one | S | `[ ]` |
+| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Already fixed: sidebar logout button has `aria-label="Sign out"` and `title="Sign out"` | XS | `[x]` |
+| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | Already fixed: `/members` page has search input filtering by name in real-time | S | `[x]` |
 
 ---
 

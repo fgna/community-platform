@@ -15,9 +15,9 @@ import { PostSkeleton } from '@/components/common/loading-skeleton';
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: feedData, isLoading: feedLoading, isError: feedError } = useFeed(1, 3);
-  const { data: coursesData } = useCourses(1, 1);
-  const { data: eventsData } = useEvents(1, 3);
-  const { data: membersData } = useMembers(1, 1);
+  const { data: coursesData, isError: coursesError } = useCourses(1, 1);
+  const { data: eventsData, isLoading: eventsLoading, isError: eventsError } = useEvents(1, 3);
+  const { data: membersData, isError: membersError } = useMembers(1, 1);
 
   const upcomingEvents = eventsData?.data?.filter(
     (e) => new Date(e.startsAt) > new Date()
@@ -56,7 +56,13 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold" style={{ color: 'var(--theme-text-muted)' }}>
             UPCOMING EVENTS
           </h3>
-          {upcomingEvents.length > 0 ? (
+          {eventsLoading ? (
+            <div className="space-y-4">{[1, 2].map((i) => <PostSkeleton key={i} />)}</div>
+          ) : eventsError ? (
+            <p className="text-sm py-4" style={{ color: 'var(--theme-danger, #ef4444)' }}>
+              Failed to load events. <button className="underline" onClick={() => window.location.reload()}>Retry</button>
+            </p>
+          ) : upcomingEvents.length > 0 ? (
             <div className="space-y-4">
               {upcomingEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
@@ -72,27 +78,27 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Members"
-          value={membersData?.total ?? '—'}
+          value={membersError ? '!' : (membersData?.total ?? '—')}
           icon={Users}
-          description="Active community members"
+          description={membersError ? 'Failed to load' : 'Active community members'}
         />
         <StatsCard
           title="Community Posts"
-          value={feedData?.total ?? '—'}
+          value={feedError ? '!' : (feedData?.total ?? '—')}
           icon={MessageCircle}
-          description="Conversations this month"
+          description={feedError ? 'Failed to load' : 'Conversations this month'}
         />
         <StatsCard
           title="Available Courses"
-          value={coursesData?.total ?? '—'}
+          value={coursesError ? '!' : (coursesData?.total ?? '—')}
           icon={BookOpen}
-          description="Learn something new"
+          description={coursesError ? 'Failed to load' : 'Learn something new'}
         />
         <StatsCard
           title="Upcoming Events"
-          value={upcomingEvents.length}
+          value={eventsError ? '!' : upcomingEvents.length}
           icon={Calendar}
-          description="Events this month"
+          description={eventsError ? 'Failed to load' : 'Events this month'}
         />
       </div>
     </div>

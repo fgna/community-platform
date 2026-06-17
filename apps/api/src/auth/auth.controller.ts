@@ -24,7 +24,7 @@ export class AuthController {
   @Post('login')
   @SetMetadata(IS_PUBLIC_KEY, true)
   @HttpCode(HttpStatus.OK)
-  @Throttle({ auth: { limit: 20, ttl: 900_000 } })
+  @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login with email and password' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -34,6 +34,7 @@ export class AuthController {
   @SetMetadata(IS_PUBLIC_KEY, true)
   @UseGuards(AuthGuard('jwt-refresh'))
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 30, ttl: 900_000 } })
   @ApiOperation({ summary: 'Refresh access token' })
   async refresh(@Request() req: any, @Body() dto: RefreshTokenDto) {
     return this.authService.refresh(req.user.id, req.user.email, req.user.role, dto.refreshToken);
@@ -42,6 +43,7 @@ export class AuthController {
   @Post('logout')
   @SetMetadata(IS_PUBLIC_KEY, true)
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Logout and invalidate refresh token' })
   async logout(@Body() dto: RefreshTokenDto) {
     return this.authService.logout(dto.refreshToken);

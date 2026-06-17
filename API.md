@@ -100,7 +100,24 @@ Update profile fields.
 ```
 
 ### GET /users/:id
-Get any user's public profile.
+Get any user's public profile (includes follow status for current user).
+
+### POST /users/me/avatar
+Upload an avatar image. Accepts `multipart/form-data` with a `file` field.
+- Allowed types: JPEG, PNG, GIF, WebP
+- Max size: 5 MB
+- Magic-byte validation ensures file content matches declared MIME type
+
+**Response 200:**
+```json
+{ "avatarUrl": "https://..." }
+```
+
+### POST /users/:id/follow
+Follow a user.
+
+### DELETE /users/:id/follow
+Unfollow a user.
 
 ---
 
@@ -224,6 +241,64 @@ System audit log.
 
 ---
 
+## Messages
+
+### GET /messages/conversations
+List all conversations for the current user.
+
+### POST /messages/conversations/:userId
+Get or create a direct conversation with another user.
+
+### GET /messages/conversations/:id/messages
+Get messages in a conversation (paginated).
+
+**Query:** `?page=1&limit=50`
+
+### POST /messages/conversations/:id/messages
+Send a message in a conversation.
+```json
+{ "content": "Hello!" }
+```
+
+---
+
+## Notifications
+
+### GET /notifications
+Get notifications for the current user (paginated).
+
+**Query:** `?page=1&limit=20`
+
+### GET /notifications/unread-count
+Get the count of unread notifications.
+
+### PATCH /notifications/read-all
+Mark all notifications as read.
+
+### PATCH /notifications/:id/read
+Mark a single notification as read.
+
+---
+
+## Search
+
+### GET /search
+Search across posts, users, courses, and events.
+
+**Query:** `?q=keyword&limit=10`
+
+**Response 200:**
+```json
+{
+  "posts": [...],
+  "users": [...],
+  "courses": [...],
+  "events": [...]
+}
+```
+
+---
+
 ## GDPR Endpoints
 
 ### GET /gdpr/consent
@@ -286,4 +361,13 @@ All errors follow:
 
 ## Rate Limiting
 
-100 requests per 60 seconds per IP (configurable via `THROTTLE_TTL` / `THROTTLE_LIMIT` env vars).
+| Scope | Limit | Window |
+|-------|-------|--------|
+| Default (all endpoints) | 100 requests | 60 seconds |
+| Auth endpoints (named throttler) | 60 requests | 15 minutes |
+| Login | 10 requests | 15 minutes |
+| Register | 5 requests | 1 hour |
+| Refresh | 30 requests | 15 minutes |
+| Logout | 10 requests | 15 minutes |
+
+Default limits are configurable via `THROTTLE_TTL` / `THROTTLE_LIMIT` env vars. For authenticated users, the throttle key is the user ID (not just IP), implemented via a custom `UserThrottlerGuard`.

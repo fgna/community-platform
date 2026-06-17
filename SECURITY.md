@@ -37,8 +37,15 @@ All responses include security headers via `helmet`:
 - Only specified origins can make cross-origin requests
 
 ### Rate Limiting
-- 100 requests per 60 seconds per IP (configurable)
-- Implemented via `@nestjs/throttler`
+- Default: 100 requests per 60 seconds (configurable via `THROTTLE_TTL` / `THROTTLE_LIMIT` env vars)
+- Auth named throttler: 60 requests per 15 minutes for auth endpoints
+- Per-route overrides:
+  - Register: 5 requests per hour
+  - Login: 10 requests per 15 minutes
+  - Refresh: 30 requests per 15 minutes
+  - Logout: 10 requests per 15 minutes
+- Implemented via `@nestjs/throttler` with custom `UserThrottlerGuard`
+- Throttle key uses authenticated user ID (not just IP) for logged-in users
 - Applies globally to all endpoints
 
 ## Input Validation
@@ -89,7 +96,8 @@ pnpm audit --audit-level moderate
 - [ ] Use strong random values for `JWT_SECRET` and `JWT_REFRESH_SECRET` (64+ chars)
 - [ ] Set `NODE_ENV=production`
 - [ ] Configure CORS_ORIGINS to your production domain only
-- [ ] Enable HTTPS/TLS via reverse proxy
+- [ ] Enable HTTPS via built-in Nginx proxy: `docker compose --profile proxy up -d` (see DEPLOYMENT.md)
+- [ ] Set `DOMAIN` and `SSL_EMAIL` in `.env` for certificate provisioning
 - [ ] Set up database backups
 - [ ] Configure log aggregation
 - [ ] Review rate limiting thresholds

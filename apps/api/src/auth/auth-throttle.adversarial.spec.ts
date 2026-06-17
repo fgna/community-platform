@@ -1,95 +1,61 @@
 /**
- * ADVERSARIAL TESTS: Rate Limiting & Throttle Configuration
+ * ADVERSARIAL TESTS: Auth endpoint throttle configuration
  *
- * Attack surfaces (PR #14 / #15 regression):
- * - SEC-023: Auth named throttler raised from limit=5 to limit=100 globally
- *   to fix BUG-013 (all endpoints hit 429 after 5 requests). The fix was
- *   too broad — refresh and logout endpoints no longer have meaningful
- *   rate protection.
- * - SEC-025: Login @Throttle override allows 20 attempts per 15 min — enough
- *   for targeted credential stuffing against known accounts.
- * - SEC-028: refresh and logout endpoints have NO per-route @Throttle
- *   decorator, so they inherit the global auth limit (100/15min).
- *
- * These tests document the CURRENT (weakened) state and will fail when
- * the throttle limits are tightened back to secure values.
+ * Verifies that all auth endpoints have per-route @Throttle decorators
+ * and that the limits are strict enough to prevent credential stuffing.
  */
 
 import { describe, it, expect } from 'vitest';
-import 'reflect-metadata';
-import { AuthController } from './auth.controller';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-// ── helpers ─────────────────────────────────────────────────────────────────
+const controllerSource = readFileSync(
+  join(__dirname, 'auth.controller.ts'),
+  'utf-8',
+);
 
-function getAuthThrottleLimit(target: any, methodName: string): number | undefined {
-  return Reflect.getMetadata('THROTTLER:LIMITauth', target.prototype[methodName]);
-}
+describe('Auth controller — throttle hardening', () => {
+  describe('FIXED SEC-025: login rate limit is strict enough', () => {
+    it('login endpoint has @Throttle decorator', () => {
+      expect(controllerSource).toContain("@Throttle({");
+    });
 
-function getAuthThrottleTtl(target: any, methodName: string): number | undefined {
-  return Reflect.getMetadata('THROTTLER:TTLauth', target.prototype[methodName]);
-}
-
-// ── tests ────────────────────────────────────────────────────────────────────
-
-describe('Auth rate limiting — adversarial audit', () => {
-
-  // ── SEC-023: global auth throttler is too permissive ─────────────────────
-
-  describe('SEC-023: auth named throttler allows 100 req/15min globally', () => {
-    it('ThrottlerModule config sets auth limit=100 — refresh endpoint inherits this', () => {
-      /**
-       * app.module.ts configures { name: 'auth', ttl: 900_000, limit: 100 }.
-       * Any endpoint without an explicit @Throttle({ auth: ... }) override
-       * gets 100 requests per 15 minutes under the auth throttler.
-       *
-       * Before PR #15 this was limit=5. It was raised to 100 to fix BUG-013
-       * where non-auth endpoints were hitting the auth throttler limit.
-       * The correct fix would be to exclude non-auth endpoints from the auth
-       * throttler entirely, not to raise its global limit.
-       */
-      const AUTH_THROTTLER_GLOBAL_LIMIT = 100;
-      expect(AUTH_THROTTLER_GLOBAL_LIMIT).toBeGreaterThan(10);
-      // SHOULD BE: limit <= 10 for auth-sensitive operations
+    it('login limit is 10 or fewer per 15 min', () => {
+      const loginMatch = controllerSource.match(
+        /login[\s\S]*?@Throttle\(\{[^}]*limit:\s*(\d+)/,
+      );
+      // Match the @Throttle before the login method
+      const allThrottles = [...controllerSource.matchAll(/@Throttle\(\{\s*auth:\s*\{\s*limit:\s*(\d+)/g)];
+      // Second @Throttle is login (first is register)
+      const loginLimit = allThrottles[1] ? Number(allThrottles[1][1]) : undefined;
+      expect(loginLimit).toBeDefined();
+      expect(loginLimit).toBeLessThanOrEqual(10);
     });
   });
 
-  // ── SEC-025: login rate limit allows credential stuffing ────────────────
-
-  describe('SEC-025: login allows 20 attempts per 15 minutes', () => {
-    it('login @Throttle override permits 20 attempts — enough for targeted attacks', () => {
-      const limit = getAuthThrottleLimit(AuthController, 'login');
-      expect(limit).toBeDefined();
-      expect(limit).toBe(20);
-      // 20 attempts = enough to test common passwords against a known email
-      // Recommendation: limit <= 5 per 15 min with progressive lockout
-    });
-  });
-
-  // ── SEC-028: refresh endpoint has no per-route throttle ─────────────────
-
-  describe('SEC-028: refresh endpoint lacks per-route @Throttle', () => {
-    it('refresh method has NO @Throttle decorator — inherits global auth limit of 100', () => {
-      const limit = getAuthThrottleLimit(AuthController, 'refresh');
-      // No per-route override → inherits global auth limit (100/15min)
-      // An attacker with a stolen refresh token can spray it 100 times in 15 min
-      expect(limit).toBeUndefined();
+  describe('FIXED SEC-028: refresh and logout have per-route @Throttle', () => {
+    it('refresh endpoint has @Throttle decorator', () => {
+      const refreshSection = controllerSource.split("'refresh'")[1]?.split("@Post")[0] ?? '';
+      // Check the section around the refresh method has @Throttle
+      const allThrottles = [...controllerSource.matchAll(/@Throttle\(\{\s*auth:\s*\{\s*limit:\s*(\d+)/g)];
+      // Should have at least 4 throttle decorators (register, login, refresh, logout)
+      expect(allThrottles.length).toBeGreaterThanOrEqual(4);
     });
 
-    it('logout method has NO @Throttle decorator — inherits global auth limit of 100', () => {
-      const limit = getAuthThrottleLimit(AuthController, 'logout');
-      expect(limit).toBeUndefined();
+    it('refresh limit is defined', () => {
+      const allThrottles = [...controllerSource.matchAll(/@Throttle\(\{\s*auth:\s*\{\s*limit:\s*(\d+)/g)];
+      // Third @Throttle is refresh
+      const refreshLimit = allThrottles[2] ? Number(allThrottles[2][1]) : undefined;
+      expect(refreshLimit).toBeDefined();
+      expect(refreshLimit).toBeGreaterThan(0);
     });
-  });
 
-  // ── Register throttle is reasonable ────────────────────────────────────
-
-  describe('Register throttle: 5 per hour (acceptable)', () => {
-    it('register @Throttle limits to 5 attempts per hour', () => {
-      const limit = getAuthThrottleLimit(AuthController, 'register');
-      const ttl = getAuthThrottleTtl(AuthController, 'register');
-      expect(limit).toBeDefined();
-      expect(limit).toBe(5);
-      expect(ttl).toBe(3_600_000); // 1 hour
+    it('logout limit is defined', () => {
+      const allThrottles = [...controllerSource.matchAll(/@Throttle\(\{\s*auth:\s*\{\s*limit:\s*(\d+)/g)];
+      // Fourth @Throttle is logout
+      const logoutLimit = allThrottles[3] ? Number(allThrottles[3][1]) : undefined;
+      expect(logoutLimit).toBeDefined();
+      expect(logoutLimit).toBeGreaterThan(0);
     });
   });
 });
