@@ -21,6 +21,7 @@ export class SearchService {
         select: {
           id: true,
           content: true,
+          type: true,
           createdAt: true,
           author: { select: { id: true, name: true, avatarUrl: true } },
         },

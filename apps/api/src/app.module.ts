@@ -18,6 +18,7 @@ import { SearchModule } from './search/search.module';
 import { InvitesModule } from './invites/invites.module';
 import { EmailModule } from './email/email.module';
 import { DigestService } from './email/digest.service';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { DigestService } from './email/digest.service';
     SearchModule,
     InvitesModule,
     EmailModule,
+    CategoriesModule,
   ],
   providers: [
     DigestService,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessageCircle, MoreHorizontal, Trash2, Pin } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, Trash2, Pin, HelpCircle, Megaphone, Hand } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionBar } from './reaction-bar';
@@ -53,10 +53,29 @@ export function PostCard({ post }: PostCardProps) {
         boxShadow: post.isPinned ? '0 0 20px rgba(197,168,128,0.08)' : 'none',
       }}
     >
-      {post.isPinned && (
-        <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--theme-primary)' }}>
-          <Pin size={12} />
-          Pinned post
+      {(post.isPinned || ((post as any).type && (post as any).type !== 'DISCUSSION')) && (
+        <div className="flex items-center gap-3">
+          {post.isPinned && (
+            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--theme-primary)' }}>
+              <Pin size={12} />
+              Pinned
+            </div>
+          )}
+          {(post as any).type === 'QUESTION' && (
+            <div className="flex items-center gap-1 text-xs font-medium" style={{ color: '#3b82f6' }}>
+              <HelpCircle size={12} /> Question
+            </div>
+          )}
+          {(post as any).type === 'ANNOUNCEMENT' && (
+            <div className="flex items-center gap-1 text-xs font-medium" style={{ color: '#f59e0b' }}>
+              <Megaphone size={12} /> Announcement
+            </div>
+          )}
+          {(post as any).type === 'INTRODUCTION' && (
+            <div className="flex items-center gap-1 text-xs font-medium" style={{ color: '#22c55e' }}>
+              <Hand size={12} /> Introduction
+            </div>
+          )}
         </div>
       )}
 
@@ -115,6 +134,24 @@ export function PostCard({ post }: PostCardProps) {
 
       {post.poll && (
         <PollCard poll={post.poll} postId={post.id} />
+      )}
+
+      {(post as any).categories?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {(post as any).categories.map((pc: any) => (
+            <span
+              key={pc.category.id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+              style={{
+                background: (pc.category.color || '#6b7280') + '18',
+                color: pc.category.color || 'var(--theme-text-muted)',
+              }}
+            >
+              {pc.category.icon && <span>{pc.category.icon}</span>}
+              {pc.category.name}
+            </span>
+          ))}
+        </div>
       )}
 
       <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--theme-border)' }}>

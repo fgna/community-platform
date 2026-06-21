@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -374,6 +374,37 @@ export function SettingsPage() {
                   checked={profile?.calendarInvites ?? true}
                   onCheckedChange={(checked) => {
                     apiClient.patch('/users/me/calendar-invites', { calendarInvites: checked }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['me'] });
+                    });
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlarmClock size={16} /> Event Reminders
+              </CardTitle>
+              <CardDescription>
+                Get reminded about upcoming events you&apos;ve RSVP&apos;d to.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+                    Email reminders
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
+                    Receive email reminders 24 hours and 1 hour before events you&apos;re attending.
+                  </p>
+                </div>
+                <Switch
+                  checked={profile?.eventReminders ?? true}
+                  onCheckedChange={(checked) => {
+                    apiClient.patch('/users/me/event-reminders', { eventReminders: checked }).then(() => {
                       queryClient.invalidateQueries({ queryKey: ['me'] });
                     });
                   }}

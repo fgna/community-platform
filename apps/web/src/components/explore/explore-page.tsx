@@ -1,0 +1,236 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import {
+  Loader2,
+  FileText,
+  GraduationCap,
+  Calendar,
+  ArrowRight,
+} from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import apiClient from '@/lib/api-client';
+import { getInitials } from '@community/shared';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  _count: { posts: number; courses: number; events: number };
+}
+
+export function ExplorePage() {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const { data: categories, isLoading } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => apiClient.get('/categories').then((r) => r.data),
+  });
+
+  const { data: content, isLoading: contentLoading } = useQuery({
+    queryKey: ['category-content', selected],
+    queryFn: () =>
+      apiClient
+        .get(`/categories/${selected}/content`, { params: { limit: 10 } })
+        .then((r) => r.data),
+    enabled: !!selected,
+  });
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--theme-text)' }}>
+          Explore by Category
+        </h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--theme-text-muted)' }}>
+          Browse posts, courses, and events by topic.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={24} className="animate-spin" style={{ color: 'var(--theme-primary)' }} />
+        </div>
+      ) : (
+        <>
+          {/* Category grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {categories?.map((cat) => {
+              const total = cat._count.posts + cat._count.courses + cat._count.events;
+              const isActive = selected === cat.slug;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelected(isActive ? null : cat.slug)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all text-center"
+                  style={{
+                    background: isActive
+                      ? (cat.color || 'var(--theme-primary)') + '18'
+                      : 'var(--theme-card)',
+                    border: isActive
+                      ? `1px solid ${cat.color || 'var(--theme-primary)'}40`
+                      : '1px solid var(--theme-border)',
+                  }}
+                >
+                  <span className="text-2xl">{cat.icon || '📁'}</span>
+                  <span
+                    className="text-sm font-semibold"
+                    style={{ color: isActive ? (cat.color || 'var(--theme-primary)') : 'var(--theme-text)' }}
+                  >
+                    {cat.name}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+                    {total} item{total !== 1 ? 's' : ''}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Content for selected category */}
+          {selected && (
+            <div className="space-y-4">
+              {contentLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 size={20} className="animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                </div>
+              ) : (
+                <>
+                  {content?.posts?.length > 0 && (
+                    <ContentSection title="Posts" icon={FileText} count={content.posts.length}>
+                      {content.posts.map((p: any) => (
+                        <Link
+                          key={p.id}
+                          href={`/feed/${p.id}`}
+                          className="block p-3 rounded-lg transition-colors hover:bg-white/5"
+                        >
+                          <p className="text-sm line-clamp-2" style={{ color: 'var(--theme-text)' }}>
+                            {p.content.replace(/<[^>]*>/g, '').slice(0, 180)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={p.author?.avatarUrl ?? undefined} />
+                              <AvatarFallback className="text-[8px]">{getInitials(p.author?.name || 'U')}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+                              {p.author?.name}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </ContentSection>
+                  )}
+
+                  {content?.courses?.length > 0 && (
+                    <ContentSection title="Courses" icon={GraduationCap} count={content.courses.length}>
+                      {content.courses.map((c: any) => (
+                        <Link
+                          key={c.id}
+                          href="/courses"
+                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-white/5"
+                        >
+                          <GraduationCap size={16} style={{ color: 'var(--theme-primary)' }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>
+                              {c.title}
+                            </p>
+                            {c.description && (
+                              <p className="text-xs truncate" style={{ color: 'var(--theme-text-muted)' }}>
+                                {c.description.slice(0, 80)}
+                              </p>
+                            )}
+                          </div>
+                          <ArrowRight size={14} style={{ color: 'var(--theme-text-muted)' }} />
+                        </Link>
+                      ))}
+                    </ContentSection>
+                  )}
+
+                  {content?.events?.length > 0 && (
+                    <ContentSection title="Events" icon={Calendar} count={content.events.length}>
+                      {content.events.map((e: any) => (
+                        <Link
+                          key={e.id}
+                          href="/events"
+                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-white/5"
+                        >
+                          <div
+                            className="w-10 h-10 rounded-lg flex flex-col items-center justify-center flex-shrink-0 text-center"
+                            style={{ background: 'rgba(197,168,128,0.1)', color: 'var(--theme-primary)' }}
+                          >
+                            <span className="text-[10px] font-medium leading-none">
+                              {new Date(e.startsAt).toLocaleDateString('en-US', { month: 'short' })}
+                            </span>
+                            <span className="text-sm font-bold leading-none">
+                              {new Date(e.startsAt).getDate()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>
+                              {e.title}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </ContentSection>
+                  )}
+
+                  {!content?.posts?.length && !content?.courses?.length && !content?.events?.length && (
+                    <div
+                      className="text-center py-12 rounded-xl"
+                      style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}
+                    >
+                      <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
+                        No content in this category yet.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ContentSection({
+  title,
+  icon: Icon,
+  count,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  count: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}
+    >
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--theme-border)' }}>
+        <Icon size={14} style={{ color: 'var(--theme-primary)' }} />
+        <span className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+          {title}
+        </span>
+        <span
+          className="text-xs px-1.5 py-0.5 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)' }}
+        >
+          {count}
+        </span>
+      </div>
+      <div className="divide-y" style={{ borderColor: 'var(--theme-border)' }}>
+        {children}
+      </div>
+    </div>
+  );
+}

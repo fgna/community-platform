@@ -2,13 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { PaginatedPosts } from '@community/shared';
 
-export function useFeed(page = 1, limit = 20) {
+export function useFeed(page = 1, limit = 20, type?: string) {
   return useQuery({
-    queryKey: ['feed', page, limit],
+    queryKey: ['feed', page, limit, type],
     queryFn: async () => {
-      const { data } = await apiClient.get<PaginatedPosts>('/posts', {
-        params: { page, limit },
-      });
+      const params: Record<string, any> = { page, limit };
+      if (type) params.type = type;
+      const { data } = await apiClient.get<PaginatedPosts>('/posts', { params });
       return data;
     },
   });
@@ -38,6 +38,8 @@ export function usePost(id: string) {
 
 interface CreatePostPayload {
   content: string;
+  type?: 'DISCUSSION' | 'QUESTION' | 'ANNOUNCEMENT' | 'INTRODUCTION';
+  categoryIds?: string[];
   poll?: {
     question: string;
     options: string[];

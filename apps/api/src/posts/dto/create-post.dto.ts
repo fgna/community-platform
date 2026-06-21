@@ -1,6 +1,13 @@
-import { IsString, MinLength, MaxLength, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, IsDateString, ValidateNested } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, IsDateString, ValidateNested, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export enum PostTypeEnum {
+  DISCUSSION = 'DISCUSSION',
+  QUESTION = 'QUESTION',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+  INTRODUCTION = 'INTRODUCTION',
+}
 
 export class CreatePollDto {
   @ApiProperty({ example: 'Which frontend framework do you prefer?' })
@@ -31,9 +38,20 @@ export class CreatePostDto {
   @MaxLength(10000)
   content: string;
 
+  @ApiPropertyOptional({ enum: PostTypeEnum, default: PostTypeEnum.DISCUSSION })
+  @IsOptional()
+  @IsEnum(PostTypeEnum)
+  type?: PostTypeEnum;
+
   @ApiPropertyOptional()
   @IsOptional()
   @ValidateNested()
   @Type(() => CreatePollDto)
   poll?: CreatePollDto;
+
+  @ApiPropertyOptional({ example: ['cat_growth', 'cat_teams'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categoryIds?: string[];
 }

@@ -15,12 +15,14 @@ export class PostsController {
   @ApiOperation({ summary: 'Get all posts' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'type', required: false, enum: ['DISCUSSION', 'QUESTION', 'ANNOUNCEMENT', 'INTRODUCTION'] })
   findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 20,
-    @CurrentUser() user: any,
+    @Query('type') type?: string,
+    @CurrentUser() user?: any,
   ) {
-    return this.postsService.findAll(Number(page), Number(limit), user?.id);
+    return this.postsService.findAll(Number(page), Number(limit), user?.id, type);
   }
 
   @Get('trending')

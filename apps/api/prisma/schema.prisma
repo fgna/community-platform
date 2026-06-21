@@ -37,6 +37,7 @@ model User {
   emailDigest      EmailDigestFrequency @default(WEEKLY)
   lastDigestAt     DateTime?
   calendarInvites  Boolean              @default(true)
+  eventReminders   Boolean              @default(true)
 }
 
 enum Role {
@@ -50,18 +51,29 @@ enum EmailDigestFrequency {
   NONE
 }
 
+enum PostType {
+  DISCUSSION
+  QUESTION
+  ANNOUNCEMENT
+  INTRODUCTION
+}
+
 model Post {
-  id        String     @id @default(cuid())
-  content   String
-  authorId  String
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  reactions Reaction[]
-  poll      Poll?
-  isPinned  Boolean    @default(false)
-  isHidden  Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  content    String
+  type       PostType   @default(DISCUSSION)
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  reactions  Reaction[]
+  poll       Poll?
+  categories PostCategory[]
+  isPinned   Boolean    @default(false)
+  isHidden   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([type])
 }
 
 model Comment {
@@ -95,15 +107,16 @@ enum ReactionType {
 }
 
 model Course {
-  id          String     @id @default(cuid())
+  id          String           @id @default(cuid())
   title       String
   description String
   coverUrl    String?
-  isPublished Boolean    @default(false)
+  isPublished Boolean          @default(false)
   modules     Module[]
   progress    Progress[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  categories  CourseCategory[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 model Module {
@@ -142,19 +155,22 @@ model Progress {
 }
 
 model Event {
-  id          String      @id @default(cuid())
-  title       String
-  description String
-  startsAt    DateTime
-  endsAt      DateTime
-  location    String?
-  isVirtual   Boolean     @default(false)
-  meetingUrl  String?
-  maxRsvps    Int?
-  rsvps       EventRsvp[]
-  recordings  Recording[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  startsAt        DateTime
+  endsAt          DateTime
+  location        String?
+  isVirtual       Boolean         @default(false)
+  meetingUrl      String?
+  maxRsvps        Int?
+  reminder24hSent Boolean         @default(false)
+  reminder1hSent  Boolean         @default(false)
+  rsvps           EventRsvp[]
+  recordings      Recording[]
+  categories      EventCategory[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Recording {
@@ -340,4 +356,46 @@ model PollVote {
   createdAt DateTime   @default(now())
 
   @@unique([pollId, userId])
+}
+
+model Category {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  slug        String          @unique
+  description String?
+  icon        String?
+  color       String?
+  sortOrder   Int             @default(0)
+  posts       PostCategory[]
+  courses     CourseCategory[]
+  events      EventCategory[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PostCategory {
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+}
+
+model CourseCategory {
+  courseId    String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, categoryId])
+}
+
+model EventCategory {
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, categoryId])
 }

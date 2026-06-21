@@ -98,6 +98,7 @@ export class UsersService {
         createdAt: true,
         emailDigest: true,
         calendarInvites: true,
+        eventReminders: true,
         _count: {
           select: { posts: true, courseProgress: true, eventRsvps: true },
         },
@@ -155,6 +156,14 @@ export class UsersService {
       where: { id: userId },
       data: { calendarInvites },
       select: { id: true, calendarInvites: true },
+    });
+  }
+
+  async updateEventReminders(userId: string, eventReminders: boolean) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { eventReminders },
+      select: { id: true, eventReminders: true },
     });
   }
 

@@ -269,7 +269,7 @@
 |----|---------|----------|------|--------|
 | GL-001 | In-platform onboarding sequence (welcome wizard, profile setup, tour) — no emails, all in-app | P1 | L | `[ ]` |
 | GL-002 | "Say hello" / introduce-yourself prompt for new members (pinned intro thread or dedicated section) | P1 | M | `[ ]` |
-| GL-003 | Post types: question, discussion, announcement, introduction — filterable in feed | P1 | M | `[ ]` |
+| GL-003 | Post types: question, discussion, announcement, introduction — filterable in feed | P1 | M | `[x]` |
 
 #### 3B · Personal Development Area ("My Private Area")
 
@@ -293,7 +293,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-012 | "Explore by category" — topic tags on courses, events, posts (e.g. Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other) | P1 | L | `[ ]` |
+| GL-012 | "Explore by category" — topic tags on courses, events, posts (e.g. Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other) | P1 | L | `[x]` |
 | GL-013 | Category landing pages — browse all content filtered by topic | P1 | M | `[ ]` |
 | GL-014 | "Leadership and AI" section — curated mix of courses, methods, news, testimonials on AI + leadership | P1 | M | `[ ]` |
 
@@ -308,7 +308,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-017 | Event reminders — automated email/in-app reminder 24h and 1h before event | P1 | M | `[ ]` |
+| GL-017 | Event reminders — automated email/in-app reminder 24h and 1h before event | P1 | M | `[x]` |
 | GL-018 | Event topic/date voting — members vote on proposed topics and preferred dates for upcoming events | P1 | L | `[ ]` |
 
 #### 3G · Social Proof & Engagement

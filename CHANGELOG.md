@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] — 2026-06-21
+
+### Added
+- **Post Types**: Posts can be typed as Discussion, Question, Announcement, or Introduction — with colored badges in the feed and type-based filtering
+- **Content Categories**: Category model with 8 default topics (Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other); many-to-many tagging for posts, courses, and events; category selector in post composer
+- **Explore Page**: New `/explore` page with category grid — click a category to browse its posts, courses, and events
+- **Categories API**: Full CRUD at `/categories` with content aggregation endpoint (`GET /categories/:slug/content`)
+- **Event Reminders**: Automated email and in-app reminders sent 24h and 1h before events to RSVP'd attendees; cron job runs every 15 minutes with duplicate-prevention flags
+- **Event Reminders Settings**: Toggle in Settings → Notifications to enable/disable event reminder emails
+
+---
+
 ## [1.17.0] — 2026-06-17
 
 ### Added

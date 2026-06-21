@@ -8,6 +8,7 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateDigestDto } from './dto/update-digest.dto';
 import { UpdateCalendarInvitesDto } from './dto/update-calendar-invites.dto';
+import { UpdateEventRemindersDto } from './dto/update-event-reminders.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -105,6 +106,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Toggle calendar invite emails for event RSVPs' })
   updateCalendarInvites(@CurrentUser() user: any, @Body() dto: UpdateCalendarInvitesDto) {
     return this.usersService.updateCalendarInvites(user.id, dto.calendarInvites);
+  }
+
+  @Patch('me/event-reminders')
+  @ApiOperation({ summary: 'Toggle event reminder notifications' })
+  updateEventReminders(@CurrentUser() user: any, @Body() dto: UpdateEventRemindersDto) {
+    return this.usersService.updateEventReminders(user.id, dto.eventReminders);
   }
 
   @Get(':id')
