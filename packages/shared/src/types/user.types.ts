@@ -26,6 +26,7 @@ export interface AuthUser {
   name: string;
   role: Role;
   avatarUrl?: string | null;
+  membershipTier?: string;
 }
 
 export interface TokenPair {

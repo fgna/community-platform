@@ -102,6 +102,7 @@ export class UsersService {
         emailDigest: true,
         calendarInvites: true,
         eventReminders: true,
+        membershipTier: true,
         _count: {
           select: { posts: true, courseProgress: true, eventRsvps: true },
         },

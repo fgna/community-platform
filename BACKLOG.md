@@ -322,7 +322,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-021 | "My Learning Group" (Lernpartner) — small private groups with shared goals, group chat, progress visibility | P1 | XL | `[ ]` |
+| GL-021 | "My Learning Group" (Lernpartner) — small private groups with shared goals, group chat, progress visibility | P1 | XL | `[x]` |
 
 #### 3I · Personalisation & Digest
 
@@ -335,7 +335,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-024 | Free-tier feature gating — limited visibility (e.g. only landing page, 1 free course, no DMs) with upgrade prompt | P1 | L | `[ ]` |
+| GL-024 | Free-tier feature gating — limited visibility (e.g. only landing page, 1 free course, no DMs) with upgrade prompt | P1 | L | `[x]` |
 | GL-025 | Stripe billing integration (subscription plans, seat management) | P2 | XL | `[ ]` |
 
 #### 3K · Internationalisation

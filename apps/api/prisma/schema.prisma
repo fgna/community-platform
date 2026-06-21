@@ -49,11 +49,20 @@ model User {
   eventProposals   EventProposal[]
   proposalVotes    ProposalVote[]
   uploads          Upload[]
+  membershipTier   MembershipTier   @default(PREMIUM)
+  learningGroups       LearningGroup[]
+  learningGroupMembers LearningGroupMember[]
+  learningGroupMessages LearningGroupMessage[]
 }
 
 enum Role {
   ADMIN
   MEMBER
+}
+
+enum MembershipTier {
+  FREE
+  PREMIUM
 }
 
 enum EmailDigestFrequency {
@@ -553,4 +562,40 @@ model Upload {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model LearningGroup {
+  id          String                 @id @default(uuid())
+  name        String
+  description String?
+  createdById String
+  createdBy   User                   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  members     LearningGroupMember[]
+  messages    LearningGroupMessage[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+}
+
+model LearningGroupMember {
+  id       String        @id @default(uuid())
+  groupId  String
+  group    LearningGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime      @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model LearningGroupMessage {
+  id        String        @id @default(uuid())
+  groupId   String
+  group     LearningGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime      @default(now())
+
+  @@index([groupId, createdAt(sort: Desc)])
 }

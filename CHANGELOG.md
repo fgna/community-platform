@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] — 2026-06-21
+
+### Added
+- **Learning Groups (GL-021)**: Small peer learning groups (max 8 members) with real-time group chat, member avatars, join/leave/create/delete; creator management (add/remove members); group listing and detail views with message history; `/learning-groups` page with glassmorphism-themed cards
+- **Free-Tier Gating (GL-024)**: `MembershipTier` enum (FREE/PREMIUM) on User model; `PremiumGuard` and `@RequirePremium()` decorator for backend route protection; `TierService` with admin tier management; `<PremiumGate>` wrapper component and `<UpgradePrompt>` for frontend feature gating; tier info API endpoint; admins bypass all tier restrictions
+- **Shared Tier Types**: `MembershipTier` enum, `TierStatus` interface, `PREMIUM_FEATURES` config, and `FREE_TIER_LIMITS`/`PREMIUM_TIER_LIMITS` in `@community/shared`
+
+---
+
 ## [1.23.0] — 2026-06-21
 
 ### Added

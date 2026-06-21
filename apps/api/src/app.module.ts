@@ -25,6 +25,8 @@ import { JournalModule } from './journal/journal.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { EventProposalsModule } from './event-proposals/event-proposals.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { LearningGroupsModule } from './learning-groups/learning-groups.module';
+import { TierModule } from './tier/tier.module';
 
 @Module({
   imports: [
@@ -62,6 +64,8 @@ import { UploadsModule } from './uploads/uploads.module';
     AssessmentsModule,
     EventProposalsModule,
     UploadsModule,
+    LearningGroupsModule,
+    TierModule,
   ],
   providers: [
     DigestService,
