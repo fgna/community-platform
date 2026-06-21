@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
 
 @Injectable()
 export class UsersService {
@@ -173,6 +174,31 @@ export class UsersService {
       where: { id: userId },
       data: { emailDigest: frequency as any },
       select: { id: true, emailDigest: true },
+    });
+  }
+
+  async getChallenge(userId: string) {
+    return this.prisma.challenge.findUnique({
+      where: { userId },
+    });
+  }
+
+  async upsertChallenge(userId: string, dto: UpsertChallengeDto) {
+    return this.prisma.challenge.upsert({
+      where: { userId },
+      create: {
+        userId,
+        title: dto.title,
+        description: dto.description,
+        reflection: dto.reflection,
+        status: dto.status as any,
+      },
+      update: {
+        title: dto.title,
+        description: dto.description,
+        reflection: dto.reflection,
+        status: dto.status as any,
+      },
     });
   }
 }

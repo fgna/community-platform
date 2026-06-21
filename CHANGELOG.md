@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] — 2026-06-21
+
+### Added
+- **My Challenge**: Personal "Most Important Challenge" card on the dashboard — set a challenge with title, description, reflection, and status (active/completed/archived); upsert API on User model
+- **Q&A Feed**: Dedicated `/questions` page filtered to QUESTION-type posts with "Ask a Question" button; sidebar nav link added
+- **Testimonials**: Member-submitted success stories with admin approval workflow; featured badge support; `/testimonials` page with story grid and submission form; full CRUD API with admin moderation endpoints
+
+---
+
 ## [1.19.0] — 2026-06-21
 
 ### Added

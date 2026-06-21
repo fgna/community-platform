@@ -19,6 +19,7 @@ import { InvitesModule } from './invites/invites.module';
 import { EmailModule } from './email/email.module';
 import { DigestService } from './email/digest.service';
 import { CategoriesModule } from './categories/categories.module';
+import { TestimonialsModule } from './testimonials/testimonials.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CategoriesModule } from './categories/categories.module';
     InvitesModule,
     EmailModule,
     CategoriesModule,
+    TestimonialsModule,
   ],
   providers: [
     DigestService,

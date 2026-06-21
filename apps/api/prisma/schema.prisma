@@ -40,6 +40,8 @@ model User {
   eventReminders   Boolean              @default(true)
   hasIntroduced    Boolean              @default(false)
   courseNotes       CourseNote[]
+  testimonials     Testimonial[]
+  challenge        Challenge?
 }
 
 enum Role {
@@ -415,4 +417,36 @@ model EventCategory {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([eventId, categoryId])
+}
+
+model Challenge {
+  id          String          @id @default(cuid())
+  userId      String          @unique
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  reflection  String?
+  status      ChallengeStatus @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  role       String?
+  isApproved Boolean  @default(false)
+  isFeatured Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isApproved])
 }

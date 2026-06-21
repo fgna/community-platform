@@ -276,7 +276,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[ ]` |
-| GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[ ]` |
+| GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[x]` |
 | GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
 | GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[ ]` |
 | GL-008 | *Ambitious*: Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[ ]` |
@@ -301,7 +301,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-015 | "My Questions" — dedicated Q&A feed (to Peter / to the community), separate from main feed | P1 | M | `[ ]` |
+| GL-015 | "My Questions" — dedicated Q&A feed (to Peter / to the community), separate from main feed | P1 | M | `[x]` |
 | GL-016 | *Ambitious*: AI Coach ("Pete — your virtual coach") — AI avatar answers questions instantly using platform content as context | P2 | XL | `[ ]` |
 
 #### 3F · Events & Workflows
@@ -315,7 +315,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-019 | Testimonials section — prominent but subtle; admin-managed or member-submitted success stories | P1 | M | `[ ]` |
+| GL-019 | Testimonials section — prominent but subtle; admin-managed or member-submitted success stories | P1 | M | `[x]` |
 | GL-020 | Success stories — dedicated section or feed filter for member success stories / case studies | P1 | M | `[ ]` |
 
 #### 3H · Learning Groups
