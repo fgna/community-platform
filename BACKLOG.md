@@ -352,7 +352,7 @@
 | GL-028 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | L | `[ ]` |
 | GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[x]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
-| GL-031 | Post bookmarks / saved items | P2 | M | `[ ]` |
+| GL-031 | Post bookmarks / saved items | P2 | M | `[x]` |
 | GL-032 | Polls within posts | P2 | M | `[x]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |

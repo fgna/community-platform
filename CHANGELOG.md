@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] — 2026-06-21
+
+### Added
+- **Post Bookmarks (GL-031)**: Save/unsave posts with toggle button in post action bar; `/bookmarks` page listing all saved posts with pagination; `Bookmark` model with unique user+post constraint; bookmark status indicator (filled icon when saved); sidebar "Saved" nav item
+
+---
+
 ## [1.24.0] — 2026-06-21
 
 ### Added

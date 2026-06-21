@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
+import { BookmarksService } from './bookmarks.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -9,7 +10,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @ApiBearerAuth()
 @Controller('posts')
 export class PostsController {
-  constructor(private postsService: PostsService) {}
+  constructor(
+    private postsService: PostsService,
+    private bookmarksService: BookmarksService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all posts' })
@@ -30,6 +34,18 @@ export class PostsController {
   @ApiQuery({ name: 'limit', required: false })
   getTrending(@Query('limit') limit = 20, @CurrentUser() user: any) {
     return this.postsService.getTrending(Number(limit), user?.id);
+  }
+
+  @Get('bookmarks')
+  @ApiOperation({ summary: "List current user's bookmarked posts" })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getBookmarks(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @CurrentUser() user: any,
+  ) {
+    return this.bookmarksService.findAll(user.id, Number(page), Number(limit));
   }
 
   @Get(':id')
@@ -95,5 +111,17 @@ export class PostsController {
   @ApiOperation({ summary: 'Remove own vote from a poll' })
   unvotePoll(@Param('id') postId: string, @CurrentUser() user: any) {
     return this.postsService.unvotePoll(postId, user.id);
+  }
+
+  @Post(':id/bookmark')
+  @ApiOperation({ summary: 'Toggle bookmark on a post' })
+  toggleBookmark(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.bookmarksService.toggle(user.id, id);
+  }
+
+  @Get(':id/bookmark')
+  @ApiOperation({ summary: 'Check if current user bookmarked a post' })
+  checkBookmark(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.bookmarksService.isBookmarked(user.id, id).then((bookmarked) => ({ bookmarked }));
   }
 }

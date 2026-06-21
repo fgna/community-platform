@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessageCircle, MoreHorizontal, Trash2, Pin, HelpCircle, Megaphone, Hand, Trophy } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, Trash2, Pin, HelpCircle, Megaphone, Hand, Trophy, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionBar } from './reaction-bar';
 import { CommentList } from './comment-list';
 import { PollCard } from './poll-card';
 import { useDeletePost } from '@/hooks/use-feed';
+import { useToggleBookmark, useIsBookmarked } from '@/hooks/use-bookmarks';
 import { useAuth } from '@/hooks/use-auth';
 import { timeAgo, getInitials } from '@community/shared';
 import type { Post } from '@community/shared';
@@ -30,6 +31,9 @@ export function PostCard({ post }: PostCardProps) {
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const deletePost = useDeletePost();
+  const toggleBookmark = useToggleBookmark();
+  const { data: bookmarkStatus } = useIsBookmarked(post.id);
+  const isBookmarked = bookmarkStatus?.bookmarked ?? false;
 
   const canDelete = user?.id === post.authorId || user?.role === 'ADMIN';
 
@@ -168,6 +172,14 @@ export function PostCard({ post }: PostCardProps) {
         >
           <MessageCircle size={14} />
           <span>{post._count?.comments ?? post.comments?.length ?? 0}</span>
+        </button>
+        <button
+          onClick={() => toggleBookmark.mutate(post.id)}
+          className="flex items-center gap-1.5 text-xs py-1 px-2 rounded-lg transition-colors hover:bg-white/5 ml-auto"
+          style={{ color: isBookmarked ? 'var(--theme-primary)' : 'var(--theme-text-muted)' }}
+          title={isBookmarked ? 'Remove bookmark' : 'Bookmark post'}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
         </button>
       </div>
 
