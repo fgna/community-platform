@@ -22,11 +22,12 @@ export class EventRemindersService {
 
   private async send24hReminders() {
     const now = new Date();
+    const in75min = new Date(now.getTime() + 75 * 60 * 1000);
     const in25h = new Date(now.getTime() + 25 * 60 * 60 * 1000);
 
     const events = await this.prisma.event.findMany({
       where: {
-        startsAt: { gte: now, lte: in25h },
+        startsAt: { gt: in75min, lte: in25h },
         reminder24hSent: false,
       },
     });

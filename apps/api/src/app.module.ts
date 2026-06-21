@@ -22,6 +22,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { TestimonialsModule } from './testimonials/testimonials.module';
 import { GoalsModule } from './goals/goals.module';
 import { JournalModule } from './journal/journal.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { EventProposalsModule } from './event-proposals/event-proposals.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -56,6 +59,9 @@ import { JournalModule } from './journal/journal.module';
     TestimonialsModule,
     GoalsModule,
     JournalModule,
+    AssessmentsModule,
+    EventProposalsModule,
+    UploadsModule,
   ],
   providers: [
     DigestService,

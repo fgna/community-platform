@@ -87,70 +87,51 @@ export class CategoriesService {
         }),
       ]);
 
-      result.posts = {
-        data: data.map((pc) => pc.post),
-        total,
-      };
+      result.posts = data.map((pc) => pc.post);
     }
 
     if (!type || type === 'courses') {
-      const [data, total] = await Promise.all([
-        this.prisma.courseCategory.findMany({
-          where: { categoryId: category.id },
-          skip: type === 'courses' ? skip : undefined,
-          take: type === 'courses' ? limit : limit,
-          include: {
-            course: {
-              select: {
-                id: true,
-                title: true,
-                description: true,
-                createdAt: true,
-                _count: { select: { modules: true, progress: true } },
-              },
+      const data = await this.prisma.courseCategory.findMany({
+        where: { categoryId: category.id },
+        skip: type === 'courses' ? skip : undefined,
+        take: type === 'courses' ? limit : limit,
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              createdAt: true,
+              _count: { select: { modules: true, progress: true } },
             },
           },
-        }),
-        this.prisma.courseCategory.count({
-          where: { categoryId: category.id },
-        }),
-      ]);
+        },
+      });
 
-      result.courses = {
-        data: data.map((cc) => cc.course),
-        total,
-      };
+      result.courses = data.map((cc) => cc.course);
     }
 
     if (!type || type === 'events') {
-      const [data, total] = await Promise.all([
-        this.prisma.eventCategory.findMany({
-          where: { categoryId: category.id },
-          skip: type === 'events' ? skip : undefined,
-          take: type === 'events' ? limit : limit,
-          include: {
-            event: {
-              select: {
-                id: true,
-                title: true,
-                description: true,
-                startsAt: true,
-                endsAt: true,
-                location: true,
-                _count: { select: { rsvps: true } },
-              },
+      const data = await this.prisma.eventCategory.findMany({
+        where: { categoryId: category.id },
+        skip: type === 'events' ? skip : undefined,
+        take: type === 'events' ? limit : limit,
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              startsAt: true,
+              endsAt: true,
+              location: true,
+              _count: { select: { rsvps: true } },
             },
           },
-        }),
-        this.prisma.eventCategory.count({
-          where: { categoryId: category.id },
-        }),
-      ]);
+        },
+      });
 
-      result.events = {
-        data: data.map((ec) => ec.event),
-        total,
-      };
+      result.events = data.map((ec) => ec.event);
     }
 
     return {

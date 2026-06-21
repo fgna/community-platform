@@ -176,6 +176,13 @@ test.describe('Logout', () => {
     await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
+    // Dismiss onboarding wizard if it appears
+    const skipBtn = page.getByRole('button', { name: /skip/i });
+    if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await skipBtn.click();
+      await skipBtn.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    }
+
     // Find and click the logout option (via user menu or sidebar)
     // Try topbar user avatar / dropdown first
     const logoutBtn = page.getByRole('button', { name: /log out|sign out|logout/i });

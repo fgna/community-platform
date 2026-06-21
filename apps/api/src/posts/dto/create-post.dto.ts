@@ -7,6 +7,7 @@ export enum PostTypeEnum {
   QUESTION = 'QUESTION',
   ANNOUNCEMENT = 'ANNOUNCEMENT',
   INTRODUCTION = 'INTRODUCTION',
+  SUCCESS_STORY = 'SUCCESS_STORY',
 }
 
 export class CreatePollDto {

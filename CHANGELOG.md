@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] — 2026-06-21
+
+### Added
+- **GROWTH Self-Assessment**: 30-question assessment across 6 leadership dimensions (Growth mindset, Rhythms, Ownership, Willpower, Teamwork, Holistic balance); SVG radar chart visualization; dimension score breakdown; assessment history; retake flow at `/assessment`
+- **Event Proposals**: Admin-created event proposals with topic voting and date preference selection; members upvote proposals and pick preferred dates from options; date vote distribution display; admin can close/delete proposals; `/event-proposals` page
+- **S3 File Uploads**: Unified upload service supporting S3-compatible storage (MinIO, DigitalOcean Spaces, AWS) with local disk fallback; image uploads (5MB max) and file uploads (20MB max); drag-and-drop `ImageUpload` component with preview; `Upload` model tracking metadata
+
+### Fixed
+- **SUCCESS_STORY post type rejected by API** — Added `SUCCESS_STORY` to `PostTypeEnum` in create-post DTO so the validation pipe accepts the new type
+- **Category content pages empty** — API returned `{ data, total }` objects but UI expected arrays; changed API to return flat arrays
+- **Event reminder 24h/1h overlap** — Events created less than 75 minutes before start received both 24h and 1h reminders simultaneously; added lower bound to 24h query
+- **Introduction banner not activating composer** — `CreatePost` state was initialized once from props; added `key` prop to remount when intro type changes
+- **E2E logout test blocked by onboarding modal** — Onboarding wizard overlay intercepted pointer events; test now dismisses the modal before attempting logout
+
+---
+
 ## [1.22.0] — 2026-06-21
 
 ### Added

@@ -45,7 +45,7 @@ export default function FeedPage() {
       {showBanner && (
         <IntroductionBanner onIntroduce={handleIntroduce} onDismiss={handleDismiss} />
       )}
-      <CreatePost initialType={introType} initialFocused={!!introType} />
+      <CreatePost key={introType ?? 'default'} initialType={introType} initialFocused={!!introType} />
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => <PostSkeleton key={i} />)}

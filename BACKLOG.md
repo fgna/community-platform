@@ -278,7 +278,7 @@
 | GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[x]` |
 | GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[x]` |
 | GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
-| GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[ ]` |
+| GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[x]` |
 | GL-008 | *Ambitious*: Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[ ]` |
 
 #### 3C · Journaling
@@ -309,7 +309,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-017 | Event reminders — automated email/in-app reminder 24h and 1h before event | P1 | M | `[x]` |
-| GL-018 | Event topic/date voting — members vote on proposed topics and preferred dates for upcoming events | P1 | L | `[ ]` |
+| GL-018 | Event topic/date voting — members vote on proposed topics and preferred dates for upcoming events | P1 | L | `[x]` |
 
 #### 3G · Social Proof & Engagement
 
@@ -350,7 +350,7 @@
 |----|---------|----------|------|--------|
 | GL-027 | Mobile app (React Native / Expo) — core features: feed, events, messages, notifications | P2 | XL | `[ ]` |
 | GL-028 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | L | `[ ]` |
-| GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[ ]` |
+| GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[x]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-031 | Post bookmarks / saved items | P2 | M | `[ ]` |
 | GL-032 | Polls within posts | P2 | M | `[x]` |
