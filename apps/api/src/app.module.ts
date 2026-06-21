@@ -21,6 +21,7 @@ import { DigestService } from './email/digest.service';
 import { CategoriesModule } from './categories/categories.module';
 import { TestimonialsModule } from './testimonials/testimonials.module';
 import { GoalsModule } from './goals/goals.module';
+import { JournalModule } from './journal/journal.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { GoalsModule } from './goals/goals.module';
     CategoriesModule,
     TestimonialsModule,
     GoalsModule,
+    JournalModule,
   ],
   providers: [
     DigestService,

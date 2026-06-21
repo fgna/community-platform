@@ -98,6 +98,7 @@ export class UsersService {
         role: true,
         createdAt: true,
         hasIntroduced: true,
+        onboardingCompleted: true,
         emailDigest: true,
         calendarInvites: true,
         eventReminders: true,
@@ -199,6 +200,17 @@ export class UsersService {
         reflection: dto.reflection,
         status: dto.status as any,
       },
+    });
+  }
+
+  async completeOnboarding(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+      select: { id: true, onboardingCompleted: true },
     });
   }
 }

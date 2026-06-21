@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { CommandPalette } from '@/components/command-palette/command-palette';
+import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
       <CommandPalette />
+      <OnboardingWizard />
     </div>
   );
 }

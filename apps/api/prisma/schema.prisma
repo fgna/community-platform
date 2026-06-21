@@ -38,11 +38,13 @@ model User {
   lastDigestAt     DateTime?
   calendarInvites  Boolean              @default(true)
   eventReminders   Boolean              @default(true)
-  hasIntroduced    Boolean              @default(false)
+  hasIntroduced         Boolean              @default(false)
+  onboardingCompleted   Boolean              @default(false)
   courseNotes       CourseNote[]
   testimonials     Testimonial[]
   challenge        Challenge?
   goals            Goal[]
+  journalEntries   JournalEntry[]
 }
 
 enum Role {
@@ -473,4 +475,18 @@ model Goal {
   updatedAt   DateTime   @updatedAt
 
   @@index([userId])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  mood      String?
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }

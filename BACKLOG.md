@@ -267,7 +267,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-001 | In-platform onboarding sequence (welcome wizard, profile setup, tour) — no emails, all in-app | P1 | L | `[ ]` |
+| GL-001 | In-platform onboarding sequence (welcome wizard, profile setup, tour) — no emails, all in-app | P1 | L | `[x]` |
 | GL-002 | "Say hello" / introduce-yourself prompt for new members (pinned intro thread or dedicated section) | P1 | M | `[x]` |
 | GL-003 | Post types: question, discussion, announcement, introduction — filterable in feed | P1 | M | `[x]` |
 
@@ -285,8 +285,8 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-009 | In-app journaling — rich-text daily/weekly journal entries (private) | P1 | L | `[ ]` |
-| GL-010 | Journaling streaks & tracking — calendar heatmap, current streak, weekly/daily completion | P1 | M | `[ ]` |
+| GL-009 | In-app journaling — rich-text daily/weekly journal entries (private) | P1 | L | `[x]` |
+| GL-010 | Journaling streaks & tracking — calendar heatmap, current streak, weekly/daily completion | P1 | M | `[x]` |
 | GL-011 | Journal prompts — optional guided prompts (reflection questions, gratitude, leadership) | P2 | S | `[ ]` |
 
 #### 3D · Content Discovery & Categories

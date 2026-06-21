@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] — 2026-06-21
+
+### Added
+- **Journaling**: Private daily journal entries at `/journal` with calendar grid, day selection, auto-save editor, mood tracking; streak stats (current/longest streak, total entries, 30-day count); `JournalEntry` model with upsert API and month-based listing
+- **Onboarding Wizard**: 4-step welcome sequence for new members — welcome screen, profile setup (name/bio/avatar), interest selection (category chips), and feature tour; shown as modal overlay on first login; `onboardingCompleted` flag on User model
+
+---
+
 ## [1.21.0] — 2026-06-21
 
 ### Added

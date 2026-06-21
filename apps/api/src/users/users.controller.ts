@@ -127,6 +127,12 @@ export class UsersController {
     return this.usersService.upsertChallenge(user.id, dto);
   }
 
+  @Post('me/onboarding/complete')
+  @ApiOperation({ summary: 'Mark onboarding as completed' })
+  completeOnboarding(@CurrentUser() user: any) {
+    return this.usersService.completeOnboarding(user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
