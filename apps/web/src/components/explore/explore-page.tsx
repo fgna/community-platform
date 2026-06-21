@@ -64,8 +64,9 @@ export function ExplorePage() {
               const total = cat._count.posts + cat._count.courses + cat._count.events;
               const isActive = selected === cat.slug;
               return (
-                <button
+                <Link
                   key={cat.id}
+                  href={`/explore/${cat.slug}`}
                   onClick={() => setSelected(isActive ? null : cat.slug)}
                   className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all text-center"
                   style={{
@@ -87,7 +88,7 @@ export function ExplorePage() {
                   <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
                     {total} item{total !== 1 ? 's' : ''}
                   </span>
-                </button>
+                </Link>
               );
             })}
           </div>

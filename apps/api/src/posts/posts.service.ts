@@ -188,6 +188,13 @@ export class PostsService {
       select: postSelect,
     });
 
+    if (dto.type === 'INTRODUCTION') {
+      await this.prisma.user.update({
+        where: { id: authorId },
+        data: { hasIntroduced: true },
+      });
+    }
+
     return post;
   }
 

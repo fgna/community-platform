@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CourseProgress } from '@/components/courses/course-progress';
+import { LessonNotes } from '@/components/courses/lesson-notes';
 
 function useCourseDetail(id: string) {
   return useQuery({
@@ -169,6 +170,7 @@ export default function CourseDetailPage() {
                   Mark as Complete
                 </Button>
               )}
+              <LessonNotes lessonId={activeLessonData.id} />
             </div>
           ) : (
             <div

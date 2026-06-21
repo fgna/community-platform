@@ -96,6 +96,7 @@ export class UsersService {
         avatarUrl: true,
         role: true,
         createdAt: true,
+        hasIntroduced: true,
         emailDigest: true,
         calendarInvites: true,
         eventReminders: true,

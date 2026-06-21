@@ -25,6 +25,30 @@ export function useCourse(id: string) {
   });
 }
 
+export function useLessonNote(lessonId: string | null) {
+  return useQuery({
+    queryKey: ['lesson-note', lessonId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/courses/lessons/${lessonId}/notes`);
+      return data;
+    },
+    enabled: !!lessonId,
+  });
+}
+
+export function useUpsertNote(lessonId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (content: string) => {
+      const { data } = await apiClient.put(`/courses/lessons/${lessonId}/notes`, { content });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lesson-note', lessonId] });
+    },
+  });
+}
+
 export function useUpdateProgress(courseId: string) {
   const queryClient = useQueryClient();
   return useMutation({

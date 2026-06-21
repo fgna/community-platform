@@ -29,12 +29,17 @@ interface PollDraft {
 
 type EditorMode = 'plain' | 'rich';
 
-export function CreatePost() {
+interface CreatePostProps {
+  initialType?: PostType;
+  initialFocused?: boolean;
+}
+
+export function CreatePost({ initialType, initialFocused }: CreatePostProps = {}) {
   const [content, setContent] = useState('');
   const [richContent, setRichContent] = useState('');
-  const [focused, setFocused] = useState(false);
+  const [focused, setFocused] = useState(initialFocused ?? false);
   const [editorMode, setEditorMode] = useState<EditorMode>('rich');
-  const [postType, setPostType] = useState<PostType>('DISCUSSION');
+  const [postType, setPostType] = useState<PostType>(initialType ?? 'DISCUSSION');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showCategories, setShowCategories] = useState(false);
   const [showPoll, setShowPoll] = useState(false);

@@ -268,7 +268,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-001 | In-platform onboarding sequence (welcome wizard, profile setup, tour) — no emails, all in-app | P1 | L | `[ ]` |
-| GL-002 | "Say hello" / introduce-yourself prompt for new members (pinned intro thread or dedicated section) | P1 | M | `[ ]` |
+| GL-002 | "Say hello" / introduce-yourself prompt for new members (pinned intro thread or dedicated section) | P1 | M | `[x]` |
 | GL-003 | Post types: question, discussion, announcement, introduction — filterable in feed | P1 | M | `[x]` |
 
 #### 3B · Personal Development Area ("My Private Area")
@@ -277,7 +277,7 @@
 |----|---------|----------|------|--------|
 | GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[ ]` |
 | GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[ ]` |
-| GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[ ]` |
+| GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
 | GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[ ]` |
 | GL-008 | *Ambitious*: Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[ ]` |
 
@@ -294,7 +294,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-012 | "Explore by category" — topic tags on courses, events, posts (e.g. Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other) | P1 | L | `[x]` |
-| GL-013 | Category landing pages — browse all content filtered by topic | P1 | M | `[ ]` |
+| GL-013 | Category landing pages — browse all content filtered by topic | P1 | M | `[x]` |
 | GL-014 | "Leadership and AI" section — curated mix of courses, methods, news, testimonials on AI + leadership | P1 | M | `[ ]` |
 
 #### 3E · Q&A & AI Coach
