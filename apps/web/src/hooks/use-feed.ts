@@ -38,7 +38,7 @@ export function usePost(id: string) {
 
 interface CreatePostPayload {
   content: string;
-  type?: 'DISCUSSION' | 'QUESTION' | 'ANNOUNCEMENT' | 'INTRODUCTION';
+  type?: 'DISCUSSION' | 'QUESTION' | 'ANNOUNCEMENT' | 'INTRODUCTION' | 'SUCCESS_STORY';
   categoryIds?: string[];
   poll?: {
     question: string;

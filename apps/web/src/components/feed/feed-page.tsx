@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
-import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X, HelpCircle, Megaphone, Hand, MessageSquare } from 'lucide-react';
+import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X, HelpCircle, Megaphone, Hand, MessageSquare, Trophy } from 'lucide-react';
 import { getInitials } from '@community/shared';
 import { renderMarkdown, extractHashtags } from '@/lib/markdown';
 
@@ -19,6 +19,7 @@ const POST_TYPE_TABS = [
   { key: 'QUESTION', label: 'Questions', icon: HelpCircle },
   { key: 'ANNOUNCEMENT', label: 'Announcements', icon: Megaphone },
   { key: 'INTRODUCTION', label: 'Introductions', icon: Hand },
+  { key: 'SUCCESS_STORY', label: 'Success Stories', icon: Trophy },
 ] as const;
 
 export function FeedPage() {

@@ -275,7 +275,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[ ]` |
+| GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[x]` |
 | GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[x]` |
 | GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
 | GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[ ]` |
@@ -295,7 +295,7 @@
 |----|---------|----------|------|--------|
 | GL-012 | "Explore by category" — topic tags on courses, events, posts (e.g. Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other) | P1 | L | `[x]` |
 | GL-013 | Category landing pages — browse all content filtered by topic | P1 | M | `[x]` |
-| GL-014 | "Leadership and AI" section — curated mix of courses, methods, news, testimonials on AI + leadership | P1 | M | `[ ]` |
+| GL-014 | "Leadership and AI" section — curated mix of courses, methods, news, testimonials on AI + leadership | P1 | M | `[x]` |
 
 #### 3E · Q&A & AI Coach
 
@@ -316,7 +316,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-019 | Testimonials section — prominent but subtle; admin-managed or member-submitted success stories | P1 | M | `[x]` |
-| GL-020 | Success stories — dedicated section or feed filter for member success stories / case studies | P1 | M | `[ ]` |
+| GL-020 | Success stories — dedicated section or feed filter for member success stories / case studies | P1 | M | `[x]` |
 
 #### 3H · Learning Groups
 

@@ -42,6 +42,7 @@ model User {
   courseNotes       CourseNote[]
   testimonials     Testimonial[]
   challenge        Challenge?
+  goals            Goal[]
 }
 
 enum Role {
@@ -60,6 +61,7 @@ enum PostType {
   QUESTION
   ANNOUNCEMENT
   INTRODUCTION
+  SUCCESS_STORY
 }
 
 model Post {
@@ -449,4 +451,26 @@ model Testimonial {
   updatedAt  DateTime @updatedAt
 
   @@index([isApproved])
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+model Goal {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  progress    Int        @default(0)
+  targetDate  DateTime?
+  status      GoalStatus @default(ACTIVE)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
 }

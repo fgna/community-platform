@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] — 2026-06-21
+
+### Added
+- **My Goals**: Personal goal tracker on dashboard — up to 5 goals with title, description, progress bar (0-100%), target date, and status (active/completed/paused); drag-to-reorder support; full CRUD API with 5-goal limit enforcement
+- **Leadership & AI**: Curated `/leadership-ai` page showcasing AI-tagged courses, posts, and events from the category system; hero section with gradient, sectioned content with links to full explore view
+- **Success Stories**: New `SUCCESS_STORY` post type with purple badge; dedicated `/success-stories` page; "Share Your Story" CTA with filtered feed; type added to feed filters and post composer
+
+---
+
 ## [1.20.0] — 2026-06-21
 
 ### Added

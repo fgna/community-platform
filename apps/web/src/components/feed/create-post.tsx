@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Send, Loader2, BarChart3, Plus, X, Type, PenLine, HelpCircle, Megaphone, Hand, MessageSquare, Tag } from 'lucide-react';
+import { Send, Loader2, BarChart3, Plus, X, Type, PenLine, HelpCircle, Megaphone, Hand, MessageSquare, Tag, Trophy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,13 +13,14 @@ import apiClient from '@/lib/api-client';
 import { getInitials } from '@community/shared';
 import { RichTextEditor } from './rich-text-editor';
 
-type PostType = 'DISCUSSION' | 'QUESTION' | 'ANNOUNCEMENT' | 'INTRODUCTION';
+type PostType = 'DISCUSSION' | 'QUESTION' | 'ANNOUNCEMENT' | 'INTRODUCTION' | 'SUCCESS_STORY';
 
 const POST_TYPES: { value: PostType; label: string; icon: React.ElementType }[] = [
   { value: 'DISCUSSION', label: 'Discussion', icon: MessageSquare },
   { value: 'QUESTION', label: 'Question', icon: HelpCircle },
   { value: 'ANNOUNCEMENT', label: 'Announcement', icon: Megaphone },
   { value: 'INTRODUCTION', label: 'Introduction', icon: Hand },
+  { value: 'SUCCESS_STORY', label: 'Success Story', icon: Trophy },
 ];
 
 interface PollDraft {

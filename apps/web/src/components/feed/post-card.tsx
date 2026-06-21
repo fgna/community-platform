@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessageCircle, MoreHorizontal, Trash2, Pin, HelpCircle, Megaphone, Hand } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, Trash2, Pin, HelpCircle, Megaphone, Hand, Trophy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionBar } from './reaction-bar';
@@ -74,6 +74,11 @@ export function PostCard({ post }: PostCardProps) {
           {(post as any).type === 'INTRODUCTION' && (
             <div className="flex items-center gap-1 text-xs font-medium" style={{ color: '#22c55e' }}>
               <Hand size={12} /> Introduction
+            </div>
+          )}
+          {(post as any).type === 'SUCCESS_STORY' && (
+            <div className="flex items-center gap-1 text-xs font-medium" style={{ color: '#a855f7' }}>
+              <Trophy size={12} /> Success Story
             </div>
           )}
         </div>
