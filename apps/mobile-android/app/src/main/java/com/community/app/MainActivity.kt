@@ -24,6 +24,8 @@ class MainActivity : AppCompatActivity() {
         const val KEY_ACCESS_TOKEN = "access_token"
         const val KEY_REFRESH_TOKEN = "refresh_token"
         const val KEY_LAST_URL = "last_url"
+        const val KEY_USER_JSON = "user_json"
+        const val KEY_USER_ROLE = "user_role"
         const val KEY_LAST_SYNC = "last_sync"
         const val KEY_LAST_RESULT = "last_result"
         private const val PERM_REQUEST = 100
@@ -97,8 +99,10 @@ class MainActivity : AppCompatActivity() {
                 val result = AuthClient.login(url, email, pass)
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putString(KEY_URL, url)
-                    .putString(KEY_ACCESS_TOKEN, result.accessToken)
-                    .putString(KEY_REFRESH_TOKEN, result.refreshToken)
+                    .putString(KEY_ACCESS_TOKEN, result.tokens.accessToken)
+                    .putString(KEY_REFRESH_TOKEN, result.tokens.refreshToken)
+                    .putString(KEY_USER_JSON, result.userJson)
+                    .putString(KEY_USER_ROLE, result.userRole)
                     .apply()
 
                 scheduleNotificationPolling()

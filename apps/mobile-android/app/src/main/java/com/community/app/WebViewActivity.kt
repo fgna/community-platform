@@ -1,7 +1,6 @@
 package com.community.app
 
 import android.os.Bundle
-import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -10,6 +9,10 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 
 class WebViewActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_DEEP_LINK = "deep_link_url"
+    }
 
     private lateinit var webView: WebView
 
@@ -39,9 +42,18 @@ class WebViewActivity : AppCompatActivity() {
             getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE).edit()
                 .remove(MainActivity.KEY_ACCESS_TOKEN)
                 .remove(MainActivity.KEY_REFRESH_TOKEN)
+                .remove(MainActivity.KEY_USER_JSON)
+                .remove(MainActivity.KEY_USER_ROLE)
                 .remove(MainActivity.KEY_LAST_URL)
                 .apply()
-            runOnUiThread { finish() }
+            runOnUiThread {
+                webView.evaluateJavascript(
+                    "document.cookie='auth-session=;path=/;expires=Thu,01 Jan 1970 00:00:01 GMT';" +
+                    "document.cookie='user-role=;path=/;expires=Thu,01 Jan 1970 00:00:01 GMT';" +
+                    "localStorage.removeItem('community-auth');", null
+                )
+                finish()
+            }
         }
     }
 
@@ -69,7 +81,7 @@ class WebViewActivity : AppCompatActivity() {
                 if (url != null && !url.startsWith("data:") && url != "about:blank") {
                     prefs.edit().putString(MainActivity.KEY_LAST_URL, url).apply()
                 }
-                injectTokensIntoLocalStorage(view, accessToken)
+                injectAuthState(view, accessToken)
             }
 
             override fun onReceivedError(
@@ -105,29 +117,39 @@ class WebViewActivity : AppCompatActivity() {
         if (baseUrl.isNullOrEmpty()) {
             webView.loadData(getString(R.string.webview_no_url), "text/plain", "utf-8")
         } else {
+            val deepLink = intent.getStringExtra(EXTRA_DEEP_LINK)
             val lastUrl = prefs.getString(MainActivity.KEY_LAST_URL, null)
-            webView.loadUrl(if (!lastUrl.isNullOrEmpty()) lastUrl else baseUrl)
+            val targetUrl = deepLink ?: (if (!lastUrl.isNullOrEmpty()) lastUrl else baseUrl)
+            webView.loadUrl(targetUrl)
         }
     }
 
-    private fun injectTokensIntoLocalStorage(view: WebView, accessToken: String) {
-        val refreshToken = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE)
-            .getString(MainActivity.KEY_REFRESH_TOKEN, "") ?: ""
+    private fun injectAuthState(view: WebView, accessToken: String) {
+        val prefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE)
+        val refreshToken = prefs.getString(MainActivity.KEY_REFRESH_TOKEN, "") ?: ""
+        val userJson = prefs.getString(MainActivity.KEY_USER_JSON, "") ?: ""
+        val userRole = prefs.getString(MainActivity.KEY_USER_ROLE, "MEMBER") ?: "MEMBER"
+        val cookieMaxAge = 7 * 24 * 60 * 60
         val js = """
             (function() {
                 try {
-                    var existing = localStorage.getItem('auth-storage');
+                    var existing = localStorage.getItem('community-auth');
                     if (!existing || existing.indexOf('accessToken') === -1) {
+                        var user = null;
+                        try { user = JSON.parse('$userJson'); } catch(e) {}
                         var state = {
                             state: {
+                                user: user,
                                 accessToken: '$accessToken',
                                 refreshToken: '$refreshToken',
                                 isAuthenticated: true
                             },
                             version: 0
                         };
-                        localStorage.setItem('auth-storage', JSON.stringify(state));
+                        localStorage.setItem('community-auth', JSON.stringify(state));
                     }
+                    document.cookie = 'auth-session=$accessToken; path=/; SameSite=Lax; max-age=$cookieMaxAge';
+                    document.cookie = 'user-role=$userRole; path=/; SameSite=Lax; max-age=$cookieMaxAge';
                     if (typeof CommunityApp !== 'undefined') {
                         window.__COMMUNITY_NATIVE = true;
                     }

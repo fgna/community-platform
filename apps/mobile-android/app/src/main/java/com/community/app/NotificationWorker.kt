@@ -36,7 +36,8 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, p
                 AuthClient.get("$serverUrl/api/notifications", accessToken)
             }
 
-            val arr = JSONArray(json)
+            val response = JSONObject(json)
+            val arr = response.getJSONArray("data")
             val shownKey = "shown_notifications"
             val shownRaw = prefs.getString(shownKey, "{}") ?: "{}"
             val shown = JSONObject(shownRaw)
@@ -51,12 +52,30 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, p
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
                 val id = obj.getString("id")
-                if (shown.has(id)) continue
+                val isRead = obj.optBoolean("read", false)
+                if (isRead || shown.has(id)) continue
 
-                val title = obj.optString("title", "Community Update")
-                val body = obj.optString("body", "")
-                val link = obj.optString("link").takeIf { it.isNotEmpty() && it != "null" }
-                val deepLink = if (link != null) "$serverUrl$link" else null
+                val type = obj.optString("type", "")
+                val actorName = obj.optJSONObject("actor")?.optString("name") ?: "Someone"
+                val entityType = obj.optString("entityType", "")
+                val entityId = obj.optString("entityId").takeIf { it.isNotEmpty() && it != "null" }
+
+                val title = when (type) {
+                    "COMMENT" -> "$actorName commented"
+                    "REACTION" -> "$actorName reacted to your post"
+                    "MENTION" -> "$actorName mentioned you"
+                    "EVENT_REMINDER" -> "Event reminder"
+                    else -> "Community update"
+                }
+                val body = when (type) {
+                    "EVENT_REMINDER" -> "You have an upcoming event"
+                    else -> "Tap to view in the community"
+                }
+                val deepLink = when {
+                    entityType == "post" && entityId != null -> "$serverUrl/feed/$entityId"
+                    entityType == "event" && entityId != null -> "$serverUrl/events"
+                    else -> null
+                }
 
                 NotificationHelper.fire(applicationContext, id, title, body, deepLink)
                 shown.put(id, nowMs)

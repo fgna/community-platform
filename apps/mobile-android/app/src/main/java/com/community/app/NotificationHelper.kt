@@ -28,8 +28,7 @@ object NotificationHelper {
         val tapIntent = Intent(context, WebViewActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             if (deepLink != null) {
-                val prefs = context.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)
-                prefs.edit().putString(MainActivity.KEY_LAST_URL, deepLink).apply()
+                putExtra(WebViewActivity.EXTRA_DEEP_LINK, deepLink)
             }
         }
         val tapPi = PendingIntent.getActivity(

@@ -5,10 +5,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 data class AuthTokens(val accessToken: String, val refreshToken: String)
+data class LoginResult(val tokens: AuthTokens, val userJson: String, val userRole: String)
 
 object AuthClient {
 
-    fun login(serverUrl: String, email: String, password: String): AuthTokens {
+    fun login(serverUrl: String, email: String, password: String): LoginResult {
         val body = JSONObject().apply {
             put("email", email)
             put("password", password)
@@ -16,10 +17,16 @@ object AuthClient {
 
         val resp = post("$serverUrl/api/auth/login", body, null)
         val json = JSONObject(resp)
-        return AuthTokens(
+        val tokens = AuthTokens(
             accessToken = json.getString("accessToken"),
             refreshToken = json.getString("refreshToken")
         )
+
+        val userResp = get("$serverUrl/api/users/me", tokens.accessToken)
+        val user = JSONObject(userResp)
+        val role = user.optString("role", "MEMBER")
+
+        return LoginResult(tokens = tokens, userJson = user.toString(), userRole = role)
     }
 
     fun refresh(serverUrl: String, refreshToken: String): AuthTokens {
