@@ -175,24 +175,22 @@ test.describe('Logout', () => {
   test('logout clears session and redirects to login', async ({ page }) => {
     await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Dismiss any modal overlays (onboarding wizard, dialogs) that block interaction
-    const overlay = page.locator('[data-state="open"].fixed.inset-0');
+    // Dismiss any modal overlays (onboarding wizard, dialogs)
     for (let i = 0; i < 3; i++) {
-      const skipBtn = page.getByRole('button', { name: /skip|close|dismiss|later/i });
-      if (await skipBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
-        await skipBtn.click();
-        await overlay.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+      const open = page.locator('[data-state="open"]').first();
+      if (await open.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      } else {
+        break;
       }
-      if (!(await overlay.isVisible().catch(() => false))) break;
-      // Try pressing Escape as fallback
-      await page.keyboard.press('Escape');
-      await overlay.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {});
     }
 
-    // Click logout in sidebar
-    const logoutBtn = page.getByRole('button', { name: /log out|sign out|logout/i });
-    await logoutBtn.click({ force: true, timeout: 10000 });
+    // Sign out via avatar dropdown in topbar
+    await page.getByTestId('user-menu-trigger').click();
+    await page.getByRole('menuitem', { name: /sign out/i }).click();
 
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });

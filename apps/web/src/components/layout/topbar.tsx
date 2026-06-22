@@ -82,7 +82,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex-shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+          <button data-testid="user-menu-trigger" className="flex-shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
             <Avatar className="h-8 w-8 cursor-pointer">
               <AvatarImage src={user?.avatarUrl || undefined} />
               <AvatarFallback className="text-xs">{getInitials(user?.name || 'U')}</AvatarFallback>

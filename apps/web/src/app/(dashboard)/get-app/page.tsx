@@ -1,6 +1,7 @@
 'use client';
 
-import { Smartphone, Download, CheckCircle, Wifi, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Smartphone, Download, CheckCircle, Wifi, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const features = [
@@ -10,6 +11,14 @@ const features = [
 ];
 
 export default function GetAppPage() {
+  const [apkAvailable, setApkAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/download-app', { method: 'HEAD' })
+      .then((r) => setApkAvailable(r.ok))
+      .catch(() => setApkAvailable(false));
+  }, []);
+
   return (
     <div className="max-w-lg mx-auto py-12 px-4 space-y-8 animate-fade-in">
       <div className="text-center space-y-4">
@@ -47,12 +56,26 @@ export default function GetAppPage() {
       </div>
 
       <div className="text-center space-y-3">
-        <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
-          <a href="/app/community.apk" download>
-            <Download size={16} />
-            Download APK
-          </a>
-        </Button>
+        {apkAvailable === false ? (
+          <div
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+            style={{
+              background: 'rgba(234,179,8,0.08)',
+              border: '1px solid rgba(234,179,8,0.2)',
+              color: 'var(--theme-text)',
+            }}
+          >
+            <AlertCircle size={16} style={{ color: '#eab308' }} />
+            The APK is being prepared. Please check back soon or contact an admin.
+          </div>
+        ) : (
+          <Button asChild size="lg" className="gap-2 w-full sm:w-auto" disabled={apkAvailable === null}>
+            <a href="/api/download-app">
+              <Download size={16} />
+              Download APK
+            </a>
+          </Button>
+        )}
         <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
           Android 8.0+ required &middot; Allow installs from unknown sources in Settings
         </p>
