@@ -23,6 +23,7 @@ const pollSelect = {
 const postSelect = {
   id: true,
   content: true,
+  type: true,
   authorId: true,
   isPinned: true,
   isHidden: true,
@@ -30,6 +31,9 @@ const postSelect = {
   updatedAt: true,
   author: {
     select: { id: true, name: true, avatarUrl: true, role: true },
+  },
+  categories: {
+    select: { category: { select: { id: true, name: true, slug: true, icon: true, color: true } } },
   },
   poll: { select: pollSelect },
   _count: {
@@ -44,13 +48,15 @@ export class PostsService {
     private notifications: NotificationsService,
   ) {}
 
-  async findAll(page = 1, limit = 20, userId?: string) {
+  async findAll(page = 1, limit = 20, userId?: string, type?: string) {
     limit = Math.max(1, Math.min(limit, 100));
     page = Math.max(1, page);
     const skip = (page - 1) * limit;
+    const where: any = { isHidden: false };
+    if (type) where.type = type;
     const [data, total] = await Promise.all([
       this.prisma.post.findMany({
-        where: { isHidden: false },
+        where,
         skip,
         take: limit,
         orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
@@ -77,7 +83,7 @@ export class PostsService {
           },
         },
       }),
-      this.prisma.post.count({ where: { isHidden: false } }),
+      this.prisma.post.count({ where }),
     ]);
 
     return {
@@ -160,7 +166,13 @@ export class PostsService {
     const post = await this.prisma.post.create({
       data: {
         content: dto.content,
+        type: (dto.type as any) || 'DISCUSSION',
         authorId,
+        ...(dto.categoryIds?.length && {
+          categories: {
+            create: dto.categoryIds.map((categoryId) => ({ categoryId })),
+          },
+        }),
         ...(dto.poll && {
           poll: {
             create: {
@@ -175,6 +187,13 @@ export class PostsService {
       },
       select: postSelect,
     });
+
+    if (dto.type === 'INTRODUCTION') {
+      await this.prisma.user.update({
+        where: { id: authorId },
+        data: { hasIntroduced: true },
+      });
+    }
 
     return post;
   }

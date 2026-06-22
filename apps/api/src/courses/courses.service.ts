@@ -171,4 +171,18 @@ export class CoursesService {
     }
     return lesson;
   }
+
+  async getNote(userId: string, lessonId: string) {
+    return this.prisma.courseNote.findUnique({
+      where: { userId_lessonId: { userId, lessonId } },
+    });
+  }
+
+  async upsertNote(userId: string, lessonId: string, content: string) {
+    return this.prisma.courseNote.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      update: { content },
+      create: { userId, lessonId, content },
+    });
+  }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseInterceptors, UploadedFile, BadRequestException, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Put, Delete, Body, Param, Query, UseInterceptors, UploadedFile, BadRequestException, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname, join } from 'path';
@@ -8,6 +8,8 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateDigestDto } from './dto/update-digest.dto';
 import { UpdateCalendarInvitesDto } from './dto/update-calendar-invites.dto';
+import { UpdateEventRemindersDto } from './dto/update-event-reminders.dto';
+import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -105,6 +107,30 @@ export class UsersController {
   @ApiOperation({ summary: 'Toggle calendar invite emails for event RSVPs' })
   updateCalendarInvites(@CurrentUser() user: any, @Body() dto: UpdateCalendarInvitesDto) {
     return this.usersService.updateCalendarInvites(user.id, dto.calendarInvites);
+  }
+
+  @Patch('me/event-reminders')
+  @ApiOperation({ summary: 'Toggle event reminder notifications' })
+  updateEventReminders(@CurrentUser() user: any, @Body() dto: UpdateEventRemindersDto) {
+    return this.usersService.updateEventReminders(user.id, dto.eventReminders);
+  }
+
+  @Get('me/challenge')
+  @ApiOperation({ summary: 'Get current user challenge' })
+  getChallenge(@CurrentUser() user: any) {
+    return this.usersService.getChallenge(user.id);
+  }
+
+  @Put('me/challenge')
+  @ApiOperation({ summary: 'Create or update current user challenge' })
+  upsertChallenge(@CurrentUser() user: any, @Body() dto: UpsertChallengeDto) {
+    return this.usersService.upsertChallenge(user.id, dto);
+  }
+
+  @Post('me/onboarding/complete')
+  @ApiOperation({ summary: 'Mark onboarding as completed' })
+  completeOnboarding(@CurrentUser() user: any) {
+    return this.usersService.completeOnboarding(user.id);
   }
 
   @Get(':id')

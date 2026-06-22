@@ -18,6 +18,15 @@ import { SearchModule } from './search/search.module';
 import { InvitesModule } from './invites/invites.module';
 import { EmailModule } from './email/email.module';
 import { DigestService } from './email/digest.service';
+import { CategoriesModule } from './categories/categories.module';
+import { TestimonialsModule } from './testimonials/testimonials.module';
+import { GoalsModule } from './goals/goals.module';
+import { JournalModule } from './journal/journal.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { EventProposalsModule } from './event-proposals/event-proposals.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { LearningGroupsModule } from './learning-groups/learning-groups.module';
+import { TierModule } from './tier/tier.module';
 
 @Module({
   imports: [
@@ -48,6 +57,15 @@ import { DigestService } from './email/digest.service';
     SearchModule,
     InvitesModule,
     EmailModule,
+    CategoriesModule,
+    TestimonialsModule,
+    GoalsModule,
+    JournalModule,
+    AssessmentsModule,
+    EventProposalsModule,
+    UploadsModule,
+    LearningGroupsModule,
+    TierModule,
   ],
   providers: [
     DigestService,

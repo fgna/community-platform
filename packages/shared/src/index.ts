@@ -6,6 +6,7 @@ export * from './types/event.types';
 export * from './types/theme.types';
 export * from './types/notification.types';
 export * from './types/message.types';
+export * from './types/tier.types';
 
 // Utils
 export * from './utils/date.utils';

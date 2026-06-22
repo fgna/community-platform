@@ -22,6 +22,13 @@ import { Test } from '@nestjs/testing';
 import { EventsService } from './events.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { EmailService } from '../email/email.service';
+
+function buildMockEmailService() {
+  return {
+    sendMail: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 function buildMockPrisma() {
   const prisma = {
@@ -50,6 +57,7 @@ async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
     providers: [
       EventsService,
       { provide: PrismaService, useValue: prisma },
+      { provide: EmailService, useValue: buildMockEmailService() },
     ],
   }).compile();
   return module.get<EventsService>(EventsService);

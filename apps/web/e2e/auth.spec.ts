@@ -176,21 +176,23 @@ test.describe('Logout', () => {
     await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
-    // Find and click the logout option (via user menu or sidebar)
-    // Try topbar user avatar / dropdown first
-    const logoutBtn = page.getByRole('button', { name: /log out|sign out|logout/i });
-    const userMenu = page.getByRole('button', { name: /platform admin|admin/i });
-
-    if (await userMenu.isVisible()) {
-      await userMenu.click();
-      await logoutBtn.click();
-    } else if (await logoutBtn.isVisible()) {
-      await logoutBtn.click();
-    } else {
-      // Navigate to settings and find logout
-      await page.goto('/settings');
-      await page.getByRole('button', { name: /log out|sign out|logout/i }).click();
+    // Dismiss any modal overlays (onboarding wizard, dialogs) that block interaction
+    const overlay = page.locator('[data-state="open"].fixed.inset-0');
+    for (let i = 0; i < 3; i++) {
+      const skipBtn = page.getByRole('button', { name: /skip|close|dismiss|later/i });
+      if (await skipBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+        await skipBtn.click();
+        await overlay.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+      }
+      if (!(await overlay.isVisible().catch(() => false))) break;
+      // Try pressing Escape as fallback
+      await page.keyboard.press('Escape');
+      await overlay.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {});
     }
+
+    // Click logout in sidebar
+    const logoutBtn = page.getByRole('button', { name: /log out|sign out|logout/i });
+    await logoutBtn.click({ force: true, timeout: 10000 });
 
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });

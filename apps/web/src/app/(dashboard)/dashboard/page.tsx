@@ -11,6 +11,8 @@ import { useMembers } from '@/hooks/use-members';
 import { PostCard } from '@/components/feed/post-card';
 import { EventCard } from '@/components/events/event-card';
 import { PostSkeleton } from '@/components/common/loading-skeleton';
+import { MyChallenge } from '@/components/dashboard/my-challenge';
+import { MyGoals } from '@/components/dashboard/my-goals';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -29,6 +31,11 @@ export default function DashboardPage() {
         title={`Welcome back, ${user?.name?.split(' ')[0] ?? 'there'}`}
         description="Here's what's happening in your community"
       />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MyChallenge />
+        <MyGoals />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent posts */}
