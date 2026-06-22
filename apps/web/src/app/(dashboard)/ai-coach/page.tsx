@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAiCoachStatus, useAiCoachChat } from '@/hooks/use-ai-coach';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send, Bot, User, Sparkles } from 'lucide-react';
@@ -10,13 +11,6 @@ interface Message {
   content: string;
 }
 
-const SUGGESTED_PROMPTS = [
-  'How can I improve my leadership skills?',
-  'I struggle with work-life balance. Any tips?',
-  'Help me build better daily habits.',
-  'How do I handle difficult conversations with my team?',
-];
-
 export default function AiCoachPage() {
   const { data: status, isLoading: statusLoading } = useAiCoachStatus();
   const chatMutation = useAiCoachChat();
@@ -24,10 +18,18 @@ export default function AiCoachPage() {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const t = useTranslations('aiCoach');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const suggestedPrompts = [
+    t('prompts.leadership'),
+    t('prompts.balance'),
+    t('prompts.habits'),
+    t('prompts.conversations'),
+  ];
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || chatMutation.isPending) return;
@@ -46,7 +48,7 @@ export default function AiCoachPage() {
     } catch {
       setMessages([
         ...newMessages,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
+        { role: 'assistant', content: t('error') },
       ]);
     }
   };
@@ -72,9 +74,9 @@ export default function AiCoachPage() {
         <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center" style={{ background: 'rgba(197,168,128,0.1)' }}>
           <Bot size={28} style={{ color: 'var(--theme-primary)' }} />
         </div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text)' }}>AI Coach Coming Soon</h2>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text)' }}>{t('comingSoon')}</h2>
         <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-          The AI Coach feature is not yet configured on this platform. Contact your administrator.
+          {t('notConfigured')}
         </p>
       </div>
     );
@@ -87,8 +89,8 @@ export default function AiCoachPage() {
           <Sparkles size={20} style={{ color: 'var(--theme-primary)' }} />
         </div>
         <div>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--theme-text)' }}>Coach</h2>
-          <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>Your virtual leadership development coach</p>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--theme-text)' }}>{t('title')}</h2>
+          <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{t('subtitle')}</p>
         </div>
       </div>
 
@@ -96,10 +98,10 @@ export default function AiCoachPage() {
         {messages.length === 0 && (
           <div className="text-center py-8 space-y-4">
             <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-              Ask me anything about leadership, personal development, or your GROWTH assessment results.
+              {t('emptyState')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg mx-auto">
-              {SUGGESTED_PROMPTS.map((prompt) => (
+              {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
@@ -159,7 +161,7 @@ export default function AiCoachPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask your coach..."
+            placeholder={t('placeholder')}
             rows={1}
             className="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none"
             style={{

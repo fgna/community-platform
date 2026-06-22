@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { SocialButtons } from '@/components/auth/social-buttons';
 
-interface RegisterForm {
+interface RegisterFormData {
   name: string;
   email: string;
   password: string;
@@ -23,17 +24,18 @@ function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get('invite') ?? undefined;
+  const t = useTranslations('auth');
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<RegisterForm>();
+  } = useForm<RegisterFormData>();
 
   const password = watch('password');
 
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async (data: RegisterFormData) => {
     try {
       await registerUser({
         email: data.email,
@@ -49,7 +51,7 @@ function RegisterForm() {
   return (
     <div className="glass rounded-2xl p-8" style={{ border: '1px solid var(--theme-border)' }}>
       <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--theme-text)' }}>
-        Create your account
+        {t('createAccountTitle')}
       </h2>
 
       {inviteToken && (
@@ -58,7 +60,7 @@ function RegisterForm() {
           style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
         >
           <Mail size={14} />
-          You&apos;ve been invited to join. Complete your registration below.
+          {t('inviteMessage')}
         </div>
       )}
 
@@ -76,22 +78,22 @@ function RegisterForm() {
           {(() => {
             const msg = (registerError as { response?: { data?: { message?: string | string[] } } })
               ?.response?.data?.message;
-            return Array.isArray(msg) ? msg[0] : (msg || 'Registration failed');
+            return Array.isArray(msg) ? msg[0] : (msg || t('registrationFailed'));
           })()}
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <Label htmlFor="name">Full name</Label>
+          <Label htmlFor="name">{t('fullName')}</Label>
           <Input
             id="name"
             type="text"
             autoComplete="name"
-            placeholder="John Doe"
+            placeholder={t('namePlaceholder')}
             {...register('name', {
-              required: 'Name is required',
-              minLength: { value: 2, message: 'Name must be at least 2 characters' },
+              required: t('nameRequired'),
+              minLength: { value: 2, message: t('nameMinLength') },
             })}
             className="mt-1"
           />
@@ -103,15 +105,15 @@ function RegisterForm() {
         </div>
 
         <div>
-          <Label htmlFor="email">Email address</Label>
+          <Label htmlFor="email">{t('email')}</Label>
           <Input
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('emailPlaceholder')}
             {...register('email', {
-              required: 'Email is required',
-              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email' },
+              required: t('emailRequired'),
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t('emailInvalid') },
             })}
             className="mt-1"
           />
@@ -123,19 +125,19 @@ function RegisterForm() {
         </div>
 
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('password')}</Label>
           <div className="relative mt-1">
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Min 8 chars, upper + lower + number"
+              placeholder={t('passwordPlaceholder')}
               {...register('password', {
-                required: 'Password is required',
-                minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                required: t('passwordRequired'),
+                minLength: { value: 8, message: t('passwordMinLength') },
                 pattern: {
                   value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                  message: 'Password must contain uppercase, lowercase, and a number',
+                  message: t('passwordComplexity'),
                 },
               })}
               className="pr-10"
@@ -157,15 +159,15 @@ function RegisterForm() {
         </div>
 
         <div>
-          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
           <Input
             id="confirmPassword"
             type="password"
             autoComplete="new-password"
-            placeholder="Repeat password"
+            placeholder={t('confirmPasswordPlaceholder')}
             {...register('confirmPassword', {
-              required: 'Please confirm your password',
-              validate: (val) => val === password || 'Passwords do not match',
+              required: t('confirmPasswordRequired'),
+              validate: (val) => val === password || t('passwordsMismatch'),
             })}
             className="mt-1"
           />
@@ -180,22 +182,22 @@ function RegisterForm() {
           {registerLoading ? (
             <>
               <Loader2 size={16} className="mr-2 animate-spin" />
-              Creating account...
+              {t('creatingAccount')}
             </>
           ) : (
-            'Create account'
+            t('createAccount')
           )}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-        Already have an account?{' '}
+        {t('haveAccount')}{' '}
         <Link
           href="/login"
           className="font-medium hover:underline"
           style={{ color: 'var(--theme-primary)' }}
         >
-          Sign in
+          {t('signIn')}
         </Link>
       </p>
     </div>

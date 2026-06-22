@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] — 2026-06-22
+
+### Added
+- **Bilingual i18n (GL-026)**: Full English + German translation support using next-intl; cookie-based locale detection (no URL restructuring required); translation files for all core UI strings (navigation, auth, dashboard, settings, AI coach); `LocaleSwitcher` component in Settings > Appearance tab; `NextIntlClientProvider` wired into root layout; sidebar, login, register, dashboard, and AI coach pages fully translated
+
+---
+
 ## [1.28.0] — 2026-06-22
 
 ### Added

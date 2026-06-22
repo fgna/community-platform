@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ interface LoginForm {
 export default function LoginPage() {
   const { login, loginLoading, loginError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const t = useTranslations('auth');
   const {
     register,
     handleSubmit,
@@ -38,7 +40,7 @@ export default function LoginPage() {
       style={{ border: '1px solid var(--theme-border)' }}
     >
       <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--theme-text)' }}>
-        Sign in to your account
+        {t('signInTitle')}
       </h2>
 
       <SocialButtons />
@@ -55,20 +57,20 @@ export default function LoginPage() {
           {(() => {
             const msg = (loginError as { response?: { data?: { message?: string | string[] } } })
               ?.response?.data?.message;
-            return Array.isArray(msg) ? msg[0] : (msg || 'Invalid credentials');
+            return Array.isArray(msg) ? msg[0] : (msg || t('invalidCredentials'));
           })()}
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <Label htmlFor="email">Email address</Label>
+          <Label htmlFor="email">{t('email')}</Label>
           <Input
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
-            {...register('email', { required: 'Email is required' })}
+            placeholder={t('emailPlaceholder')}
+            {...register('email', { required: t('emailRequired') })}
             className="mt-1"
           />
           {errors.email && (
@@ -79,14 +81,14 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('password')}</Label>
           <div className="relative mt-1">
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="••••••••"
-              {...register('password', { required: 'Password is required' })}
+              {...register('password', { required: t('passwordRequired') })}
               className="pr-10"
             />
             <button
@@ -109,22 +111,22 @@ export default function LoginPage() {
           {loginLoading ? (
             <>
               <Loader2 size={16} className="mr-2 animate-spin" />
-              Signing in...
+              {t('signingIn')}
             </>
           ) : (
-            'Sign in'
+            t('signIn')
           )}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-        Don&apos;t have an account?{' '}
+        {t('noAccount')}{' '}
         <Link
           href="/register"
           className="font-medium hover:underline"
           style={{ color: 'var(--theme-primary)' }}
         >
-          Sign up
+          {t('signUp')}
         </Link>
       </p>
     </div>

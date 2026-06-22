@@ -1,6 +1,7 @@
 'use client';
 
 import { Users, MessageCircle, BookOpen, Calendar } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { StatsCard } from '@/components/common/stats-card';
 import { PageHeader } from '@/components/common/page-header';
 import { useAuth } from '@/hooks/use-auth';
@@ -16,6 +17,8 @@ import { MyGoals } from '@/components/dashboard/my-goals';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const t = useTranslations('dashboard');
+  const tc = useTranslations('common');
   const { data: feedData, isLoading: feedLoading, isError: feedError } = useFeed(1, 3);
   const { data: coursesData, isError: coursesError } = useCourses(1, 1);
   const { data: eventsData, isLoading: eventsLoading, isError: eventsError } = useEvents(1, 3);
@@ -28,8 +31,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Welcome back, ${user?.name?.split(' ')[0] ?? 'there'}`}
-        description="Here's what's happening in your community"
+        title={t('welcomeBack', { name: user?.name?.split(' ')[0] ?? 'there' })}
+        description={t('subtitle')}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -41,13 +44,13 @@ export default function DashboardPage() {
         {/* Recent posts */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-sm font-semibold" style={{ color: 'var(--theme-text-muted)' }}>
-            RECENT POSTS
+            {t('recentPosts')}
           </h3>
           {feedLoading ? (
             <div className="space-y-4">{[1, 2].map((i) => <PostSkeleton key={i} />)}</div>
           ) : feedError ? (
             <p className="text-sm py-4" style={{ color: 'var(--theme-danger, #ef4444)' }}>
-              Failed to load posts. <button className="underline" onClick={() => window.location.reload()}>Retry</button>
+              {t('failedPosts')}. <button className="underline" onClick={() => window.location.reload()}>{tc('retry')}</button>
             </p>
           ) : (
             <div className="space-y-4">
@@ -61,13 +64,13 @@ export default function DashboardPage() {
         {/* Upcoming events */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold" style={{ color: 'var(--theme-text-muted)' }}>
-            UPCOMING EVENTS
+            {t('upcomingEvents')}
           </h3>
           {eventsLoading ? (
             <div className="space-y-4">{[1, 2].map((i) => <PostSkeleton key={i} />)}</div>
           ) : eventsError ? (
             <p className="text-sm py-4" style={{ color: 'var(--theme-danger, #ef4444)' }}>
-              Failed to load events. <button className="underline" onClick={() => window.location.reload()}>Retry</button>
+              {t('failedEvents')}. <button className="underline" onClick={() => window.location.reload()}>{tc('retry')}</button>
             </p>
           ) : upcomingEvents.length > 0 ? (
             <div className="space-y-4">
@@ -76,7 +79,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>No upcoming events</p>
+            <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>{t('noUpcomingEvents')}</p>
           )}
         </div>
       </div>
@@ -84,28 +87,28 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Total Members"
+          title={t('totalMembers')}
           value={membersError ? '!' : (membersData?.total ?? '—')}
           icon={Users}
-          description={membersError ? 'Failed to load' : 'Active community members'}
+          description={membersError ? t('failedPosts') : t('totalMembersDesc')}
         />
         <StatsCard
-          title="Community Posts"
+          title={t('communityPosts')}
           value={feedError ? '!' : (feedData?.total ?? '—')}
           icon={MessageCircle}
-          description={feedError ? 'Failed to load' : 'Conversations this month'}
+          description={feedError ? t('failedPosts') : t('communityPostsDesc')}
         />
         <StatsCard
-          title="Available Courses"
+          title={t('availableCourses')}
           value={coursesError ? '!' : (coursesData?.total ?? '—')}
           icon={BookOpen}
-          description={coursesError ? 'Failed to load' : 'Learn something new'}
+          description={coursesError ? t('failedPosts') : t('availableCoursesDesc')}
         />
         <StatsCard
-          title="Upcoming Events"
+          title={t('upcomingEventsCard')}
           value={eventsError ? '!' : upcomingEvents.length}
           icon={Calendar}
-          description={eventsError ? 'Failed to load' : 'Events this month'}
+          description={eventsError ? t('failedEvents') : t('upcomingEventsCardDesc')}
         />
       </div>
     </div>

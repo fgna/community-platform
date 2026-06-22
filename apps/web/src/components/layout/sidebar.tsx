@@ -2,32 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Search, Compass, Star, Trophy, Sparkles, BookOpen, BarChart3, Vote, UsersRound, Bookmark, Bot } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
+import type { LucideIcon } from 'lucide-react';
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/feed', label: 'Community Feed', icon: MessageCircle },
-  { href: '/questions', label: 'Questions', icon: HelpCircle },
-  { href: '/courses', label: 'Learning Hub', icon: GraduationCap },
-  { href: '/journal', label: 'Journal', icon: BookOpen },
-  { href: '/assessment', label: 'Self-Assessment', icon: BarChart3 },
-  { href: '/learning-groups', label: 'Learning Groups', icon: UsersRound },
-  { href: '/events', label: 'Events', icon: Calendar },
-  { href: '/event-proposals', label: 'Event Proposals', icon: Vote },
-  { href: '/recordings', label: 'Recordings', icon: Play },
-  { href: '/explore', label: 'Explore', icon: Compass },
-  { href: '/testimonials', label: 'Stories', icon: Star },
-  { href: '/ai-coach', label: 'AI Coach', icon: Bot },
-  { href: '/leadership-ai', label: 'Leadership & AI', icon: Sparkles },
-  { href: '/success-stories', label: 'Success Stories', icon: Trophy },
-  { href: '/members', label: 'Members', icon: Users },
-  { href: '/search', label: 'Search', icon: Search },
-  { href: '/bookmarks', label: 'Saved', icon: Bookmark },
-  { href: '/messages', label: 'Messages', icon: Mail },
-  { href: '/settings', label: 'Settings', icon: Settings },
+const navItems: { href: string; labelKey: string; icon: LucideIcon }[] = [
+  { href: '/dashboard', labelKey: 'dashboard', icon: Home },
+  { href: '/feed', labelKey: 'feed', icon: MessageCircle },
+  { href: '/questions', labelKey: 'questions', icon: HelpCircle },
+  { href: '/courses', labelKey: 'courses', icon: GraduationCap },
+  { href: '/journal', labelKey: 'journal', icon: BookOpen },
+  { href: '/assessment', labelKey: 'assessment', icon: BarChart3 },
+  { href: '/learning-groups', labelKey: 'learningGroups', icon: UsersRound },
+  { href: '/events', labelKey: 'events', icon: Calendar },
+  { href: '/event-proposals', labelKey: 'eventProposals', icon: Vote },
+  { href: '/recordings', labelKey: 'recordings', icon: Play },
+  { href: '/explore', labelKey: 'explore', icon: Compass },
+  { href: '/testimonials', labelKey: 'testimonials', icon: Star },
+  { href: '/ai-coach', labelKey: 'aiCoach', icon: Bot },
+  { href: '/leadership-ai', labelKey: 'leadershipAi', icon: Sparkles },
+  { href: '/success-stories', labelKey: 'successStories', icon: Trophy },
+  { href: '/members', labelKey: 'members', icon: Users },
+  { href: '/search', labelKey: 'search', icon: Search },
+  { href: '/bookmarks', labelKey: 'bookmarks', icon: Bookmark },
+  { href: '/messages', labelKey: 'messages', icon: Mail },
+  { href: '/settings', labelKey: 'settings', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -38,6 +40,8 @@ interface SidebarProps {
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const t = useTranslations('nav');
+  const tc = useTranslations('common');
 
   return (
     <aside
@@ -62,13 +66,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </svg>
         </div>
         <span className="font-bold text-base flex-1" style={{ color: 'var(--theme-text)' }}>
-          Community
+          {tc('community')}
         </span>
         {/* Close button — mobile only */}
         <button
           className="lg:hidden p-1.5 rounded-md hover:bg-white/5"
           onClick={onClose}
-          aria-label="Close menu"
+          aria-label={t('closeMenu')}
         >
           <X size={18} style={{ color: 'var(--theme-text-muted)' }} />
         </button>
@@ -76,7 +80,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, labelKey, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link
@@ -91,7 +95,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               }}
             >
               <Icon size={18} className="flex-shrink-0" />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{t(labelKey)}</span>
               {isActive && <ChevronRight size={14} />}
             </Link>
           );
@@ -101,7 +105,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <>
             <div className="pt-2 pb-1">
               <p className="px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)', opacity: 0.6 }}>
-                Admin
+                {t('admin')}
               </p>
             </div>
             <Link
@@ -115,7 +119,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               }}
             >
               <Shield size={18} className="flex-shrink-0" />
-              <span className="flex-1">Admin Panel</span>
+              <span className="flex-1">{t('adminPanel')}</span>
             </Link>
           </>
         )}
@@ -135,8 +139,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <button
             onClick={logout}
             className="p-1.5 rounded-md transition-colors hover:bg-white/5"
-            aria-label="Sign out"
-            title="Sign out"
+            aria-label={tc('signOut')}
+            title={tc('signOut')}
           >
             <LogOut size={14} style={{ color: 'var(--theme-text-muted)' }} />
           </button>

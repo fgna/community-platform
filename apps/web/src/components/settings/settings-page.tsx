@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock, Sparkles, Link2, Unlink } from 'lucide-react';
 import { InterestPicker } from './interest-picker';
+import { LocaleSwitcher } from './locale-switcher';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -466,7 +467,8 @@ export function SettingsPage() {
         </TabsContent>
 
         {/* Appearance tab */}
-        <TabsContent value="appearance" className="mt-6">
+        <TabsContent value="appearance" className="mt-6 space-y-4">
+          <LocaleSwitcher />
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Theme</CardTitle>
