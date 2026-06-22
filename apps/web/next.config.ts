@@ -15,6 +15,19 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'via.placeholder.com' },
     ],
   },
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${apiUrl}/api/:path*`,
+        },
+      ],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       {
