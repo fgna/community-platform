@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 17 adversarial tests covering security fixes (SEC-045–064)
 - 20 adversarial tests for SEC-045–057 audit findings (OAuth, billing, AI coach, digests, CSV exports)
+- **Android mobile app (GL-027)**: Native Android wrapper at `apps/mobile-android/` based on the my-taskOS WebView template; JWT authentication via `/api/auth/login` with automatic token refresh; tokens injected into WebView localStorage for seamless SSO; background notification polling (15-min WorkManager) with deep-link support; branded Executive Glass offline error page; `CommunityApp` JS bridge for native↔web token sync and logout; Dockerfile for headless APK builds; release keystore and ProGuard configuration
 
 ---
 

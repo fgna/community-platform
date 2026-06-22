@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Community Platform</string>
+    <string name="subtitle">Your community, courses, and events</string>
+
+    <string name="label_server_url">Server URL</string>
+    <string name="hint_url">https://community.example.com</string>
+    <string name="label_email">Email</string>
+    <string name="hint_email">you@example.com</string>
+    <string name="label_password">Password</string>
+    <string name="hint_password">••••••••</string>
+
+    <string name="btn_login">Sign In</string>
+    <string name="btn_open">Open Community</string>
+    <string name="logging_in">Signing in…</string>
+    <string name="login_success">Signed in successfully</string>
+    <string name="error_fields_required">Please fill in all fields.</string>
+    <string name="webview_no_url">Please configure the server URL first.</string>
+</resources>

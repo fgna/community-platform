@@ -1,0 +1,1 @@
+-keep class com.community.app.WebViewActivity$CommunityBridge { *; }
