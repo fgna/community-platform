@@ -49,7 +49,9 @@ model User {
   eventProposals   EventProposal[]
   proposalVotes    ProposalVote[]
   uploads          Upload[]
-  membershipTier   MembershipTier   @default(PREMIUM)
+  membershipTier       MembershipTier   @default(PREMIUM)
+  stripeCustomerId     String?          @unique
+  stripeSubscriptionId String?
   learningGroups       LearningGroup[]
   learningGroupMembers LearningGroupMember[]
   learningGroupMessages LearningGroupMessage[]

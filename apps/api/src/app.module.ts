@@ -28,6 +28,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { LearningGroupsModule } from './learning-groups/learning-groups.module';
 import { TierModule } from './tier/tier.module';
 import { DigestTemplateModule } from './digest/digest-template.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { DigestTemplateModule } from './digest/digest-template.module';
     LearningGroupsModule,
     TierModule,
     DigestTemplateModule,
+    BillingModule,
   ],
   providers: [
     DigestService,

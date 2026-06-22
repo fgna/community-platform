@@ -1,6 +1,6 @@
 'use client';
 
-import { useUpgradeTier } from '@/hooks/use-tier';
+import { useBillingCheckout } from '@/hooks/use-billing';
 
 interface UpgradePromptProps {
   feature: string;
@@ -8,7 +8,7 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({ feature, onClose }: UpgradePromptProps) {
-  const upgrade = useUpgradeTier();
+  const checkout = useBillingCheckout();
 
   return (
     <div
@@ -40,12 +40,12 @@ export function UpgradePrompt({ feature, onClose }: UpgradePromptProps) {
           </button>
         )}
         <button
-          onClick={() => upgrade.mutate()}
-          disabled={upgrade.isPending}
+          onClick={() => checkout.mutate()}
+          disabled={checkout.isPending}
           className="px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
           style={{ background: 'var(--theme-primary)', color: 'var(--theme-background)' }}
         >
-          {upgrade.isPending ? 'Upgrading...' : 'Upgrade to Premium'}
+          {checkout.isPending ? 'Redirecting...' : 'Upgrade to Premium'}
         </button>
       </div>
     </div>

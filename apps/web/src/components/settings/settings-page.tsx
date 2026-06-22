@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 import { getGoogleOAuthUrl, getLinkedInOAuthUrl } from '@/lib/oauth';
+import { useBillingStatus, useBillingCheckout, useBillingPortal } from '@/hooks/use-billing';
 
 const DIGEST_OPTIONS = [
   { value: 'DAILY', label: 'Daily', description: 'Receive a summary every morning at 8 AM' },
@@ -178,6 +179,44 @@ function PasswordCard({ hasPassword }: { hasPassword: boolean }) {
           >
             {setPasswordMut.isPending ? 'Saving…' : saved ? 'Saved ✓' : hasPassword ? 'Change password' : 'Set password'}
           </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SubscriptionCard() {
+  const { data: billing } = useBillingStatus();
+  const checkout = useBillingCheckout();
+  const portal = useBillingPortal();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">Subscription</CardTitle>
+        <CardDescription>Manage your membership plan.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+              {billing?.tier === 'PREMIUM' ? 'Premium' : 'Free'} Plan
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
+              {billing?.tier === 'PREMIUM'
+                ? billing.cancelAtPeriodEnd ? 'Cancels at end of billing period' : 'Active subscription'
+                : 'Upgrade to unlock all features'}
+            </p>
+          </div>
+          {billing?.tier === 'PREMIUM' && billing.hasSubscription ? (
+            <Button size="sm" variant="outline" onClick={() => portal.mutate()} disabled={portal.isPending}>
+              {portal.isPending ? 'Loading...' : 'Manage'}
+            </Button>
+          ) : billing?.tier !== 'PREMIUM' ? (
+            <Button size="sm" onClick={() => checkout.mutate()} disabled={checkout.isPending}>
+              {checkout.isPending ? 'Loading...' : 'Upgrade'}
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -404,6 +443,8 @@ export function SettingsPage() {
           <ConnectedAccountsCard />
 
           <PasswordCard hasPassword={profile?.hasPassword ?? true} />
+
+          <SubscriptionCard />
 
           <Card>
             <CardHeader>
