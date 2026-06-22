@@ -89,6 +89,13 @@ class MainActivity : AppCompatActivity() {
                     || url.startsWith("localhost") || url.startsWith("127.")
             url = if (isLocal) "http://$url" else "https://$url"
         }
+        // Fix saved https:// URLs for local/private networks
+        if (url.startsWith("https://")) {
+            val host = url.removePrefix("https://").split("/")[0].split(":")[0]
+            val isLocal = host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.")
+                    || host == "localhost" || host.startsWith("127.")
+            if (isLocal) url = url.replaceFirst("https://", "http://")
+        }
 
         if (url.isEmpty() || email.isEmpty() || pass.isEmpty()) {
             tvStatus.text = getString(R.string.error_fields_required)
