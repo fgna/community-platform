@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Digest Templates (GL-022)**: Admin-managed email digest templates with CRUD; configurable header/footer HTML, accent color, logo, and section selection (new posts, upcoming events, new courses, community stats); template activation (only one active at a time); HTML preview rendering; admin Digests page at `/admin/digests`
 - **Interest Preferences (GL-023)**: Members pick interest categories in Settings > Interests; feed prioritises posts matching selected interests; `UserInterest` model linking users to categories; `GET/PUT /users/me/interests` endpoints; `?prioritize=interests` feed query parameter
 - **Admin Journal Prompts (GL-011 enhancement)**: Journal prompts moved from hardcoded to fully admin-editable; `JournalPromptCategory` and `JournalPrompt` database models; admin CRUD for categories (create, edit, delete, show/hide) and prompts (create, edit, delete, show/hide); category color management; admin page at `/admin/journal-prompts`; 30 default prompts seeded across 5 categories
+- **Adversarial tests SEC-031–044**: 30 tests across 6 new files covering tier self-upgrade bypass, S3 path traversal, upload MIME spoofing, learning group TOCTOU race, event proposal privacy leak, journal input validation, and assessment score manipulation
 
 ### Changed
 - Journal prompts now read from database instead of hardcoded array; prompt colors come from admin-configured category colors
