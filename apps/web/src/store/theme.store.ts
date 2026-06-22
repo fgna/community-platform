@@ -18,6 +18,7 @@ export const useThemeStore = create<ThemeStore>()(
     }),
     {
       name: 'community-theme',
+      partialize: (state) => ({ themeName: state.themeName }),
     },
   ),
 );

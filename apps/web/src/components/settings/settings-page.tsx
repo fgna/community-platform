@@ -318,7 +318,7 @@ export function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile">
-        <TabsList className="w-full sm:w-auto">
+        <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap justify-start scrollbar-hide">
           <TabsTrigger value="profile" className="flex items-center gap-1.5">
             <User size={14} /> Profile
           </TabsTrigger>
