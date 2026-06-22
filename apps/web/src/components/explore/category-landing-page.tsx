@@ -10,9 +10,48 @@ import {
   GraduationCap,
   Calendar,
   ArrowRight,
+  Sparkles,
+  Users,
+  Lightbulb,
+  Target,
+  Heart,
+  TrendingUp,
+  Briefcase,
+  Globe,
+  Rocket,
+  Gem,
+  Brain,
+  Layers,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, timeAgo } from '@community/shared';
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  ai: Sparkles,
+  leadership: Gem,
+  strategy: Target,
+  innovation: Rocket,
+  growth: TrendingUp,
+  wellbeing: Heart,
+  wellness: Heart,
+  teamwork: Users,
+  culture: Globe,
+  productivity: Lightbulb,
+  business: Briefcase,
+  technology: Brain,
+  learning: GraduationCap,
+  general: Layers,
+};
+
+function getCategoryIcon(slug: string, name: string): LucideIcon {
+  if (CATEGORY_ICONS[slug]) return CATEGORY_ICONS[slug];
+  const lower = name.toLowerCase();
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return Layers;
+}
 
 export function CategoryLandingPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -69,7 +108,17 @@ export function CategoryLandingPage() {
         }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{category.icon || '📁'}</span>
+          {(() => {
+            const Icon = getCategoryIcon(slug, category.name);
+            return (
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${color}20`, color }}
+              >
+                <Icon size={24} />
+              </div>
+            );
+          })()}
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--theme-text)' }}>
               {category.name}

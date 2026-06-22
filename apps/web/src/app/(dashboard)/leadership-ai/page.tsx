@@ -1,7 +1,5 @@
-'use client';
-
-import { LeadershipAIPage } from '@/components/leadership-ai/leadership-ai-page';
+import { redirect } from 'next/navigation';
 
 export default function LeadershipAI() {
-  return <LeadershipAIPage />;
+  redirect('/explore/ai');
 }

@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Event Proposals now shown inline on top of the Events page and as a compact widget on the Dashboard — no longer a separate page
 - Removed Event Proposals sidebar link; old `/event-proposals` URL redirects to `/events`
+- Removed Success Stories, AI Coach, and Leadership & AI from sidebar navigation
+- Leadership & AI redirects to `/explore/ai` (it's a category in Explore)
+- AI Coach redirects to `/dashboard`
+- Explore section: replaced emoji icons with elegant lucide icons in styled containers that match the premium theme
 
 ---
 

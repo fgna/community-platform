@@ -9,10 +9,49 @@ import {
   GraduationCap,
   Calendar,
   ArrowRight,
+  Sparkles,
+  Users,
+  Lightbulb,
+  Target,
+  Heart,
+  TrendingUp,
+  Briefcase,
+  Globe,
+  Rocket,
+  Gem,
+  Brain,
+  Layers,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import apiClient from '@/lib/api-client';
 import { getInitials } from '@community/shared';
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  ai: Sparkles,
+  leadership: Gem,
+  strategy: Target,
+  innovation: Rocket,
+  growth: TrendingUp,
+  wellbeing: Heart,
+  wellness: Heart,
+  teamwork: Users,
+  culture: Globe,
+  productivity: Lightbulb,
+  business: Briefcase,
+  technology: Brain,
+  learning: GraduationCap,
+  general: Layers,
+};
+
+function getCategoryIcon(slug: string, name: string): LucideIcon {
+  if (CATEGORY_ICONS[slug]) return CATEGORY_ICONS[slug];
+  const lower = name.toLowerCase();
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return Layers;
+}
 
 interface Category {
   id: string;
@@ -64,31 +103,45 @@ export function ExplorePage() {
               const total = cat._count.posts + cat._count.courses + cat._count.events;
               const isActive = selected === cat.slug;
               return (
-                <Link
-                  key={cat.id}
-                  href={`/explore/${cat.slug}`}
-                  onClick={() => setSelected(isActive ? null : cat.slug)}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all text-center"
-                  style={{
-                    background: isActive
-                      ? (cat.color || 'var(--theme-primary)') + '18'
-                      : 'var(--theme-card)',
-                    border: isActive
-                      ? `1px solid ${cat.color || 'var(--theme-primary)'}40`
-                      : '1px solid var(--theme-border)',
-                  }}
-                >
-                  <span className="text-2xl">{cat.icon || '📁'}</span>
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: isActive ? (cat.color || 'var(--theme-primary)') : 'var(--theme-text)' }}
-                  >
-                    {cat.name}
-                  </span>
-                  <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
-                    {total} item{total !== 1 ? 's' : ''}
-                  </span>
-                </Link>
+                (() => {
+                  const Icon = getCategoryIcon(cat.slug, cat.name);
+                  const accent = cat.color || 'var(--theme-primary)';
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={`/explore/${cat.slug}`}
+                      onClick={() => setSelected(isActive ? null : cat.slug)}
+                      className="group flex flex-col items-center gap-3 p-5 rounded-xl transition-all text-center hover:scale-[1.02]"
+                      style={{
+                        background: isActive
+                          ? `${accent}18`
+                          : 'var(--theme-card)',
+                        border: isActive
+                          ? `1px solid ${accent}40`
+                          : '1px solid var(--theme-border)',
+                      }}
+                    >
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center transition-all group-hover:scale-110"
+                        style={{
+                          background: isActive ? `${accent}20` : 'rgba(197,168,128,0.08)',
+                          color: isActive ? accent : 'var(--theme-primary)',
+                        }}
+                      >
+                        <Icon size={20} />
+                      </div>
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: isActive ? accent : 'var(--theme-text)' }}
+                      >
+                        {cat.name}
+                      </span>
+                      <span className="text-[11px]" style={{ color: 'var(--theme-text-muted)' }}>
+                        {total} item{total !== 1 ? 's' : ''}
+                      </span>
+                    </Link>
+                  );
+                })()
               );
             })}
           </div>
