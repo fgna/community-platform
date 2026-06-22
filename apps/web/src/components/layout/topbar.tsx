@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Menu, User, Settings, LogOut } from 'lucide-react';
+import { Search, Menu, User, Settings, LogOut, Bookmark, Mail, Smartphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ThemeSwitcher } from './theme-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -24,6 +24,7 @@ interface TopbarProps {
 export function Topbar({ title, onMenuClick }: TopbarProps) {
   const { user, logout } = useAuth();
   const t = useTranslations('topbar');
+  const tn = useTranslations('nav');
   const tc = useTranslations('common');
 
   const openPalette = () =>
@@ -101,10 +102,29 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+            <Link href="/bookmarks">
+              <Bookmark size={14} />
+              {tn('bookmarks')}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+            <Link href="/messages">
+              <Mail size={14} />
+              {tn('messages')}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
             <Link href="/settings">
               <Settings size={14} />
               {t('settings')}
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+            <a href="/app/community.apk" download>
+              <Smartphone size={14} />
+              {tn('getTheApp')}
+            </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Compass, Star, BookOpen, BarChart3, UsersRound, Bookmark, Smartphone } from 'lucide-react';
+import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, X, Play, Compass, Star, BookOpen, BarChart3, UsersRound } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -22,8 +22,6 @@ const navItems: { href: string; labelKey: string; icon: LucideIcon }[] = [
   { href: '/explore', labelKey: 'explore', icon: Compass },
   { href: '/testimonials', labelKey: 'testimonials', icon: Star },
   { href: '/members', labelKey: 'members', icon: Users },
-  { href: '/bookmarks', labelKey: 'bookmarks', icon: Bookmark },
-  { href: '/messages', labelKey: 'messages', icon: Mail },
   { href: '/settings', labelKey: 'settings', icon: Settings },
 ];
 
@@ -119,29 +117,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </>
         )}
       </nav>
-
-      {/* Install app */}
-      <div className="px-4 pt-3">
-        <a
-          href="/app/community.apk"
-          download
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:bg-white/5"
-          style={{
-            background: 'rgba(197,168,128,0.06)',
-            border: '1px solid rgba(197,168,128,0.15)',
-            color: 'var(--theme-primary)',
-          }}
-        >
-          <Smartphone size={15} />
-          <span className="flex-1">{t('getTheApp')}</span>
-          <span
-            className="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase"
-            style={{ background: 'rgba(197,168,128,0.12)' }}
-          >
-            APK
-          </span>
-        </a>
-      </div>
 
       {/* User profile */}
       <div className="p-4" style={{ borderTop: '1px solid var(--theme-border)' }}>
