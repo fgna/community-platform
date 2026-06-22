@@ -410,20 +410,20 @@
 | SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** | Added `@Throttle` decorators: refresh 30/15min, logout 10/15min | XS | `[x]` |
 | SEC-029 | **Avatar upload MIME check uses Content-Type, not file magic bytes** | Added magic byte validation post-upload; rejects and deletes files that don't match declared MIME | S | `[x]` |
 | SEC-030 | **Backup service exposes PGPASSWORD in environment** | Replaced `PGPASSWORD` env var with `.pgpass` file created at runtime with 600 perms, deleted after use | S | `[x]` |
-| SEC-031 | **Free tier self-upgrade bypass — no payment verification** | `POST /tier/upgrade` calls `upgradeTier()` which directly sets `membershipTier: 'PREMIUM'` with no payment/billing check | M | `[ ]` |
-| SEC-032 | **Arbitrary tier string injection via admin endpoint** | `setTier()` casts `tier as any` from URL param — no enum validation, accepts `SUPERADMIN` or empty string | S | `[ ]` |
-| SEC-033 | **S3 local-disk mode path traversal** | `s3.service.ts` uses `path.join(localDir, key)` without validating resolved path stays within `localDir` | M | `[ ]` |
-| SEC-034 | **Upload MIME validation uses client Content-Type, not magic bytes** | `uploads.service.ts` trusts `file.mimetype` from multipart header — attacker can upload EXE as `image/jpeg` | S | `[ ]` |
-| SEC-035 | **Learning group join() TOCTOU race condition** | `join()` checks member count, then checks duplicate, then creates — three separate queries with no `$transaction` | S | `[ ]` |
-| SEC-036 | **Non-member can view learning group metadata and member list** | `findOne()` returns group name, description, and full member list to non-members (only hides messages) | S | `[ ]` |
-| SEC-037 | **Unbounded proposedDates array in event proposals** | `CreateProposalDto` has `@ArrayMinSize(2)` but no `@ArrayMaxSize` — allows 10,000+ dates stored in JSON column | S | `[ ]` |
-| SEC-038 | **Event proposal voter privacy leak** | `findOne()` spreads full proposal including votes relation — exposes every voter's name and date preferences | S | `[ ]` |
-| SEC-039 | **Event proposal vote TOCTOU + phantom date voting** | `vote()` checks `status !== 'CLOSED'` then upserts without transaction; also accepts dates not in `proposedDates` | S | `[ ]` |
-| SEC-040 | **Journal content field has no length limit** | `UpsertJournalDto` uses `@IsNotEmpty()` but no `@MaxLength` — allows 1MB+ payloads | XS | `[ ]` |
-| SEC-041 | **Journal mood field accepts arbitrary strings** | `mood` is `@IsString() @IsOptional()` with no enum or length constraint — accepts XSS payloads or 50KB strings | XS | `[ ]` |
-| SEC-042 | **Unsafe date parsing in journal service** | `new Date(date + 'T00:00:00.000Z')` with no validation — garbage input creates `Invalid Date` sent to Prisma | S | `[ ]` |
-| SEC-043 | **Assessment questionIds not validated against server QUESTIONS** | `submit()` filters by `questionId.startsWith(dim)` — fabricated IDs bypass real questions, skew scores | S | `[ ]` |
-| SEC-044 | **Assessment score manipulation via duplicate dimension IDs** | Client can send 30 answers all starting with 'G' to inflate Growth dimension to max while zeroing others | S | `[ ]` |
+| SEC-031 | **Free tier self-upgrade bypass — no payment verification** | Disabled self-upgrade endpoint (returns 501) until billing integration | M | `[x]` |
+| SEC-032 | **Arbitrary tier string injection via admin endpoint** | Added enum validation — only FREE/PREMIUM accepted | S | `[x]` |
+| SEC-033 | **S3 local-disk mode path traversal** | Added resolved path prefix check to prevent directory traversal | M | `[x]` |
+| SEC-034 | **Upload MIME validation uses client Content-Type, not magic bytes** | Added magic byte validation for uploaded files | S | `[x]` |
+| SEC-035 | **Learning group join() TOCTOU race condition** | Wrapped join logic in \$transaction | S | `[x]` |
+| SEC-036 | **Non-member can view learning group metadata and member list** | Non-members now see only name, description, and member count | S | `[x]` |
+| SEC-037 | **Unbounded proposedDates array in event proposals** | Added @ArrayMaxSize(20) to DTO | S | `[x]` |
+| SEC-038 | **Event proposal voter privacy leak** | Non-admin users see aggregate counts only; admin sees voter details | S | `[x]` |
+| SEC-039 | **Event proposal vote TOCTOU + phantom date voting** | Wrapped in \$transaction; validate dates against proposedDates | S | `[x]` |
+| SEC-040 | **Journal content field has no length limit** | Added @MaxLength(50000) to content field | XS | `[x]` |
+| SEC-041 | **Journal mood field accepts arbitrary strings** | Added @IsIn(VALID_MOODS) and @MaxLength(50) validation | XS | `[x]` |
+| SEC-042 | **Unsafe date parsing in journal service** | Added YYYY-MM-DD regex validation with BadRequestException | S | `[x]` |
+| SEC-043 | **Assessment questionIds not validated against server QUESTIONS** | Validate each questionId exists in server QUESTIONS array | S | `[x]` |
+| SEC-044 | **Assessment score manipulation via duplicate dimension IDs** | Validate exact question set match and reject duplicates | S | `[x]` |
 
 ### CI Infrastructure
 

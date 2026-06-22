@@ -93,10 +93,28 @@ export class LearningGroupsService {
 
     const isMember = group.members.some((m) => m.userId === userId);
 
+    // SEC-036: Non-members should only see minimal info (name, description, member count)
+    // Hide actual member list details and messages
+    if (!isMember) {
+      return {
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        createdById: group.createdById,
+        createdBy: group.createdBy,
+        isMember,
+        memberCount: group._count.members,
+        members: [],
+        messages: [],
+        _count: group._count,
+      };
+    }
+
     return {
       ...group,
       isMember,
-      messages: isMember ? group.messages.reverse() : [],
+      memberCount: group._count.members,
+      messages: group.messages.reverse(),
     };
   }
 
@@ -237,23 +255,27 @@ export class LearningGroupsService {
   }
 
   async join(groupId: string, userId: string) {
-    const group = await this.prisma.learningGroup.findUnique({
-      where: { id: groupId },
-      include: { _count: { select: { members: true } } },
+    // SEC-035: Wrap in $transaction to prevent TOCTOU race condition
+    // where concurrent joins could exceed MAX_MEMBERS
+    return this.prisma.$transaction(async (tx) => {
+      const group = await tx.learningGroup.findUnique({
+        where: { id: groupId },
+        include: { _count: { select: { members: true } } },
+      });
+      if (!group) throw new NotFoundException('Learning group not found');
+
+      if (group._count.members >= MAX_MEMBERS) {
+        throw new BadRequestException(`Group cannot exceed ${MAX_MEMBERS} members`);
+      }
+
+      const existing = await tx.learningGroupMember.findUnique({
+        where: { groupId_userId: { groupId, userId } },
+      });
+      if (existing) throw new BadRequestException('Already a member');
+
+      await tx.learningGroupMember.create({ data: { groupId, userId } });
+      return { joined: true };
     });
-    if (!group) throw new NotFoundException('Learning group not found');
-
-    if (group._count.members >= MAX_MEMBERS) {
-      throw new BadRequestException(`Group cannot exceed ${MAX_MEMBERS} members`);
-    }
-
-    const existing = await this.prisma.learningGroupMember.findUnique({
-      where: { groupId_userId: { groupId, userId } },
-    });
-    if (existing) throw new BadRequestException('Already a member');
-
-    await this.prisma.learningGroupMember.create({ data: { groupId, userId } });
-    return { joined: true };
   }
 
   async leave(groupId: string, userId: string) {

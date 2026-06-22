@@ -13,6 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Admin Journal Prompts (GL-011 enhancement)**: Journal prompts moved from hardcoded to fully admin-editable; `JournalPromptCategory` and `JournalPrompt` database models; admin CRUD for categories (create, edit, delete, show/hide) and prompts (create, edit, delete, show/hide); category color management; admin page at `/admin/journal-prompts`; 30 default prompts seeded across 5 categories
 - **Adversarial tests SEC-031–044**: 30 tests across 6 new files covering tier self-upgrade bypass, S3 path traversal, upload MIME spoofing, learning group TOCTOU race, event proposal privacy leak, journal input validation, and assessment score manipulation
 
+### Fixed
+- **SEC-031**: Tier self-upgrade bypass — `upgradeTier()` now disabled (throws NotImplementedException) until billing integration
+- **SEC-032**: Tier enum injection — `setTier()` validates against whitelist of valid tier values
+- **SEC-033**: S3 path traversal — local storage validates resolved path stays within upload directory
+- **SEC-034**: Upload MIME spoofing — validates magic bytes match claimed MIME type; blocks dangerous extensions
+- **SEC-035**: Learning group join race condition — wrapped in database transaction to enforce maxMembers
+- **SEC-036**: Learning group data leak — non-members see only public info (name, description, member count)
+- **SEC-037**: Event proposal date array bomb — `@ArrayMaxSize(20)` on proposedDates DTO
+- **SEC-038**: Event proposal vote privacy — non-admin voters see only aggregate counts, not individual votes
+- **SEC-039**: Event proposal vote race condition — wrapped in transaction; validates dateVotes against proposedDates
+- **SEC-040**: Journal content size limit — `@MaxLength(50000)` on journal content field
+- **SEC-041**: Journal mood injection — validates mood against whitelist with `@IsIn(VALID_MOODS)`
+- **SEC-042**: Journal date injection — strict regex validation on date and month parameters
+- **SEC-043**: Assessment question injection — validates each questionId exists in server-side question set
+- **SEC-044**: Assessment score manipulation — validates exact question set match; rejects duplicates
+
 ### Changed
 - Journal prompts now read from database instead of hardcoded array; prompt colors come from admin-configured category colors
 

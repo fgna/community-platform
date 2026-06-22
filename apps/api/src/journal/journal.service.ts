@@ -1,7 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
 import { CreatePromptDto, UpdatePromptDto, CreateCategoryDto, UpdateCategoryDto } from './dto/create-prompt.dto';
+
+const DATE_REGEX = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const MONTH_REGEX = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+
+function validateDateParam(date: string): Date {
+  if (!DATE_REGEX.test(date)) {
+    throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD.');
+  }
+  const parsed = new Date(date + 'T00:00:00.000Z');
+  if (isNaN(parsed.getTime())) {
+    throw new BadRequestException('Invalid date value.');
+  }
+  return parsed;
+}
+
+function validateMonthParam(month: string): void {
+  if (!MONTH_REGEX.test(month)) {
+    throw new BadRequestException('Invalid month format. Expected YYYY-MM.');
+  }
+}
 
 @Injectable()
 export class JournalService {
@@ -89,6 +109,7 @@ export class JournalService {
     const where: any = { userId };
 
     if (month) {
+      validateMonthParam(month);
       // month is in YYYY-MM format
       const [year, mon] = month.split('-').map(Number);
       const startDate = new Date(Date.UTC(year, mon - 1, 1));
@@ -106,7 +127,7 @@ export class JournalService {
   }
 
   async findOne(userId: string, date: string) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
     const entry = await this.prisma.journalEntry.findUnique({
       where: {
         userId_date: { userId, date: parsedDate },
@@ -121,7 +142,7 @@ export class JournalService {
   }
 
   async upsert(userId: string, date: string, dto: UpsertJournalDto) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
 
     return this.prisma.journalEntry.upsert({
       where: {
@@ -141,7 +162,7 @@ export class JournalService {
   }
 
   async delete(userId: string, date: string) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
 
     const entry = await this.prisma.journalEntry.findUnique({
       where: {

@@ -38,7 +38,7 @@ export class EventProposalsService {
     return { data: enriched, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, userId?: string, isAdmin = false) {
     const proposal = await this.prisma.eventProposal.findUnique({
       where: { id },
       include: {
@@ -66,12 +66,17 @@ export class EventProposalsService {
 
     const myVote = userId ? proposal.votes.find((v) => v.userId === userId) : null;
 
+    // SEC-038: Strip individual voter details for non-admin users
+    // Only return aggregate vote counts, not who voted for what
+    const { votes, ...proposalWithoutVotes } = proposal;
+
     return {
-      ...proposal,
-      voteCount: proposal.votes.length,
+      ...proposalWithoutVotes,
+      voteCount: votes.length,
       dateVoteCounts,
       hasVoted: !!myVote,
       myDateVotes: myVote ? (myVote.dateVotes as string[]) : [],
+      ...(isAdmin ? { votes } : {}),
     };
   }
 
@@ -90,25 +95,37 @@ export class EventProposalsService {
   }
 
   async vote(proposalId: string, userId: string, dateVotes: string[] = []) {
-    const proposal = await this.prisma.eventProposal.findUnique({
-      where: { id: proposalId },
-    });
+    // SEC-039: Wrap in transaction to prevent TOCTOU race on proposal status
+    return this.prisma.$transaction(async (tx) => {
+      const proposal = await tx.eventProposal.findUnique({
+        where: { id: proposalId },
+      });
 
-    if (!proposal) throw new NotFoundException('Proposal not found');
-    if (proposal.status === 'CLOSED') throw new BadRequestException('Proposal is closed');
+      if (!proposal) throw new NotFoundException('Proposal not found');
+      if (proposal.status === 'CLOSED') throw new BadRequestException('Proposal is closed');
 
-    return this.prisma.proposalVote.upsert({
-      where: {
-        proposalId_userId: { proposalId, userId },
-      },
-      create: {
-        proposalId,
-        userId,
-        dateVotes,
-      },
-      update: {
-        dateVotes,
-      },
+      // SEC-039: Validate that submitted dates exist in the proposal's proposedDates
+      const proposedDates = (proposal.proposedDates as string[]) || [];
+      const invalidDates = dateVotes.filter((d) => !proposedDates.includes(d));
+      if (invalidDates.length > 0) {
+        throw new BadRequestException(
+          `Invalid dates: ${invalidDates.join(', ')}. Must be one of: ${proposedDates.join(', ')}`,
+        );
+      }
+
+      return tx.proposalVote.upsert({
+        where: {
+          proposalId_userId: { proposalId, userId },
+        },
+        create: {
+          proposalId,
+          userId,
+          dateVotes,
+        },
+        update: {
+          dateVotes,
+        },
+      });
     });
   }
 

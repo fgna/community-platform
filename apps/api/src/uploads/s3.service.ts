@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -40,9 +40,22 @@ export class S3Service {
     }
   }
 
+  /**
+   * SEC-033: Validate that a resolved file path stays within localDir.
+   * Prevents path traversal attacks via crafted keys containing "../".
+   */
+  private validateLocalPath(key: string): string {
+    const resolved = path.resolve(this.localDir, key);
+    const normalizedBase = path.resolve(this.localDir);
+    if (!resolved.startsWith(normalizedBase + path.sep) && resolved !== normalizedBase) {
+      throw new BadRequestException('Invalid file key: path traversal detected');
+    }
+    return resolved;
+  }
+
   async upload(key: string, body: Buffer, contentType: string): Promise<string> {
     if (this.useLocal) {
-      const filePath = path.join(this.localDir, key);
+      const filePath = this.validateLocalPath(key);
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -65,7 +78,7 @@ export class S3Service {
 
   async delete(key: string): Promise<void> {
     if (this.useLocal) {
-      const filePath = path.join(this.localDir, key);
+      const filePath = this.validateLocalPath(key);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

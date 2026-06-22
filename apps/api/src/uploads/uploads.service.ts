@@ -15,12 +15,55 @@ const FILE_TYPES = [
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
+// SEC-034: Dangerous file extensions that should always be blocked
+const BLOCKED_EXTENSIONS = new Set([
+  '.exe', '.dll', '.bat', '.cmd', '.com', '.scr', '.pif', '.msi',
+  '.sh', '.bash', '.ps1', '.vbs', '.js', '.wsh', '.wsf',
+]);
+
+// SEC-034: Magic byte signatures for validating file content matches claimed MIME type
+const MAGIC_BYTES: Record<string, Buffer[]> = {
+  'image/jpeg': [Buffer.from([0xFF, 0xD8, 0xFF])],
+  'image/png': [Buffer.from([0x89, 0x50, 0x4E, 0x47])],
+  'image/gif': [Buffer.from('GIF87a'), Buffer.from('GIF89a')],
+  'image/webp': [Buffer.from('RIFF')], // RIFF....WEBP
+  'application/pdf': [Buffer.from('%PDF')],
+};
+
 @Injectable()
 export class UploadsService {
   constructor(
     private prisma: PrismaService,
     private s3: S3Service,
   ) {}
+
+  /**
+   * SEC-034: Validate that file content magic bytes match the claimed MIME type.
+   * Prevents attackers from sending executables with a spoofed Content-Type header.
+   */
+  private validateMagicBytes(file: Express.Multer.File): void {
+    const signatures = MAGIC_BYTES[file.mimetype];
+    if (signatures && file.buffer && file.buffer.length > 0) {
+      const matches = signatures.some((sig) =>
+        file.buffer.subarray(0, sig.length).equals(sig),
+      );
+      if (!matches) {
+        throw new BadRequestException(
+          'File content does not match declared MIME type',
+        );
+      }
+    }
+  }
+
+  /**
+   * SEC-034: Block dangerous file extensions regardless of MIME type.
+   */
+  private validateExtension(filename: string): void {
+    const ext = filename.toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+    if (BLOCKED_EXTENSIONS.has(ext)) {
+      throw new BadRequestException(`File extension "${ext}" is not allowed`);
+    }
+  }
 
   async uploadImage(userId: string, file: Express.Multer.File) {
     if (!IMAGE_TYPES.includes(file.mimetype)) {
@@ -29,6 +72,8 @@ export class UploadsService {
     if (file.size > MAX_IMAGE_SIZE) {
       throw new BadRequestException('Image too large. Maximum 5MB');
     }
+    this.validateMagicBytes(file);
+    this.validateExtension(file.originalname);
     return this.processUpload(userId, file);
   }
 
@@ -39,6 +84,8 @@ export class UploadsService {
     if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException('File too large. Maximum 20MB');
     }
+    this.validateMagicBytes(file);
+    this.validateExtension(file.originalname);
     return this.processUpload(userId, file);
   }
 

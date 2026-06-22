@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ArrayMinSize, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, MaxLength, MinLength } from 'class-validator';
 
 export class CreateProposalDto {
   @IsString()
@@ -13,6 +13,7 @@ export class CreateProposalDto {
 
   @IsArray()
   @ArrayMinSize(2)
+  @ArrayMaxSize(20)
   @IsString({ each: true })
   proposedDates: string[];
 }

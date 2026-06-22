@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitAssessmentDto } from './dto/submit-assessment.dto';
 
@@ -68,6 +68,29 @@ export class AssessmentsService {
   }
 
   async submit(userId: string, dto: SubmitAssessmentDto) {
+    // SEC-043/044: Validate that submitted questionIds exactly match the expected set
+    const validQuestionIds = new Set(QUESTIONS.map((q) => q.id));
+    const submittedIds = new Set(dto.answers.map((a) => a.questionId));
+
+    // Check for invalid questionIds
+    for (const id of submittedIds) {
+      if (!validQuestionIds.has(id)) {
+        throw new BadRequestException(`Invalid questionId: ${id}`);
+      }
+    }
+
+    // Check that all expected questions are answered (exact 1:1 match)
+    if (submittedIds.size !== validQuestionIds.size) {
+      throw new BadRequestException(
+        `Expected exactly ${validQuestionIds.size} unique question answers, got ${submittedIds.size}.`,
+      );
+    }
+
+    // Check for duplicate questionIds
+    if (dto.answers.length !== submittedIds.size) {
+      throw new BadRequestException('Duplicate questionIds are not allowed.');
+    }
+
     const scores: Record<string, number> = {};
 
     for (const dim of GROWTH_DIMENSIONS) {

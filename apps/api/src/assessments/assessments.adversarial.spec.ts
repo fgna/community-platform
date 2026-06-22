@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { AssessmentsService } from './assessments.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException } from '@nestjs/common';
 
 function buildMockPrisma() {
   return {
@@ -40,69 +41,33 @@ describe('[SEC-043] unvalidated questionIds in submit()', () => {
     service = await buildService(prisma);
   });
 
-  it('submit() accepts fabricated questionIds not in QUESTIONS array', async () => {
-    prisma.assessment.create.mockImplementation(async ({ data }) => ({
-      id: 'a1',
-      userId: data.userId,
-      scores: data.scores,
-      overallScore: data.overallScore,
-      completedAt: new Date(),
-    }));
-
+  it('submit() rejects fabricated questionIds not in QUESTIONS array', async () => {
     // Send 30 answers with entirely fake questionIds
     const fakeAnswers = Array.from({ length: 30 }, (_, i) => ({
       questionId: `FAKE${i}`,
       score: 5,
     }));
 
-    const result = await service.submit('u1', { answers: fakeAnswers });
-
-    // SEC-043: The service filters answers by a.questionId.startsWith(dim)
-    // Fake IDs starting with something other than G/R/O/W/T/H produce
-    // zero matches per dimension, so avg = 0/1 = 0
-    expect(result.scores).toBeDefined();
-    // All dimension scores should be 0 because no fakeId starts with G,R,O,W,T,H
-    const scores = result.scores as Record<string, number>;
-    expect(scores['G']).toBe(0);
-    expect(scores['R']).toBe(0);
+    // SEC-043 FIX: Service now validates questionIds against the server QUESTIONS array
+    await expect(service.submit('u1', { answers: fakeAnswers })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
-  it('submit() allows inflating a single dimension with duplicate questionIds', async () => {
-    prisma.assessment.create.mockImplementation(async ({ data }) => ({
-      id: 'a1',
-      userId: data.userId,
-      scores: data.scores,
-      overallScore: data.overallScore,
-      completedAt: new Date(),
-    }));
-
+  it('submit() rejects inflating a single dimension with duplicate questionIds', async () => {
     // 30 answers all claiming to be G-dimension questions with score 5
     const spikedAnswers = Array.from({ length: 30 }, (_, i) => ({
       questionId: `G${i + 1}`,
       score: 5,
     }));
 
-    const result = await service.submit('u1', { answers: spikedAnswers });
-    const scores = result.scores as Record<string, number>;
-
-    // SEC-044: G dimension gets 30 answers all scoring 5 → average = 5
-    // Other dimensions get 0 answers → 0/1 = 0
-    expect(scores['G']).toBe(5);
-    expect(scores['R']).toBe(0);
-    expect(scores['O']).toBe(0);
-    // The overall score is (5+0+0+0+0+0)/6 = 0.83 — a skewed result
-    expect(result.overallScore).toBeCloseTo(0.83, 1);
+    // SEC-044 FIX: Service now validates that questionIds match exactly the expected set
+    await expect(service.submit('u1', { answers: spikedAnswers })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
-  it('submit() does not verify answers map 1:1 to actual QUESTIONS', async () => {
-    prisma.assessment.create.mockImplementation(async ({ data }) => ({
-      id: 'a1',
-      userId: data.userId,
-      scores: data.scores,
-      overallScore: data.overallScore,
-      completedAt: new Date(),
-    }));
-
+  it('submit() rejects a mix of real and fake questionIds', async () => {
     // Mix of real and fake: submit G1-G5 legitimately, fake the rest
     const answers = [
       // 5 real G questions
@@ -114,11 +79,38 @@ describe('[SEC-043] unvalidated questionIds in submit()', () => {
       })),
     ];
 
-    const result = await service.submit('u1', { answers });
-    const scores = result.scores as Record<string, number>;
+    // SEC-043 FIX: Invalid questionIds are now rejected
+    await expect(service.submit('u1', { answers })).rejects.toThrow(BadRequestException);
+  });
 
-    // G gets a perfect score, other dimensions are 0 (not 1, because X doesn't match)
-    expect(scores['G']).toBe(5);
-    expect(scores['R']).toBe(0);
+  it('submit() accepts valid answers matching all QUESTIONS', async () => {
+    prisma.assessment.create.mockImplementation(async ({ data }) => ({
+      id: 'a1',
+      userId: data.userId,
+      scores: data.scores,
+      overallScore: data.overallScore,
+      completedAt: new Date(),
+    }));
+
+    // Build valid answers for all 30 questions
+    const validAnswers = [
+      ...['G1', 'G2', 'G3', 'G4', 'G5'].map((id) => ({ questionId: id, score: 4 })),
+      ...['R1', 'R2', 'R3', 'R4', 'R5'].map((id) => ({ questionId: id, score: 3 })),
+      ...['O1', 'O2', 'O3', 'O4', 'O5'].map((id) => ({ questionId: id, score: 5 })),
+      ...['W1', 'W2', 'W3', 'W4', 'W5'].map((id) => ({ questionId: id, score: 4 })),
+      ...['T1', 'T2', 'T3', 'T4', 'T5'].map((id) => ({ questionId: id, score: 3 })),
+      ...['H1', 'H2', 'H3', 'H4', 'H5'].map((id) => ({ questionId: id, score: 2 })),
+    ];
+
+    const result = await service.submit('u1', { answers: validAnswers });
+    expect(result.scores).toBeDefined();
+
+    const scores = result.scores as Record<string, number>;
+    expect(scores['G']).toBe(4);
+    expect(scores['R']).toBe(3);
+    expect(scores['O']).toBe(5);
+    expect(scores['W']).toBe(4);
+    expect(scores['T']).toBe(3);
+    expect(scores['H']).toBe(2);
   });
 });
