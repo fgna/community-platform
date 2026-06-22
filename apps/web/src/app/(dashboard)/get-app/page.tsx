@@ -10,10 +10,16 @@ const features = [
   { icon: CheckCircle, text: 'Quick access to journal & feed' },
 ];
 
+const externalApkUrl = process.env.NEXT_PUBLIC_APK_URL;
+
 export default function GetAppPage() {
-  const [apkAvailable, setApkAvailable] = useState<boolean | null>(null);
+  const [apkAvailable, setApkAvailable] = useState<boolean | null>(
+    externalApkUrl ? true : null,
+  );
+  const downloadUrl = externalApkUrl || '/api/download-app';
 
   useEffect(() => {
+    if (externalApkUrl) return;
     fetch('/api/download-app', { method: 'HEAD' })
       .then((r) => setApkAvailable(r.ok))
       .catch(() => setApkAvailable(false));
@@ -58,19 +64,24 @@ export default function GetAppPage() {
       <div className="text-center space-y-3">
         {apkAvailable === false ? (
           <div
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
-            style={{
-              background: 'rgba(234,179,8,0.08)',
-              border: '1px solid rgba(234,179,8,0.2)',
-              color: 'var(--theme-text)',
-            }}
+            className="space-y-3"
           >
-            <AlertCircle size={16} style={{ color: '#eab308' }} />
-            The APK is being prepared. Please check back soon or contact an admin.
+            <div
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+              style={{
+                background: 'rgba(234,179,8,0.08)',
+                border: '1px solid rgba(234,179,8,0.2)',
+                color: 'var(--theme-text)',
+              }}
+            >
+              <AlertCircle size={16} className="flex-shrink-0" style={{ color: '#eab308' }} />
+              The APK is included in Docker deployments. For dev environments, set
+              NEXT_PUBLIC_APK_URL or build via: <code className="px-1 py-0.5 rounded text-xs" style={{ background: 'rgba(255,255,255,0.06)' }}>cd apps/mobile-android && docker build -t apk-builder . && docker run --rm -v $(pwd):/app apk-builder ./gradlew assembleRelease</code>
+            </div>
           </div>
         ) : (
           <Button asChild size="lg" className="gap-2 w-full sm:w-auto" disabled={apkAvailable === null}>
-            <a href="/api/download-app">
+            <a href={downloadUrl} download={!externalApkUrl}>
               <Download size={16} />
               Download APK
             </a>
