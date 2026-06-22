@@ -348,7 +348,7 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-027 | Mobile app (React Native / Expo) — core features: feed, events, messages, notifications | P2 | XL | `[ ]` |
+| GL-027 | Mobile app (Android WebView wrapper) — JWT auth, push notifications, deep linking, offline error page | P2 | L | `[x]` |
 | GL-028 | SSO / OAuth (Google, LinkedIn) | P2 | L | `[x]` |
 | GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[x]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
