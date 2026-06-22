@@ -119,46 +119,48 @@ export class LearningGroupsService {
   }
 
   async addMember(groupId: string, targetUserId: string, requestingUserId: string) {
-    const group = await this.prisma.learningGroup.findUnique({
-      where: { id: groupId },
-      include: { members: true },
+    return this.prisma.$transaction(async (tx) => {
+      // Lock the group row to serialize concurrent addMember calls
+      await tx.$queryRaw`SELECT id FROM "LearningGroup" WHERE id = ${groupId} FOR UPDATE`;
+
+      const group = await tx.learningGroup.findUnique({
+        where: { id: groupId },
+        include: { members: true },
+      });
+
+      if (!group) {
+        throw new NotFoundException('Learning group not found');
+      }
+
+      if (group.createdById !== requestingUserId) {
+        throw new ForbiddenException('Only the group creator can add members');
+      }
+
+      if (group.members.length >= MAX_MEMBERS) {
+        throw new BadRequestException(`Group cannot exceed ${MAX_MEMBERS} members`);
+      }
+
+      const targetUser = await tx.user.findUnique({
+        where: { id: targetUserId },
+      });
+      if (!targetUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      const existing = group.members.find((m) => m.userId === targetUserId);
+      if (existing) {
+        throw new BadRequestException('User is already a member of this group');
+      }
+
+      await tx.learningGroupMember.create({
+        data: {
+          groupId,
+          userId: targetUserId,
+        },
+      });
+
+      return { message: 'Member added' };
     });
-
-    if (!group) {
-      throw new NotFoundException('Learning group not found');
-    }
-
-    // Only creator can add members
-    if (group.createdById !== requestingUserId) {
-      throw new ForbiddenException('Only the group creator can add members');
-    }
-
-    if (group.members.length >= MAX_MEMBERS) {
-      throw new BadRequestException(`Group cannot exceed ${MAX_MEMBERS} members`);
-    }
-
-    // Check if user exists
-    const targetUser = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
-    });
-    if (!targetUser) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check if already a member
-    const existing = group.members.find((m) => m.userId === targetUserId);
-    if (existing) {
-      throw new BadRequestException('User is already a member of this group');
-    }
-
-    await this.prisma.learningGroupMember.create({
-      data: {
-        groupId,
-        userId: targetUserId,
-      },
-    });
-
-    return { message: 'Member added' };
   }
 
   async removeMember(groupId: string, targetUserId: string, requestingUserId: string) {
@@ -258,6 +260,8 @@ export class LearningGroupsService {
     // SEC-035: Wrap in $transaction to prevent TOCTOU race condition
     // where concurrent joins could exceed MAX_MEMBERS
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "LearningGroup" WHERE id = ${groupId} FOR UPDATE`;
+
       const group = await tx.learningGroup.findUnique({
         where: { id: groupId },
         include: { _count: { select: { members: true } } },

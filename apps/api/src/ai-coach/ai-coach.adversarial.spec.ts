@@ -10,42 +10,36 @@ import { describe, it, expect, vi } from 'vitest';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
-describe('[SEC-050] no rate limit on AI coach chat', () => {
-  it('ai-coach.controller.ts has no @Throttle decorator on chat endpoint', async () => {
-    // SEC-050: The /ai-coach/chat endpoint has no per-route @Throttle() decorator.
-    // Each request triggers an Anthropic API call which costs real money.
-    // An authenticated user can flood this endpoint to run up API bills.
-
-    // We verify by checking the controller source for missing throttle metadata
+describe('[SEC-050] rate limit on AI coach chat — FIXED', () => {
+  it('ai-coach.controller.ts has @Throttle decorator on chat endpoint', async () => {
+    // SEC-050 FIX: The /ai-coach/chat endpoint now has @Throttle({ default: { limit: 10, ttl: 60000 } })
     const fs = await import('fs');
     const controllerSrc = fs.readFileSync(
       'src/ai-coach/ai-coach.controller.ts',
       'utf-8',
     );
 
-    // The controller does NOT import Throttle
-    expect(controllerSrc).not.toContain('@Throttle');
+    expect(controllerSrc).toContain('@Throttle');
   });
 });
 
-describe('[SEC-051] unbounded chat history array', () => {
-  it('ChatDto accepts 1000 history messages (no @ArrayMaxSize)', async () => {
+describe('[SEC-051] chat history array bounded — FIXED', () => {
+  it('ChatDto rejects 1000 history messages (@ArrayMaxSize(20))', async () => {
     const { ChatDto } = await import('./dto/chat.dto');
 
     const dto = plainToInstance(ChatDto, {
       message: 'Hello',
       history: Array.from({ length: 1000 }, (_, i) => ({
         role: i % 2 === 0 ? 'user' : 'assistant',
-        content: 'x'.repeat(5000), // 5KB each = 5MB total
+        content: 'x'.repeat(5000),
       })),
     });
 
     const errors = await validate(dto);
 
-    // SEC-051: No ArrayMaxSize on history — validation must parse all 1000 items
-    // Even though service uses .slice(-10), the full array is validated first
+    // SEC-051 FIX: @ArrayMaxSize(20) now rejects oversized history arrays
     const historyErrors = errors.filter((e) => e.property === 'history');
-    expect(historyErrors).toHaveLength(0);
+    expect(historyErrors.length).toBeGreaterThan(0);
   });
 });
 

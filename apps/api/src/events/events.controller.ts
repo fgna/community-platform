@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { CreateRecordingDto } from './dto/create-recording.dto';
 import { RsvpDto } from './dto/rsvp.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -39,7 +40,7 @@ export class EventsController {
   @Put(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update event (Admin only)' })
-  update(@Param('id') id: string, @Body() dto: Partial<CreateEventDto>) {
+  update(@Param('id') id: string, @Body() dto: UpdateEventDto) {
     return this.eventsService.update(id, dto);
   }
 

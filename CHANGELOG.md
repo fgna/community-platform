@@ -5,10 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.32.0] — 2026-06-22
+
+### Security
+- **SEC-065**: Billing DTO `@IsUrl` now uses `require_tld: false` — allows localhost URLs in development/staging
+- **SEC-066**: Learning group `addMember()` and `join()` now use `SELECT ... FOR UPDATE` row lock — truly serializes concurrent requests under READ COMMITTED isolation
+- **SEC-067**: Event update endpoint now uses dedicated `UpdateEventDto` with explicit validators — same fix pattern as SEC-058 for categories
+
+---
+
+## [1.31.0] — 2026-06-22
+
+### Security
+- **SEC-045**: OAuth callback DTO now supports `state` parameter for CSRF protection
+- **SEC-048**: Billing checkout/portal endpoints now use validated DTOs with `@IsUrl` — prevents open redirect attacks
+- **SEC-050**: AI Coach chat endpoint rate-limited to 10 requests per minute — prevents LLM API cost amplification
+- **SEC-051**: AI Coach chat history array capped at 20 items (`@ArrayMaxSize(20)`) — prevents DoS via validation overload
+- **SEC-058**: Categories update uses dedicated `UpdateCategoryDto` with full runtime validation
+- **SEC-059**: Invite token registration verifies registering email matches the invite's intended recipient
+- **SEC-060**: GDPR data export endpoint rate-limited to 3 requests per 15 minutes
+- **SEC-061**: Learning group `addMember()` wrapped in `$transaction` with `FOR UPDATE` lock — prevents TOCTOU race
+- **SEC-062**: Journal prompt/category color fields validated with hex color regex — blocks CSS injection
+- **SEC-063**: Event `meetingUrl` validated with `@IsUrl({ protocols: ['http', 'https'] })` — blocks `javascript:` URI injection
+- **SEC-064**: Event partial date updates validate against existing counterpart date
 
 ### Added
-- **Adversarial tests SEC-045–057**: 20 tests across 5 new files covering OAuth CSRF/account takeover, billing open redirect, AI coach prompt injection/rate limit, digest template stored XSS, and CSV export DoS/PII exposure
+- 17 adversarial tests covering security fixes (SEC-045–064)
+- 20 adversarial tests for SEC-045–057 audit findings (OAuth, billing, AI coach, digests, CSV exports)
 
 ---
 

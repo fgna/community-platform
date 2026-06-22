@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Body, SetMetadata } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { GdprService } from './gdpr.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IS_PUBLIC_KEY } from '../auth/guards/jwt-auth.guard';
@@ -32,6 +33,7 @@ export class GdprController {
 
   @Get('export')
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 3, ttl: 900000 } })
   @ApiOperation({ summary: 'Export user data (GDPR Article 20)' })
   exportData(@CurrentUser() user: any) {
     return this.gdprService.exportUserData(user.id);

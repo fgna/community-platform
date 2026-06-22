@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Param, Req, SetMetadata, HttpCode, HttpSta
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { BillingService } from './billing.service';
+import { CreateCheckoutDto, CreatePortalDto } from './dto/checkout.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from '../auth/guards/jwt-auth.guard';
@@ -14,14 +15,14 @@ export class BillingController {
 
   @Post('checkout')
   @ApiOperation({ summary: 'Create Stripe Checkout session for upgrade' })
-  async createCheckout(@CurrentUser() user: any, @Body() body: { successUrl: string; cancelUrl: string }) {
-    return this.billingService.createCheckoutSession(user.id, body.successUrl, body.cancelUrl);
+  async createCheckout(@CurrentUser() user: any, @Body() dto: CreateCheckoutDto) {
+    return this.billingService.createCheckoutSession(user.id, dto.successUrl, dto.cancelUrl);
   }
 
   @Post('portal')
   @ApiOperation({ summary: 'Create Stripe Customer Portal session' })
-  async createPortal(@CurrentUser() user: any, @Body() body: { returnUrl: string }) {
-    return this.billingService.createPortalSession(user.id, body.returnUrl);
+  async createPortal(@CurrentUser() user: any, @Body() dto: CreatePortalDto) {
+    return this.billingService.createPortalSession(user.id, dto.returnUrl);
   }
 
   @Get('status')

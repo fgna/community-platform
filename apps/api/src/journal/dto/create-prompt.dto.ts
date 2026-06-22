@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, Min, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, Min, MaxLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePromptDto {
@@ -59,6 +59,7 @@ export class CreateCategoryDto {
   @ApiPropertyOptional({ example: '#8b5cf6' })
   @IsString()
   @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{3,8}$/, { message: 'color must be a valid hex color' })
   color?: string;
 
   @ApiPropertyOptional({ example: true })
@@ -83,6 +84,7 @@ export class UpdateCategoryDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{3,8}$/, { message: 'color must be a valid hex color' })
   color?: string;
 
   @ApiPropertyOptional()

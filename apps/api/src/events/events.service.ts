@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { generateIcs } from '../email/ics.util';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { CreateRecordingDto } from './dto/create-recording.dto';
 
 @Injectable()
@@ -81,12 +82,16 @@ export class EventsService {
     return this.prisma.event.create({ data: dto });
   }
 
-  async update(id: string, dto: Partial<CreateEventDto>) {
-    if (dto.startsAt && dto.endsAt && new Date(dto.startsAt) >= new Date(dto.endsAt)) {
-      throw new BadRequestException('startsAt must be before endsAt');
-    }
+  async update(id: string, dto: UpdateEventDto) {
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException('Event not found');
+
+    const effectiveStart = dto.startsAt ? new Date(dto.startsAt) : event.startsAt;
+    const effectiveEnd = dto.endsAt ? new Date(dto.endsAt) : event.endsAt;
+    if (effectiveStart >= effectiveEnd) {
+      throw new BadRequestException('startsAt must be before endsAt');
+    }
+
     return this.prisma.event.update({ where: { id }, data: dto });
   }
 

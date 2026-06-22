@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AiCoachService } from './ai-coach.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ChatDto } from './dto/chat.dto';
@@ -17,6 +18,7 @@ export class AiCoachController {
   }
 
   @Post('chat')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Send a message to the AI Coach' })
   async chat(@CurrentUser() user: any, @Body() dto: ChatDto) {
     return this.aiCoachService.chat(user.id, dto.message, dto.history ?? []);
