@@ -62,6 +62,7 @@ describe('[SEC-035] TOCTOU race in join() — FIXED', () => {
       const tx = {
         learningGroup: prisma.learningGroup,
         learningGroupMember: prisma.learningGroupMember,
+        $queryRaw: vi.fn().mockResolvedValue([]),
       };
       prisma.learningGroup.findUnique.mockResolvedValue({
         id: 'g1',
@@ -84,6 +85,7 @@ describe('[SEC-035] TOCTOU race in join() — FIXED', () => {
       const tx = {
         learningGroup: prisma.learningGroup,
         learningGroupMember: prisma.learningGroupMember,
+        $queryRaw: vi.fn().mockResolvedValue([]),
       };
       prisma.learningGroup.findUnique.mockResolvedValue({
         id: 'g1',

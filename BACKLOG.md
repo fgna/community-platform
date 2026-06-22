@@ -444,6 +444,9 @@
 | SEC-062 | **Journal prompt/category color field allows arbitrary strings** — CSS injection vector | Added `@Matches(/^#[0-9a-fA-F]{3,8}$/)` to all color fields in journal DTOs | XS | `[x]` |
 | SEC-063 | **Event meetingUrl accepts `javascript:` URIs** — stored XSS vector in calendar invite emails | Replaced `@IsString()` with `@IsUrl({ protocols: ['http', 'https'] })` | XS | `[x]` |
 | SEC-064 | **Event partial date update bypasses ordering validation** — only checked when both dates provided | Now validates against existing counterpart date when only one date is updated | S | `[x]` |
+| SEC-065 | **Billing `@IsUrl` rejects localhost** — `require_tld: true` default breaks dev/staging | Added `require_tld: false` to all billing DTO URL validators | XS | `[x]` |
+| SEC-066 | **addMember/join `$transaction` doesn't truly serialize** — READ COMMITTED allows phantom reads | Added `SELECT ... FOR UPDATE` row lock before count check in both `addMember()` and `join()` | S | `[x]` |
+| SEC-067 | **Event update uses `Partial<CreateEventDto>`** — same validation gap as categories (SEC-058) | Created `UpdateEventDto` with explicit validators and `@IsOptional()` on all fields | S | `[x]` |
 
 ### CI Infrastructure
 

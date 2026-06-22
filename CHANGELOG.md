@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] — 2026-06-22
+
+### Security
+- **SEC-065**: Billing DTO `@IsUrl` now uses `require_tld: false` — allows localhost URLs in development/staging
+- **SEC-066**: Learning group `addMember()` and `join()` now use `SELECT ... FOR UPDATE` row lock — truly serializes concurrent requests under READ COMMITTED isolation
+- **SEC-067**: Event update endpoint now uses dedicated `UpdateEventDto` with explicit validators — same fix pattern as SEC-058 for categories
+
+---
+
 ## [1.31.0] — 2026-06-22
 
 ### Security

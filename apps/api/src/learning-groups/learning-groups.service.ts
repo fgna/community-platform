@@ -120,6 +120,9 @@ export class LearningGroupsService {
 
   async addMember(groupId: string, targetUserId: string, requestingUserId: string) {
     return this.prisma.$transaction(async (tx) => {
+      // Lock the group row to serialize concurrent addMember calls
+      await tx.$queryRaw`SELECT id FROM "LearningGroup" WHERE id = ${groupId} FOR UPDATE`;
+
       const group = await tx.learningGroup.findUnique({
         where: { id: groupId },
         include: { members: true },
@@ -257,6 +260,8 @@ export class LearningGroupsService {
     // SEC-035: Wrap in $transaction to prevent TOCTOU race condition
     // where concurrent joins could exceed MAX_MEMBERS
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "LearningGroup" WHERE id = ${groupId} FOR UPDATE`;
+
       const group = await tx.learningGroup.findUnique({
         where: { id: groupId },
         include: { _count: { select: { members: true } } },
