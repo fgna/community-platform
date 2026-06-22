@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **SSO / OAuth (GL-028)**: Google and LinkedIn OAuth login via authorization code flow; `OAuthAccount` model linking providers to users; automatic account linking when OAuth email matches existing account; OAuth-only users (no password) fully supported; "Connected Accounts" section in Settings to link/unlink providers; password set/change UI for OAuth-only users; social login buttons on login and register pages; CSRF protection via `state` parameter; graceful degradation when OAuth env vars not configured
 - **Stripe Billing (GL-025)**: Stripe Checkout for FREE→PREMIUM subscription upgrade; Stripe Customer Portal for subscription management (cancel, update payment); webhook handler for `checkout.session.completed`, `customer.subscription.updated/deleted`, `invoice.payment_failed`; `stripeCustomerId` and `stripeSubscriptionId` on User model; pricing page at `/pricing`; subscription management in Settings; billing success page; automatic downgrade on subscription cancellation; graceful degradation when Stripe env vars not set
+- **Assessment Recommendations (GL-008)**: Personalized development path based on GROWTH assessment scores; identifies top 3 weakest dimensions with actionable suggestions; keyword-based course and event recommendations; progress-aware course cards; `GET /assessments/recommendations` endpoint; "Your Development Path" section in assessment results view
 
 ---
 

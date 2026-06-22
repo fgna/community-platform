@@ -24,6 +24,13 @@ export function useAssessmentHistory(page = 1, limit = 10) {
   });
 }
 
+export function useAssessmentRecommendations() {
+  return useQuery({
+    queryKey: ['assessment-recommendations'],
+    queryFn: () => apiClient.get('/assessments/recommendations').then((r) => r.data),
+  });
+}
+
 export function useSubmitAssessment() {
   const queryClient = useQueryClient();
   return useMutation({

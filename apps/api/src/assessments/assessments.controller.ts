@@ -39,4 +39,9 @@ export class AssessmentsController {
   findLatest(@CurrentUser() user: { id: string }) {
     return this.assessments.findLatest(user.id);
   }
+
+  @Get('recommendations')
+  getRecommendations(@CurrentUser() user: { id: string }) {
+    return this.assessments.getRecommendations(user.id);
+  }
 }

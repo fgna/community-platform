@@ -279,7 +279,7 @@
 | GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[x]` |
 | GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
 | GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[x]` |
-| GL-008 | *Ambitious*: Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[ ]` |
+| GL-008 | Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[x]` |
 
 #### 3C · Journaling
 
