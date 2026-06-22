@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Adversarial tests SEC-031–044**: 30 tests across 6 new files covering tier self-upgrade bypass, S3 path traversal, upload MIME spoofing, learning group TOCTOU race, event proposal privacy leak, journal input validation, and assessment score manipulation
+
+---
+
 ## [1.25.0] — 2026-06-21
 
 ### Added
