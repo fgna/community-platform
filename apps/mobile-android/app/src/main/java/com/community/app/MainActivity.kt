@@ -84,8 +84,11 @@ class MainActivity : AppCompatActivity() {
         val email = etEmail.text.toString().trim()
         val pass = etPass.text.toString()
 
-        if (url.isNotEmpty() && !url.startsWith("http://") && !url.startsWith("https://"))
-            url = "https://$url"
+        if (url.isNotEmpty() && !url.startsWith("http://") && !url.startsWith("https://")) {
+            val isLocal = url.startsWith("192.168.") || url.startsWith("10.") || url.startsWith("172.")
+                    || url.startsWith("localhost") || url.startsWith("127.")
+            url = if (isLocal) "http://$url" else "https://$url"
+        }
 
         if (url.isEmpty() || email.isEmpty() || pass.isEmpty()) {
             tvStatus.text = getString(R.string.error_fields_required)
