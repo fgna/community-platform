@@ -424,6 +424,19 @@
 | SEC-042 | **Unsafe date parsing in journal service** | Added YYYY-MM-DD regex validation with BadRequestException | S | `[x]` |
 | SEC-043 | **Assessment questionIds not validated against server QUESTIONS** | Validate each questionId exists in server QUESTIONS array | S | `[x]` |
 | SEC-044 | **Assessment score manipulation via duplicate dimension IDs** | Validate exact question set match and reject duplicates | S | `[x]` |
+| SEC-045 | **OAuth flow has no `state` parameter — CSRF on authorization code** | `OAuthCallbackDto` only has `code` + `redirectUri`, no `state` — attacker can forge callback to link their OAuth identity to victim's session | M | `[ ]` |
+| SEC-046 | **OAuth `redirectUri` from client body with no allowlist** | `redirectUri` is `@IsString()` with no `@IsUrl()` or domain check — attacker can supply `https://evil.com` and server sends `client_secret` alongside it | M | `[ ]` |
+| SEC-047 | **OAuth auto-links account by email without email_verified check** | `handleOAuthLogin()` finds existing user by email and auto-links OAuth account — attacker with OAuth account using victim's email takes over their account | L | `[ ]` |
+| SEC-048 | **Billing checkout/portal URLs have no DTO validation** | `successUrl`, `cancelUrl`, `returnUrl` are inline body types (not class-validator DTOs) — attacker controls post-payment redirect destination | M | `[ ]` |
+| SEC-049 | **TOCTOU race on Stripe customer creation** | `createCheckoutSession()` checks `stripeCustomerId == null` then creates customer — concurrent requests create duplicate Stripe customers | S | `[ ]` |
+| SEC-050 | **No rate limit on AI coach chat endpoint** | `/ai-coach/chat` has no `@Throttle()` — each request costs real money via Anthropic API, unbounded cost attack | M | `[ ]` |
+| SEC-051 | **Unbounded chat history array size in ChatDto** | `history` has `@IsArray()` but no `@ArrayMaxSize()` — attacker sends thousands of 5KB messages causing validation DoS | S | `[ ]` |
+| SEC-052 | **Client-supplied chat history enables prompt injection** | Attacker fabricates `role: 'assistant'` messages that prime the model to ignore system prompt | S | `[ ]` |
+| SEC-053 | **Stored XSS via digest template headerHtml/footerHtml** | `renderPreview()` interpolates `headerHtml`/`footerHtml` into raw HTML — `logoUrl` is escaped but these fields are not | M | `[ ]` |
+| SEC-054 | **CSS injection via unvalidated accentColor in digest templates** | `accentColor` is interpolated into `style` attributes with no format validation — enables CSS property injection | S | `[ ]` |
+| SEC-055 | **Missing constraints on digest template DTO fields** | `headerHtml`, `footerHtml`, `sections`, `accentColor`, `logoUrl` have no `@MaxLength`/`@ArrayMaxSize`/format checks | S | `[ ]` |
+| SEC-056 | **CSV exports load entire dataset into memory — OOM DoS** | All `export*Csv()` methods use `findMany` with no `take` limit — single admin request can crash server | M | `[ ]` |
+| SEC-057 | **PII in content-focused CSV exports** | Posts and course progress CSV exports include author/user email addresses — unnecessary data exposure | S | `[ ]` |
 
 ### CI Infrastructure
 
