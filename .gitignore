@@ -46,5 +46,8 @@ data/
 # Prisma
 apps/api/prisma/migrations/*.sql
 
+# APK build artifacts (built in CI)
+*.apk
+
 # Misc
 *.tsbuildinfo
