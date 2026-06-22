@@ -16,6 +16,7 @@ export class ReportsService {
     const users = await this.prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: 10000,
       select: {
         id: true,
         email: true,
@@ -58,18 +59,18 @@ export class ReportsService {
     const posts = await this.prisma.post.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: 10000,
       include: {
-        author: { select: { name: true, email: true } },
+        author: { select: { name: true } },
         _count: { select: { comments: true, reactions: true } },
       },
     });
 
-    const header = 'id,author_name,author_email,type,content_preview,created_at,comments,reactions,pinned';
+    const header = 'id,author_name,type,content_preview,created_at,comments,reactions,pinned';
     const rows = posts.map((p) =>
       [
         p.id,
         csvEscape(p.author.name),
-        csvEscape(p.author.email),
         p.type,
         csvEscape(p.content.slice(0, 100)),
         p.createdAt.toISOString(),
@@ -93,6 +94,7 @@ export class ReportsService {
     const events = await this.prisma.event.findMany({
       where,
       orderBy: { startsAt: 'desc' },
+      take: 10000,
       include: {
         _count: { select: { rsvps: true } },
       },
@@ -118,17 +120,17 @@ export class ReportsService {
   async exportCourseProgressCsv(): Promise<string> {
     const progress = await this.prisma.progress.findMany({
       orderBy: { updatedAt: 'desc' },
+      take: 10000,
       include: {
-        user: { select: { name: true, email: true } },
+        user: { select: { name: true } },
         course: { select: { title: true } },
       },
     });
 
-    const header = 'user_name,user_email,course,percentage,completed_at,updated_at';
+    const header = 'user_name,course,percentage,completed_at,updated_at';
     const rows = progress.map((p) =>
       [
         csvEscape(p.user.name),
-        csvEscape(p.user.email),
         csvEscape(p.course.title),
         p.percentage,
         p.completedAt?.toISOString() || '',

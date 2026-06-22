@@ -425,18 +425,18 @@
 | SEC-043 | **Assessment questionIds not validated against server QUESTIONS** | Validate each questionId exists in server QUESTIONS array | S | `[x]` |
 | SEC-044 | **Assessment score manipulation via duplicate dimension IDs** | Validate exact question set match and reject duplicates | S | `[x]` |
 | SEC-045 | **OAuth flow has no `state` parameter — CSRF on authorization code** | Added optional `state` field with `@MaxLength(256)` to OAuthCallbackDto | M | `[x]` |
-| SEC-046 | **OAuth `redirectUri` from client body with no allowlist** | `redirectUri` is `@IsString()` with no `@IsUrl()` or domain check — attacker can supply `https://evil.com` and server sends `client_secret` alongside it | M | `[ ]` |
-| SEC-047 | **OAuth auto-links account by email without email_verified check** | `handleOAuthLogin()` finds existing user by email and auto-links OAuth account — attacker with OAuth account using victim's email takes over their account | L | `[ ]` |
+| SEC-046 | **OAuth `redirectUri` from client body with no allowlist** | Added `@IsUrl` validation to `redirectUri` in OAuthCallbackDto | M | `[x]` |
+| SEC-047 | **OAuth auto-links account by email without email_verified check** | Added `emailVerified` to OAuthUserInfo; rejects auto-link when provider hasn't verified email | L | `[x]` |
 | SEC-048 | **Billing checkout/portal URLs have no DTO validation** | Created `CreateCheckoutDto` and `CreatePortalDto` with `@IsUrl` validation | M | `[x]` |
-| SEC-049 | **TOCTOU race on Stripe customer creation** | `createCheckoutSession()` checks `stripeCustomerId == null` then creates customer — concurrent requests create duplicate Stripe customers | S | `[ ]` |
+| SEC-049 | **TOCTOU race on Stripe customer creation** | Wrapped checkout in `$transaction` with `SELECT ... FOR UPDATE` on user row | S | `[x]` |
 | SEC-050 | **No rate limit on AI coach chat endpoint** | Added `@Throttle({ default: { limit: 10, ttl: 60000 } })` to chat endpoint | M | `[x]` |
 | SEC-051 | **Unbounded chat history array size in ChatDto** | Added `@ArrayMaxSize(20)` to ChatDto history field | S | `[x]` |
-| SEC-052 | **Client-supplied chat history enables prompt injection** | Attacker fabricates `role: 'assistant'` messages that prime the model to ignore system prompt | S | `[ ]` |
-| SEC-053 | **Stored XSS via digest template headerHtml/footerHtml** | `renderPreview()` interpolates `headerHtml`/`footerHtml` into raw HTML — `logoUrl` is escaped but these fields are not | M | `[ ]` |
-| SEC-054 | **CSS injection via unvalidated accentColor in digest templates** | `accentColor` is interpolated into `style` attributes with no format validation — enables CSS property injection | S | `[ ]` |
-| SEC-055 | **Missing constraints on digest template DTO fields** | `headerHtml`, `footerHtml`, `sections`, `accentColor`, `logoUrl` have no `@MaxLength`/`@ArrayMaxSize`/format checks | S | `[ ]` |
-| SEC-056 | **CSV exports load entire dataset into memory — OOM DoS** | All `export*Csv()` methods use `findMany` with no `take` limit — single admin request can crash server | M | `[ ]` |
-| SEC-057 | **PII in content-focused CSV exports** | Posts and course progress CSV exports include author/user email addresses — unnecessary data exposure | S | `[ ]` |
+| SEC-052 | **Client-supplied chat history enables prompt injection** | Added per-message content truncation (2000 chars) and anti-injection system prompt clause | S | `[x]` |
+| SEC-053 | **Stored XSS via digest template headerHtml/footerHtml** | `headerHtml`/`footerHtml` now escaped via `escapeHtml()` in `renderPreview()` | M | `[x]` |
+| SEC-054 | **CSS injection via unvalidated accentColor in digest templates** | DTO validates hex with `@Matches`; render sanitizes to default if invalid | S | `[x]` |
+| SEC-055 | **Missing constraints on digest template DTO fields** | Added `@MaxLength(10000)` to HTML fields, `@ArrayMaxSize(20)` + `@IsString({each:true})` to sections, `@Matches` to accentColor, `@IsUrl` to logoUrl | S | `[x]` |
+| SEC-056 | **CSV exports load entire dataset into memory — OOM DoS** | Added `take: 10000` to all CSV export `findMany` calls | M | `[x]` |
+| SEC-057 | **PII in content-focused CSV exports** | Removed email from posts and course progress CSV exports; kept in members report | S | `[x]` |
 | SEC-058 | **Categories update bypasses DTO validation** — `Partial<CreateCategoryDto>` has no runtime validators | Created `UpdateCategoryDto` with all validators replicated and `@IsOptional()` | S | `[x]` |
 | SEC-059 | **Invite token usable by any email** — registration doesn't verify email matches invite recipient | Added email comparison check in `register()` — rejects mismatched emails | S | `[x]` |
 | SEC-060 | **GDPR export endpoint missing rate limiting** — expensive DB query with no throttle | Added `@Throttle({ default: { limit: 3, ttl: 900000 } })` (3 per 15 min) | XS | `[x]` |

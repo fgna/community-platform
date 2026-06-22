@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] — 2026-06-22
+
+### Security
+- **SEC-046**: OAuth `redirectUri` now validated with `@IsUrl` — blocks non-URL strings and arbitrary redirects
+- **SEC-047**: OAuth auto-link by email now requires `emailVerified: true` from identity provider — prevents account takeover via unverified emails
+- **SEC-049**: Stripe customer creation wrapped in `$transaction` with `SELECT ... FOR UPDATE` — prevents duplicate customer TOCTOU race
+- **SEC-052**: AI Coach history messages truncated to 2000 chars each; system prompt hardened against prompt injection from client-supplied history
+- **SEC-053**: Digest `headerHtml`/`footerHtml` now escaped in `renderPreview()` — blocks stored XSS
+- **SEC-054**: Digest `accentColor` validated with hex regex in DTO; render sanitizes invalid values to default
+- **SEC-055**: Digest template DTO constraints: `@MaxLength(10000)` on HTML fields, `@ArrayMaxSize(20)` on sections, `@IsUrl` on logoUrl
+- **SEC-056**: CSV exports capped at 10,000 rows (`take: 10000`) — prevents OOM on large datasets
+- **SEC-057**: Removed email addresses from posts and course progress CSV exports — data minimization
+
+### Changed
+- Updated 3 adversarial test files to verify fixed behavior (OAuth, digest templates, reports)
+
+---
+
 ## [1.32.0] — 2026-06-22
 
 ### Security
