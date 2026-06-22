@@ -1,10 +1,11 @@
 import type { NextConfig } from 'next';
 import path from 'path';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  // Required for pnpm workspaces: trace from repo root so standalone
-  // bundles workspace-root node_modules correctly
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@community/shared', '@community/themes', '@community/ui'],
   images: {
@@ -28,4 +29,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

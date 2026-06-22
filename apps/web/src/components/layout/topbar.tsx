@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Search, Menu, User, Settings, LogOut } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { ThemeSwitcher } from './theme-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,8 @@ interface TopbarProps {
 
 export function Topbar({ title, onMenuClick }: TopbarProps) {
   const { user, logout } = useAuth();
+  const t = useTranslations('topbar');
+  const tc = useTranslations('common');
 
   const openPalette = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
@@ -40,7 +43,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
       <button
         className="lg:hidden p-2 rounded-md hover:bg-white/5 flex-shrink-0"
         onClick={onMenuClick}
-        aria-label="Open menu"
+        aria-label={t('openMenu')}
       >
         <Menu size={20} style={{ color: 'var(--theme-text-muted)' }} />
       </button>
@@ -62,7 +65,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
         }}
       >
         <Search size={14} />
-        <span className="flex-1 text-left text-sm hidden sm:inline">Search commands…</span>
+        <span className="flex-1 text-left text-sm hidden sm:inline">{t('searchPlaceholder')}</span>
         <kbd
           className="text-xs px-1.5 py-0.5 rounded font-mono hidden sm:inline"
           style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--theme-text-muted)' }}
@@ -94,13 +97,13 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
           <DropdownMenuItem asChild className="gap-2 cursor-pointer">
             <Link href={`/members/${user?.id}`}>
               <User size={14} />
-              My Profile
+              {t('myProfile')}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2 cursor-pointer">
             <Link href="/settings">
               <Settings size={14} />
-              Settings
+              {t('settings')}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -110,7 +113,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
             style={{ color: 'var(--theme-danger)' }}
           >
             <LogOut size={14} />
-            Sign out
+            {tc('signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
