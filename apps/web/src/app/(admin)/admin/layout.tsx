@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ClipboardList, ArrowLeft, BarChart2, Settings, Mail, Menu, X, FileDown, Newspaper, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Calendar, Shield, Flag, ClipboardList, ArrowLeft, BarChart2, Settings, Mail, Menu, X, FileDown, Newspaper, Lightbulb, Tag, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 
@@ -19,6 +19,8 @@ const adminNav = [
   { href: '/admin/invites', label: 'Invites', icon: Mail },
   { href: '/admin/digests', label: 'Digests', icon: Newspaper },
   { href: '/admin/journal-prompts', label: 'Journal Prompts', icon: Lightbulb },
+  { href: '/admin/categories', label: 'Categories', icon: Tag },
+  { href: '/admin/assessment', label: 'Assessment', icon: ClipboardCheck },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

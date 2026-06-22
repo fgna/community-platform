@@ -257,7 +257,6 @@ export function SettingsPage() {
       apiClient.patch('/users/me', {
         name: profileName || undefined,
         bio: profileBio || undefined,
-        avatarUrl: profileAvatar || undefined,
       }).then((r) => r.data),
     onSuccess: (data) => {
       updateUser({ name: data.name, avatarUrl: data.avatarUrl });
@@ -347,7 +346,7 @@ export function SettingsPage() {
             <CardContent className="space-y-5">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
+                  <AvatarImage src={profileAvatar || user.avatarUrl || undefined} alt={user.name} />
                   <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -403,17 +402,6 @@ export function SettingsPage() {
                     onChange={(e) => setProfileBio(e.target.value)}
                     disabled={profileLoading}
                     placeholder={profileLoading ? 'Loading…' : 'Tell us about yourself'}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="avatar">Avatar URL</Label>
-                  <Input
-                    id="avatar"
-                    value={profileAvatar}
-                    onChange={(e) => setProfileAvatar(e.target.value)}
-                    disabled={profileLoading}
-                    placeholder="https://..."
                     className="mt-1"
                   />
                 </div>

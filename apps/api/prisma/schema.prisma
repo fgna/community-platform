@@ -682,3 +682,16 @@ model JournalPrompt {
 
   @@index([categoryId])
 }
+
+model AssessmentQuestion {
+  id        String   @id @default(uuid())
+  questionId String  @unique
+  dimension String
+  text      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dimension])
+}

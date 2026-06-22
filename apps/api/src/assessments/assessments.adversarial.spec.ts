@@ -19,6 +19,9 @@ function buildMockPrisma() {
       findFirst: vi.fn(),
       count: vi.fn(),
     },
+    assessmentQuestion: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   };
 }
 
