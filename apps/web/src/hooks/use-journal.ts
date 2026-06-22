@@ -1,10 +1,39 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 
+export interface MustDoTask {
+  text: string;
+  done: boolean;
+}
+
+export interface JournalContent {
+  threeGoals: string[];
+  mustDoTasks: MustDoTask[];
+  whoIWantToBe: string;
+  lookingForwardTo: string;
+  importantPeople: string;
+  thoughts: string;
+}
+
+export const EMPTY_JOURNAL_CONTENT: JournalContent = {
+  threeGoals: ['', '', ''],
+  mustDoTasks: [
+    { text: '', done: false },
+    { text: '', done: false },
+    { text: '', done: false },
+    { text: '', done: false },
+    { text: '', done: false },
+  ],
+  whoIWantToBe: '',
+  lookingForwardTo: '',
+  importantPeople: '',
+  thoughts: '',
+};
+
 export interface JournalEntry {
   id: string;
   userId: string;
-  content: string;
+  content: JournalContent;
   mood: string | null;
   date: string;
   createdAt: string;
@@ -12,7 +41,7 @@ export interface JournalEntry {
 }
 
 export interface UpsertJournalInput {
-  content: string;
+  content: JournalContent;
   mood?: string;
 }
 
@@ -24,13 +53,30 @@ export interface JournalStats {
   entriesByDate: Record<string, boolean>;
 }
 
+function normalizeContent(raw: unknown): JournalContent {
+  if (!raw || typeof raw !== 'object') return { ...EMPTY_JOURNAL_CONTENT };
+  const obj = raw as Record<string, unknown>;
+  return {
+    threeGoals: Array.isArray(obj.threeGoals)
+      ? (obj.threeGoals as string[]).slice(0, 3)
+      : ['', '', ''],
+    mustDoTasks: Array.isArray(obj.mustDoTasks)
+      ? (obj.mustDoTasks as MustDoTask[]).slice(0, 5)
+      : EMPTY_JOURNAL_CONTENT.mustDoTasks,
+    whoIWantToBe: typeof obj.whoIWantToBe === 'string' ? obj.whoIWantToBe : '',
+    lookingForwardTo: typeof obj.lookingForwardTo === 'string' ? obj.lookingForwardTo : '',
+    importantPeople: typeof obj.importantPeople === 'string' ? obj.importantPeople : '',
+    thoughts: typeof obj.thoughts === 'string' ? obj.thoughts : '',
+  };
+}
+
 export function useJournalEntries(month?: string) {
   return useQuery({
     queryKey: ['journal', 'entries', month],
     queryFn: async () => {
       const params = month ? { month } : {};
       const { data } = await apiClient.get<JournalEntry[]>('/journal', { params });
-      return data;
+      return data.map((e) => ({ ...e, content: normalizeContent(e.content) }));
     },
   });
 }
@@ -40,7 +86,7 @@ export function useJournalEntry(date: string | null) {
     queryKey: ['journal', 'entry', date],
     queryFn: async () => {
       const { data } = await apiClient.get<JournalEntry>(`/journal/${date}`);
-      return data;
+      return { ...data, content: normalizeContent(data.content) };
     },
     enabled: !!date,
     retry: false,
@@ -97,6 +143,6 @@ export function useJournalPrompts() {
       const { data } = await apiClient.get<JournalPrompt[]>('/journal/prompts');
       return data;
     },
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60,
   });
 }

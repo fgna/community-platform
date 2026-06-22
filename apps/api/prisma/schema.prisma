@@ -515,7 +515,7 @@ model JournalEntry {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content   String
+  content   Json
   mood      String?
   date      DateTime @db.Date
   createdAt DateTime @default(now())
