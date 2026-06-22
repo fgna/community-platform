@@ -45,28 +45,6 @@ export const themes: Theme[] = [
     effects: { glassmorphism: false, shadows: true, gradients: false, blur: '0px' },
     sidebarWidth: '280px',
   },
-  {
-    name: 'high-contrast',
-    displayName: 'High Contrast',
-    description: 'Maximum accessibility with stark contrast',
-    colors: {
-      primary: '#ffffff',
-      secondary: '#ffff00',
-      accent: '#00ffff',
-      success: '#00ff00',
-      warning: '#ffff00',
-      danger: '#ff0000',
-      background: '#000000',
-      surface: '#0a0a0a',
-      card: '#111111',
-      text: '#ffffff',
-      textMuted: '#cccccc',
-      border: 'rgba(255, 255, 255, 0.3)',
-      glow: 'rgba(255, 255, 255, 0.1)',
-    },
-    effects: { glassmorphism: false, shadows: false, gradients: false, blur: '0px' },
-    sidebarWidth: '280px',
-  },
 ];
 
 export const defaultTheme = themes[0];
