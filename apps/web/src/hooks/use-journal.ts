@@ -84,9 +84,10 @@ export function useJournalStats() {
 }
 
 export interface JournalPrompt {
-  id: number;
+  id: string;
   category: string;
   text: string;
+  color: string;
 }
 
 export function useJournalPrompts() {

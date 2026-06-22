@@ -7,14 +7,6 @@ interface JournalPromptsProps {
   onSelect: (text: string) => void;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Reflection: '#8b5cf6',
-  Gratitude: '#22c55e',
-  Leadership: '#eab308',
-  Growth: '#3b82f6',
-  Challenge: '#ef4444',
-};
-
 export function JournalPrompts({ onSelect }: JournalPromptsProps) {
   const { data: prompts, isLoading } = useJournalPrompts();
 
@@ -40,7 +32,7 @@ export function JournalPrompts({ onSelect }: JournalPromptsProps) {
       </div>
       <div className="grid grid-cols-1 gap-2">
         {prompts.map((prompt: JournalPrompt) => {
-          const categoryColor = CATEGORY_COLORS[prompt.category] || 'var(--theme-primary)';
+          const categoryColor = prompt.color || 'var(--theme-primary)';
           return (
             <button
               key={prompt.id}

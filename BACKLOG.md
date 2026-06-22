@@ -287,7 +287,7 @@
 |----|---------|----------|------|--------|
 | GL-009 | In-app journaling — rich-text daily/weekly journal entries (private) | P1 | L | `[x]` |
 | GL-010 | Journaling streaks & tracking — calendar heatmap, current streak, weekly/daily completion | P1 | M | `[x]` |
-| GL-011 | Journal prompts — optional guided prompts (reflection questions, gratitude, leadership) | P2 | S | `[x]` |
+| GL-011 | Journal prompts — admin-editable prompts with category show/hide (reflection, gratitude, leadership, growth, challenge) | P2 | S | `[x]` |
 
 #### 3D · Content Discovery & Categories
 
@@ -328,8 +328,8 @@
 
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
-| GL-022 | Customisable digest templates — admin designs email digest layout (header, sections, branding) | P2 | L | `[ ]` |
-| GL-023 | "Customise your view" — members pick interests/topics, dashboard and feed prioritise matching content | P2 | L | `[ ]` |
+| GL-022 | Customisable digest templates — admin designs email digest layout (header, sections, branding) | P2 | L | `[x]` |
+| GL-023 | "Customise your view" — members pick interests/topics, dashboard and feed prioritise matching content | P2 | L | `[x]` |
 
 #### 3J · Access Tiers
 

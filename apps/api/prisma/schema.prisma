@@ -627,3 +627,41 @@ model UserInterest {
   @@unique([userId, categoryId])
   @@index([userId])
 }
+
+model DigestTemplate {
+  id         String   @id @default(uuid())
+  name       String
+  subject    String
+  headerHtml String   @default("")
+  footerHtml String   @default("")
+  sections   Json     @default("[]")
+  accentColor String  @default("#c5a880")
+  logoUrl    String?
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model JournalPromptCategory {
+  id        String          @id @default(uuid())
+  name      String          @unique
+  color     String          @default("#8b5cf6")
+  isActive  Boolean         @default(true)
+  sortOrder Int             @default(0)
+  prompts   JournalPrompt[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model JournalPrompt {
+  id         String                @id @default(uuid())
+  text       String
+  categoryId String
+  category   JournalPromptCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isActive   Boolean               @default(true)
+  sortOrder  Int                   @default(0)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([categoryId])
+}

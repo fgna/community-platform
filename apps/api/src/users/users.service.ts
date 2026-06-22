@@ -214,4 +214,50 @@ export class UsersService {
       select: { id: true, onboardingCompleted: true },
     });
   }
+
+  async getInterests(userId: string) {
+    const interests = await this.prisma.userInterest.findMany({
+      where: { userId },
+      select: {
+        categoryId: true,
+        category: {
+          select: { id: true, name: true, slug: true, icon: true, color: true },
+        },
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return interests.map((i) => i.category);
+  }
+
+  async updateInterests(userId: string, categoryIds: string[]) {
+    // Validate that all category IDs exist
+    if (categoryIds.length > 0) {
+      const existingCategories = await this.prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true },
+      });
+      const existingIds = new Set(existingCategories.map((c) => c.id));
+      const invalidIds = categoryIds.filter((id) => !existingIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new NotFoundException(`Categories not found: ${invalidIds.join(', ')}`);
+      }
+    }
+
+    // Replace all interests in a transaction
+    await this.prisma.$transaction([
+      this.prisma.userInterest.deleteMany({ where: { userId } }),
+      ...(categoryIds.length > 0
+        ? [
+            this.prisma.userInterest.createMany({
+              data: categoryIds.map((categoryId) => ({ userId, categoryId })),
+              skipDuplicates: true,
+            }),
+          ]
+        : []),
+    ]);
+
+    return this.getInterests(userId);
+  }
 }

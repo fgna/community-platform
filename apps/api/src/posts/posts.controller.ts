@@ -20,13 +20,15 @@ export class PostsController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'type', required: false, enum: ['DISCUSSION', 'QUESTION', 'ANNOUNCEMENT', 'INTRODUCTION'] })
+  @ApiQuery({ name: 'prioritize', required: false, enum: ['interests'], description: 'Prioritize posts matching user interests' })
   findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('type') type?: string,
+    @Query('prioritize') prioritize?: string,
     @CurrentUser() user?: any,
   ) {
-    return this.postsService.findAll(Number(page), Number(limit), user?.id, type);
+    return this.postsService.findAll(Number(page), Number(limit), user?.id, type, prioritize);
   }
 
   @Get('trending')

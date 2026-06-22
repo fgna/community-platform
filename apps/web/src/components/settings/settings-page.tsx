@@ -11,7 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock, Sparkles } from 'lucide-react';
+import { InterestPicker } from './interest-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -135,6 +136,9 @@ export function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-1.5">
             <Bell size={14} /> Notifications
+          </TabsTrigger>
+          <TabsTrigger value="interests" className="flex items-center gap-1.5">
+            <Sparkles size={14} /> Interests
           </TabsTrigger>
           <TabsTrigger value="privacy" className="flex items-center gap-1.5">
             <Shield size={14} /> Privacy
@@ -447,6 +451,11 @@ export function SettingsPage() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Interests tab */}
+        <TabsContent value="interests" className="mt-6">
+          <InterestPicker />
         </TabsContent>
 
         {/* Privacy tab */}
