@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { existsSync, statSync, createReadStream } from 'fs';
 import { join } from 'path';
 
@@ -14,11 +14,12 @@ function findApk(): string | null {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const apkPath = findApk();
 
   if (!apkPath) {
-    return NextResponse.redirect(new URL('/get-app', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
+    const origin = request.nextUrl.origin;
+    return NextResponse.redirect(new URL('/get-app', origin));
   }
 
   const stat = statSync(apkPath);
