@@ -18,10 +18,7 @@ export async function GET() {
   const apkPath = findApk();
 
   if (!apkPath) {
-    return NextResponse.json(
-      { error: 'APK not available yet. The app is being built.' },
-      { status: 404 },
-    );
+    return NextResponse.redirect(new URL('/get-app', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
   }
 
   const stat = statSync(apkPath);

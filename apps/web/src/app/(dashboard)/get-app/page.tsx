@@ -50,7 +50,7 @@ export default function GetAppPage() {
 
       <div className="text-center space-y-3">
         <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
-          <a href={downloadUrl} download>
+          <a href={downloadUrl}>
             <Download size={16} />
             Download APK
           </a>
