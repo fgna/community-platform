@@ -39,7 +39,8 @@
     "settings": "Einstellungen",
     "admin": "Admin",
     "adminPanel": "Admin-Bereich",
-    "closeMenu": "Menü schließen"
+    "closeMenu": "Menü schließen",
+    "getTheApp": "App herunterladen"
   },
   "topbar": {
     "openMenu": "Menü öffnen",

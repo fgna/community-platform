@@ -39,7 +39,8 @@
     "settings": "Settings",
     "admin": "Admin",
     "adminPanel": "Admin Panel",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "getTheApp": "Get the App"
   },
   "topbar": {
     "openMenu": "Open menu",
