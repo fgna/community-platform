@@ -29,6 +29,7 @@ import { LearningGroupsModule } from './learning-groups/learning-groups.module';
 import { TierModule } from './tier/tier.module';
 import { DigestTemplateModule } from './digest/digest-template.module';
 import { BillingModule } from './billing/billing.module';
+import { AiCoachModule } from './ai-coach/ai-coach.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { BillingModule } from './billing/billing.module';
     TierModule,
     DigestTemplateModule,
     BillingModule,
+    AiCoachModule,
   ],
   providers: [
     DigestService,

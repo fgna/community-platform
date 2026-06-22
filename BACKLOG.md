@@ -302,7 +302,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-015 | "My Questions" — dedicated Q&A feed (to Peter / to the community), separate from main feed | P1 | M | `[x]` |
-| GL-016 | *Ambitious*: AI Coach ("Pete — your virtual coach") — AI avatar answers questions instantly using platform content as context | P2 | XL | `[ ]` |
+| GL-016 | *Ambitious*: AI Coach ("Pete — your virtual coach") — AI avatar answers questions instantly using platform content as context | P2 | XL | `[x]` |
 
 #### 3F · Events & Workflows
 
