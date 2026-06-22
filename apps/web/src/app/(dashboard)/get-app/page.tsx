@@ -9,7 +9,7 @@ const features = [
   { icon: CheckCircle, text: 'Quick access to journal & feed' },
 ];
 
-const downloadUrl = process.env.NEXT_PUBLIC_APK_URL || '/api/download-app';
+const downloadUrl = process.env.NEXT_PUBLIC_APK_URL || '/app/community.apk';
 
 export default function GetAppPage() {
   return (
