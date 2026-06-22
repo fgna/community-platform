@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Adversarial tests SEC-045–057**: 20 tests across 5 new files covering OAuth CSRF/account takeover, billing open redirect, AI coach prompt injection/rate limit, digest template stored XSS, and CSV export DoS/PII exposure
+
+---
+
 ## [1.30.0] — 2026-06-22
 
 ### Fixed
