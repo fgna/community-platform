@@ -1,5 +1,5 @@
-import { EventProposalsPage } from '@/components/event-proposals/event-proposals-page';
+import { redirect } from 'next/navigation';
 
 export default function EventProposals() {
-  return <EventProposalsPage />;
+  redirect('/events');
 }

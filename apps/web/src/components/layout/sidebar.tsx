@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Search, Compass, Star, Trophy, Sparkles, BookOpen, BarChart3, Vote, UsersRound, Bookmark, Bot } from 'lucide-react';
+import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, X, Play, Compass, Star, BookOpen, BarChart3, UsersRound } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -18,17 +18,10 @@ const navItems: { href: string; labelKey: string; icon: LucideIcon }[] = [
   { href: '/assessment', labelKey: 'assessment', icon: BarChart3 },
   { href: '/learning-groups', labelKey: 'learningGroups', icon: UsersRound },
   { href: '/events', labelKey: 'events', icon: Calendar },
-  { href: '/event-proposals', labelKey: 'eventProposals', icon: Vote },
   { href: '/recordings', labelKey: 'recordings', icon: Play },
   { href: '/explore', labelKey: 'explore', icon: Compass },
   { href: '/testimonials', labelKey: 'testimonials', icon: Star },
-  { href: '/ai-coach', labelKey: 'aiCoach', icon: Bot },
-  { href: '/leadership-ai', labelKey: 'leadershipAi', icon: Sparkles },
-  { href: '/success-stories', labelKey: 'successStories', icon: Trophy },
   { href: '/members', labelKey: 'members', icon: Users },
-  { href: '/search', labelKey: 'search', icon: Search },
-  { href: '/bookmarks', labelKey: 'bookmarks', icon: Bookmark },
-  { href: '/messages', labelKey: 'messages', icon: Mail },
   { href: '/settings', labelKey: 'settings', icon: Settings },
 ];
 
