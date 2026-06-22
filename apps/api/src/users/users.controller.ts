@@ -11,6 +11,7 @@ import { UpdateCalendarInvitesDto } from './dto/update-calendar-invites.dto';
 import { UpdateEventRemindersDto } from './dto/update-event-reminders.dto';
 import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
 import { UpdateInterestsDto } from './dto/update-interests.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -96,6 +97,12 @@ export class UsersController {
     const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${file.filename}`;
     await this.usersService.updateProfile(user.id, { avatarUrl });
     return { avatarUrl };
+  }
+
+  @Post('me/password')
+  @ApiOperation({ summary: 'Set or change password' })
+  setPassword(@CurrentUser() user: any, @Body() dto: SetPasswordDto) {
+    return this.usersService.setPassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
   @Patch('me/digest')

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { SocialButtons } from '@/components/auth/social-buttons';
 
 interface RegisterForm {
   name: string;
@@ -60,6 +61,8 @@ function RegisterForm() {
           You&apos;ve been invited to join. Complete your registration below.
         </div>
       )}
+
+      <SocialButtons />
 
       {registerError && (
         <div

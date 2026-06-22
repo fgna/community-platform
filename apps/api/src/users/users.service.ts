@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UsersService {
@@ -103,13 +104,33 @@ export class UsersService {
         calendarInvites: true,
         eventReminders: true,
         membershipTier: true,
+        passwordHash: true,
         _count: {
           select: { posts: true, courseProgress: true, eventRsvps: true },
         },
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    const { passwordHash, ...rest } = user;
+    return { ...rest, hasPassword: !!passwordHash };
+  }
+
+  async setPassword(userId: string, currentPassword: string | undefined, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.passwordHash) {
+      if (!currentPassword) throw new BadRequestException('Current password is required');
+      const valid = await argon2.verify(user.passwordHash, currentPassword);
+      if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    return { message: 'Password updated' };
   }
 
   async findOneWithFollow(id: string, requesterId: string) {

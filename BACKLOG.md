@@ -349,7 +349,7 @@
 | ID | Feature | Priority | Size | Status |
 |----|---------|----------|------|--------|
 | GL-027 | Mobile app (React Native / Expo) — core features: feed, events, messages, notifications | P2 | XL | `[ ]` |
-| GL-028 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | L | `[ ]` |
+| GL-028 | SSO / OAuth (Google, LinkedIn) | P2 | L | `[x]` |
 | GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[x]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-031 | Post bookmarks / saved items | P2 | M | `[x]` |

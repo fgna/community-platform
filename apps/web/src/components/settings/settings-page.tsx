@@ -11,11 +11,12 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock, Sparkles } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock, Sparkles, Link2, Unlink } from 'lucide-react';
 import { InterestPicker } from './interest-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
+import { getGoogleOAuthUrl, getLinkedInOAuthUrl } from '@/lib/oauth';
 
 const DIGEST_OPTIONS = [
   { value: 'DAILY', label: 'Daily', description: 'Receive a summary every morning at 8 AM' },
@@ -30,6 +31,157 @@ function getInitials(name: string) {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+}
+
+const PROVIDERS = [
+  { id: 'google', name: 'Google', getUrl: getGoogleOAuthUrl },
+  { id: 'linkedin', name: 'LinkedIn', getUrl: getLinkedInOAuthUrl },
+] as const;
+
+function ConnectedAccountsCard() {
+  const queryClient = useQueryClient();
+  const { data: accounts } = useQuery<{ id: string; provider: string; email?: string; createdAt: string }[]>({
+    queryKey: ['oauth-accounts'],
+    queryFn: () => apiClient.get('/auth/oauth/accounts').then((r) => r.data),
+  });
+
+  const unlinkMut = useMutation({
+    mutationFn: (provider: string) => apiClient.delete(`/auth/oauth/unlink/${provider}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['oauth-accounts'] }),
+  });
+
+  const linked = new Set(accounts?.map((a) => a.provider) ?? []);
+  const hasAnyProvider = PROVIDERS.some((p) => typeof window !== 'undefined' && p.getUrl());
+  if (!hasAnyProvider) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2"><Link2 size={16} /> Connected Accounts</CardTitle>
+        <CardDescription>Link social accounts for easier sign-in.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {PROVIDERS.map((p) => {
+          const url = typeof window !== 'undefined' ? p.getUrl() : null;
+          if (!url && !linked.has(p.id)) return null;
+          const account = accounts?.find((a) => a.provider === p.id);
+          return (
+            <div key={p.id} className="flex items-center justify-between gap-3 p-3 rounded-lg" style={{ border: '1px solid var(--theme-border)' }}>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{p.name}</p>
+                {account && (
+                  <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{account.email || 'Connected'}</p>
+                )}
+              </div>
+              {account ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { if (confirm(`Disconnect ${p.name}?`)) unlinkMut.mutate(p.id); }}
+                  disabled={unlinkMut.isPending}
+                  className="flex items-center gap-1"
+                >
+                  <Unlink size={13} /> Disconnect
+                </Button>
+              ) : url ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    sessionStorage.setItem('oauth_link_mode', 'true');
+                    window.location.href = url;
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <Link2 size={13} /> Connect
+                </Button>
+              ) : null}
+            </div>
+          );
+        })}
+        {unlinkMut.error && (
+          <p className="text-xs" style={{ color: 'var(--theme-danger)' }}>
+            {((unlinkMut.error as any)?.response?.data?.message) || 'Failed to disconnect'}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PasswordCard({ hasPassword }: { hasPassword: boolean }) {
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  const setPasswordMut = useMutation({
+    mutationFn: () =>
+      apiClient.post('/users/me/password', {
+        ...(hasPassword ? { currentPassword: currentPw } : {}),
+        newPassword: newPw,
+      }),
+    onSuccess: () => {
+      setCurrentPw('');
+      setNewPw('');
+      setSaved(true);
+    },
+  });
+
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(t);
+  }, [saved]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{hasPassword ? 'Change Password' : 'Set Password'}</CardTitle>
+        <CardDescription>
+          {hasPassword ? 'Update your password.' : 'Set a password so you can also sign in with email.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {hasPassword && (
+          <div>
+            <Label htmlFor="current-password">Current password</Label>
+            <Input
+              id="current-password"
+              type="password"
+              value={currentPw}
+              onChange={(e) => setCurrentPw(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        )}
+        <div>
+          <Label htmlFor="new-password">New password</Label>
+          <Input
+            id="new-password"
+            type="password"
+            value={newPw}
+            onChange={(e) => setNewPw(e.target.value)}
+            placeholder="Min 8 chars, upper + lower + number"
+            className="mt-1"
+          />
+        </div>
+        {setPasswordMut.error && (
+          <p className="text-xs" style={{ color: 'var(--theme-danger)' }}>
+            {((setPasswordMut.error as any)?.response?.data?.message) || 'Failed to update password'}
+          </p>
+        )}
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            onClick={() => setPasswordMut.mutate()}
+            disabled={setPasswordMut.isPending || !newPw}
+          >
+            {setPasswordMut.isPending ? 'Saving…' : saved ? 'Saved ✓' : hasPassword ? 'Change password' : 'Set password'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function SettingsPage() {
@@ -248,6 +400,10 @@ export function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <ConnectedAccountsCard />
+
+          <PasswordCard hasPassword={profile?.hasPassword ?? true} />
 
           <Card>
             <CardHeader>

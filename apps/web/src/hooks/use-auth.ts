@@ -32,6 +32,17 @@ export function useAuth() {
     },
   });
 
+  const oauthLoginMutation = useMutation({
+    mutationFn: async ({ provider, code, redirectUri }: { provider: string; code: string; redirectUri: string }) => {
+      const { data } = await apiClient.post<LoginResponse>(`/auth/oauth/${provider}`, { code, redirectUri });
+      return data;
+    },
+    onSuccess: (data) => {
+      setAuth(data.user, data.accessToken, data.refreshToken);
+      router.push('/dashboard');
+    },
+  });
+
   const logout = useCallback(async () => {
     const { refreshToken } = useAuthStore.getState();
     try {
@@ -57,6 +68,9 @@ export function useAuth() {
     register: registerMutation.mutateAsync,
     registerLoading: registerMutation.isPending,
     registerError: registerMutation.error,
+    oauthLogin: oauthLoginMutation.mutateAsync,
+    oauthLoginLoading: oauthLoginMutation.isPending,
+    oauthLoginError: oauthLoginMutation.error,
     logout,
   };
 }

@@ -10,7 +10,7 @@ datasource db {
 model User {
   id            String         @id @default(cuid())
   email         String         @unique
-  passwordHash  String
+  passwordHash  String?
   name          String
   bio           String?
   avatarUrl     String?
@@ -55,6 +55,7 @@ model User {
   learningGroupMessages LearningGroupMessage[]
   bookmarks            Bookmark[]
   interests            UserInterest[]
+  oauthAccounts        OAuthAccount[]
 }
 
 enum Role {
@@ -251,6 +252,20 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  provider          String
+  providerAccountId String
+  email             String?
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model AuditLog {
