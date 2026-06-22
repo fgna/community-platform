@@ -17,6 +17,12 @@ export class JournalController {
     return this.journalService.findAll(user.id, month);
   }
 
+  @Get('prompts')
+  @ApiOperation({ summary: 'Get daily journal prompts' })
+  getDailyPrompts() {
+    return this.journalService.getDailyPrompts();
+  }
+
   @Get('stats')
   @ApiOperation({ summary: 'Get journal streak stats' })
   getStats(@CurrentUser() user: any) {

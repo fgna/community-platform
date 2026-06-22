@@ -2,9 +2,70 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
 
+export interface JournalPrompt {
+  id: number;
+  category: string;
+  text: string;
+}
+
+const CURATED_PROMPTS: JournalPrompt[] = [
+  // Reflection
+  { id: 0, category: 'Reflection', text: 'What was the most meaningful conversation you had this week?' },
+  { id: 1, category: 'Reflection', text: 'What assumption did you challenge today?' },
+  { id: 2, category: 'Reflection', text: 'What moment today made you pause and think?' },
+  { id: 3, category: 'Reflection', text: 'How has your perspective changed on something recently?' },
+  { id: 4, category: 'Reflection', text: 'What did you learn about yourself this week?' },
+  { id: 5, category: 'Reflection', text: 'What would you do differently if you could redo today?' },
+  // Gratitude
+  { id: 6, category: 'Gratitude', text: 'Name three things you are grateful for today.' },
+  { id: 7, category: 'Gratitude', text: 'Who made a positive impact on you recently?' },
+  { id: 8, category: 'Gratitude', text: 'What small moment brought you joy today?' },
+  { id: 9, category: 'Gratitude', text: 'What resource or tool are you thankful to have access to?' },
+  { id: 10, category: 'Gratitude', text: 'What is something about your work environment you appreciate?' },
+  { id: 11, category: 'Gratitude', text: 'Who is someone you have not thanked yet but should?' },
+  // Leadership
+  { id: 12, category: 'Leadership', text: 'How did you empower someone on your team today?' },
+  { id: 13, category: 'Leadership', text: 'What leadership quality do you most want to develop?' },
+  { id: 14, category: 'Leadership', text: 'Describe a decision you made today and how you arrived at it.' },
+  { id: 15, category: 'Leadership', text: 'How did you handle a disagreement or conflict recently?' },
+  { id: 16, category: 'Leadership', text: 'What is one thing you could delegate to help your team grow?' },
+  { id: 17, category: 'Leadership', text: 'How do you ensure every team member feels heard?' },
+  // Growth
+  { id: 18, category: 'Growth', text: 'What skill are you currently working to improve?' },
+  { id: 19, category: 'Growth', text: 'What feedback have you received that changed your perspective?' },
+  { id: 20, category: 'Growth', text: 'What book, article, or talk inspired you recently?' },
+  { id: 21, category: 'Growth', text: 'What is one habit you want to build this month?' },
+  { id: 22, category: 'Growth', text: 'Where are you today compared to where you were a year ago?' },
+  { id: 23, category: 'Growth', text: 'What is the next milestone you are working toward?' },
+  // Challenge
+  { id: 24, category: 'Challenge', text: 'What is the biggest obstacle you are facing right now?' },
+  { id: 25, category: 'Challenge', text: 'Describe a recent failure and what you learned from it.' },
+  { id: 26, category: 'Challenge', text: 'What situation is currently outside your comfort zone?' },
+  { id: 27, category: 'Challenge', text: 'What problem have you been avoiding, and why?' },
+  { id: 28, category: 'Challenge', text: 'How do you stay motivated when progress feels slow?' },
+  { id: 29, category: 'Challenge', text: 'What is a risk you are considering taking, and what holds you back?' },
+];
+
 @Injectable()
 export class JournalService {
   constructor(private prisma: PrismaService) {}
+
+  getDailyPrompts(): JournalPrompt[] {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    const totalPrompts = CURATED_PROMPTS.length;
+    const prompts: JournalPrompt[] = [];
+
+    for (let i = 0; i < 3; i++) {
+      const index = (dayOfYear * 3 + i) % totalPrompts;
+      prompts.push(CURATED_PROMPTS[index]);
+    }
+
+    return prompts;
+  }
 
   async findAll(userId: string, month?: string) {
     const where: any = { userId };

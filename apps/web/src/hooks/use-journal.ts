@@ -82,3 +82,20 @@ export function useJournalStats() {
     },
   });
 }
+
+export interface JournalPrompt {
+  id: number;
+  category: string;
+  text: string;
+}
+
+export function useJournalPrompts() {
+  return useQuery({
+    queryKey: ['journal-prompts'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<JournalPrompt[]>('/journal/prompts');
+      return data;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}

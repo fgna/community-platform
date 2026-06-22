@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] — 2026-06-22
+
+### Added
+- **Journal Prompts (GL-011)**: 30 curated daily prompts across 5 categories (Reflection, Gratitude, Leadership, Growth, Challenge); deterministic daily rotation showing 3 prompts per day; clickable prompt cards that populate the journal editor; color-coded category tags; `GET /journal/prompts` endpoint
+- **CSV Export Reports (GL-035)**: Admin-only CSV export endpoints for members, posts, events, and course progress; date range filtering; download via browser blob; admin Reports page at `/admin/reports` with download cards and date pickers
+
+---
+
 ## [1.25.0] — 2026-06-21
 
 ### Added

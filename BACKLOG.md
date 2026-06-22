@@ -287,7 +287,7 @@
 |----|---------|----------|------|--------|
 | GL-009 | In-app journaling — rich-text daily/weekly journal entries (private) | P1 | L | `[x]` |
 | GL-010 | Journaling streaks & tracking — calendar heatmap, current streak, weekly/daily completion | P1 | M | `[x]` |
-| GL-011 | Journal prompts — optional guided prompts (reflection questions, gratitude, leadership) | P2 | S | `[ ]` |
+| GL-011 | Journal prompts — optional guided prompts (reflection questions, gratitude, leadership) | P2 | S | `[x]` |
 
 #### 3D · Content Discovery & Categories
 
@@ -356,7 +356,7 @@
 | GL-032 | Polls within posts | P2 | M | `[x]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
-| GL-035 | Advanced reporting (CSV/PDF exports, scheduled reports) | P2 | L | `[ ]` |
+| GL-035 | Advanced reporting (CSV/PDF exports, scheduled reports) | P2 | L | `[x]` |
 
 ---
 
