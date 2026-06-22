@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { AssessmentsService } from './assessments.service';
 import { SubmitAssessmentDto } from './dto/submit-assessment.dto';
 
@@ -43,5 +44,29 @@ export class AssessmentsController {
   @Get('recommendations')
   getRecommendations(@CurrentUser() user: { id: string }) {
     return this.assessments.getRecommendations(user.id);
+  }
+
+  @Get('admin/questions')
+  @Roles('ADMIN')
+  getAdminQuestions() {
+    return this.assessments.getAdminQuestions();
+  }
+
+  @Post('admin/questions')
+  @Roles('ADMIN')
+  createQuestion(@Body() body: { questionId: string; dimension: string; text: string; sortOrder?: number }) {
+    return this.assessments.createQuestion(body);
+  }
+
+  @Patch('admin/questions/:id')
+  @Roles('ADMIN')
+  updateQuestion(@Param('id') id: string, @Body() body: { text?: string; dimension?: string; isActive?: boolean; sortOrder?: number }) {
+    return this.assessments.updateQuestion(id, body);
+  }
+
+  @Delete('admin/questions/:id')
+  @Roles('ADMIN')
+  deleteQuestion(@Param('id') id: string) {
+    return this.assessments.deleteQuestion(id);
   }
 }

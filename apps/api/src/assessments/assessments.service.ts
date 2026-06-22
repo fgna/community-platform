@@ -4,45 +4,6 @@ import { SubmitAssessmentDto } from './dto/submit-assessment.dto';
 
 const GROWTH_DIMENSIONS = ['G', 'R', 'O', 'W', 'T', 'H'] as const;
 
-const QUESTIONS = [
-  // G - Growth mindset
-  { id: 'G1', dimension: 'G', text: 'I actively seek out new learning opportunities.' },
-  { id: 'G2', dimension: 'G', text: 'I embrace challenges as chances to grow.' },
-  { id: 'G3', dimension: 'G', text: 'I am open to feedback, even when it is critical.' },
-  { id: 'G4', dimension: 'G', text: 'I regularly reflect on my development progress.' },
-  { id: 'G5', dimension: 'G', text: 'I believe my abilities can be developed through effort.' },
-  // R - Rhythms & habits
-  { id: 'R1', dimension: 'R', text: 'I have consistent daily routines that support my goals.' },
-  { id: 'R2', dimension: 'R', text: 'I prioritize my most important tasks each day.' },
-  { id: 'R3', dimension: 'R', text: 'I maintain a regular schedule for learning and development.' },
-  { id: 'R4', dimension: 'R', text: 'I review and adjust my habits periodically.' },
-  { id: 'R5', dimension: 'R', text: 'I protect time for deep, focused work.' },
-  // O - Ownership
-  { id: 'O1', dimension: 'O', text: 'I take full responsibility for my results.' },
-  { id: 'O2', dimension: 'O', text: 'I proactively identify and solve problems.' },
-  { id: 'O3', dimension: 'O', text: 'I follow through on my commitments.' },
-  { id: 'O4', dimension: 'O', text: 'I hold myself accountable without external pressure.' },
-  { id: 'O5', dimension: 'O', text: 'I take initiative rather than waiting to be told what to do.' },
-  // W - Willpower & resilience
-  { id: 'W1', dimension: 'W', text: 'I persist through setbacks without losing motivation.' },
-  { id: 'W2', dimension: 'W', text: 'I manage stress effectively in challenging situations.' },
-  { id: 'W3', dimension: 'W', text: 'I can delay gratification for long-term goals.' },
-  { id: 'W4', dimension: 'W', text: 'I recover quickly from failures or disappointments.' },
-  { id: 'W5', dimension: 'W', text: 'I maintain focus even when tasks are difficult or boring.' },
-  // T - Teamwork
-  { id: 'T1', dimension: 'T', text: 'I communicate clearly and listen actively.' },
-  { id: 'T2', dimension: 'T', text: 'I build trust with colleagues through consistent actions.' },
-  { id: 'T3', dimension: 'T', text: 'I contribute to a positive team culture.' },
-  { id: 'T4', dimension: 'T', text: 'I resolve conflicts constructively.' },
-  { id: 'T5', dimension: 'T', text: 'I support others\' growth and celebrate their successes.' },
-  // H - Holistic balance
-  { id: 'H1', dimension: 'H', text: 'I maintain a healthy work-life balance.' },
-  { id: 'H2', dimension: 'H', text: 'I take care of my physical health regularly.' },
-  { id: 'H3', dimension: 'H', text: 'I nurture meaningful personal relationships.' },
-  { id: 'H4', dimension: 'H', text: 'I make time for activities that recharge me.' },
-  { id: 'H5', dimension: 'H', text: 'I feel aligned between my work and personal values.' },
-];
-
 const DIMENSION_LABELS: Record<string, string> = {
   G: 'Growth Mindset',
   R: 'Rhythms & Habits',
@@ -52,41 +13,83 @@ const DIMENSION_LABELS: Record<string, string> = {
   H: 'Holistic Balance',
 };
 
+const DEFAULT_QUESTIONS = [
+  { id: 'G1', dimension: 'G', text: 'I actively seek out new learning opportunities.' },
+  { id: 'G2', dimension: 'G', text: 'I embrace challenges as chances to grow.' },
+  { id: 'G3', dimension: 'G', text: 'I am open to feedback, even when it is critical.' },
+  { id: 'G4', dimension: 'G', text: 'I regularly reflect on my development progress.' },
+  { id: 'G5', dimension: 'G', text: 'I believe my abilities can be developed through effort.' },
+  { id: 'R1', dimension: 'R', text: 'I have consistent daily routines that support my goals.' },
+  { id: 'R2', dimension: 'R', text: 'I prioritize my most important tasks each day.' },
+  { id: 'R3', dimension: 'R', text: 'I maintain a regular schedule for learning and development.' },
+  { id: 'R4', dimension: 'R', text: 'I review and adjust my habits periodically.' },
+  { id: 'R5', dimension: 'R', text: 'I protect time for deep, focused work.' },
+  { id: 'O1', dimension: 'O', text: 'I take full responsibility for my results.' },
+  { id: 'O2', dimension: 'O', text: 'I proactively identify and solve problems.' },
+  { id: 'O3', dimension: 'O', text: 'I follow through on my commitments.' },
+  { id: 'O4', dimension: 'O', text: 'I hold myself accountable without external pressure.' },
+  { id: 'O5', dimension: 'O', text: 'I take initiative rather than waiting to be told what to do.' },
+  { id: 'W1', dimension: 'W', text: 'I persist through setbacks without losing motivation.' },
+  { id: 'W2', dimension: 'W', text: 'I manage stress effectively in challenging situations.' },
+  { id: 'W3', dimension: 'W', text: 'I can delay gratification for long-term goals.' },
+  { id: 'W4', dimension: 'W', text: 'I recover quickly from failures or disappointments.' },
+  { id: 'W5', dimension: 'W', text: 'I maintain focus even when tasks are difficult or boring.' },
+  { id: 'T1', dimension: 'T', text: 'I communicate clearly and listen actively.' },
+  { id: 'T2', dimension: 'T', text: 'I build trust with colleagues through consistent actions.' },
+  { id: 'T3', dimension: 'T', text: 'I contribute to a positive team culture.' },
+  { id: 'T4', dimension: 'T', text: 'I resolve conflicts constructively.' },
+  { id: 'T5', dimension: 'T', text: "I support others' growth and celebrate their successes." },
+  { id: 'H1', dimension: 'H', text: 'I maintain a healthy work-life balance.' },
+  { id: 'H2', dimension: 'H', text: 'I take care of my physical health regularly.' },
+  { id: 'H3', dimension: 'H', text: 'I nurture meaningful personal relationships.' },
+  { id: 'H4', dimension: 'H', text: 'I make time for activities that recharge me.' },
+  { id: 'H5', dimension: 'H', text: 'I feel aligned between my work and personal values.' },
+];
+
 @Injectable()
 export class AssessmentsService {
   constructor(private prisma: PrismaService) {}
 
-  getQuestions() {
+  private async loadQuestions() {
+    const dbQuestions = await this.prisma.assessmentQuestion.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (dbQuestions.length > 0) {
+      return dbQuestions.map((q) => ({ id: q.questionId, dimension: q.dimension, text: q.text }));
+    }
+    return DEFAULT_QUESTIONS;
+  }
+
+  async getQuestions() {
+    const questions = await this.loadQuestions();
     return {
       dimensions: GROWTH_DIMENSIONS.map((d) => ({
         key: d,
         label: DIMENSION_LABELS[d],
-        questions: QUESTIONS.filter((q) => q.dimension === d),
+        questions: questions.filter((q) => q.dimension === d),
       })),
-      totalQuestions: QUESTIONS.length,
+      totalQuestions: questions.length,
     };
   }
 
   async submit(userId: string, dto: SubmitAssessmentDto) {
-    // SEC-043/044: Validate that submitted questionIds exactly match the expected set
-    const validQuestionIds = new Set(QUESTIONS.map((q) => q.id));
+    const questions = await this.loadQuestions();
+    const validQuestionIds = new Set(questions.map((q) => q.id));
     const submittedIds = new Set(dto.answers.map((a) => a.questionId));
 
-    // Check for invalid questionIds
     for (const id of submittedIds) {
       if (!validQuestionIds.has(id)) {
         throw new BadRequestException(`Invalid questionId: ${id}`);
       }
     }
 
-    // Check that all expected questions are answered (exact 1:1 match)
     if (submittedIds.size !== validQuestionIds.size) {
       throw new BadRequestException(
         `Expected exactly ${validQuestionIds.size} unique question answers, got ${submittedIds.size}.`,
       );
     }
 
-    // Check for duplicate questionIds
     if (dto.answers.length !== submittedIds.size) {
       throw new BadRequestException('Duplicate questionIds are not allowed.');
     }
@@ -239,6 +242,25 @@ export class AssessmentsService {
       })),
       events,
     };
+  }
+
+  // Admin methods
+  async getAdminQuestions() {
+    return this.prisma.assessmentQuestion.findMany({
+      orderBy: { sortOrder: 'asc' },
+    });
+  }
+
+  async updateQuestion(id: string, data: { text?: string; dimension?: string; isActive?: boolean; sortOrder?: number }) {
+    return this.prisma.assessmentQuestion.update({ where: { id }, data });
+  }
+
+  async createQuestion(data: { questionId: string; dimension: string; text: string; sortOrder?: number }) {
+    return this.prisma.assessmentQuestion.create({ data });
+  }
+
+  async deleteQuestion(id: string) {
+    return this.prisma.assessmentQuestion.delete({ where: { id } });
   }
 
   private getDimensionSuggestion(dimension: string, score: number): string {

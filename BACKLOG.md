@@ -483,9 +483,9 @@
 | BUG-011 | **User avatar in topbar should be clickable** — no way to access profile or settings from topbar | Avatar was a static element with no dropdown menu; added dropdown with profile, settings, sign out | S | `[x]` |
 | BUG-012 | **Remove Growth Green and Executive Red themes** — only 3 themes should remain | Deleted `executive-red.ts` and `growth-green.ts` from `packages/themes`; removed from theme switcher and index. Three themes remain: Executive Glass, Corporate Light, High Contrast | S | `[x]` |
 | BUG-013 | **Events page shows "Failed to load events"** — all API calls fail after ~5 requests | `auth` named throttler had global limit of 5 req/15min applied to ALL endpoints; dashboard loads exhaust the quota, then events and other pages get 429'd. Fixed: auth throttler now permissive globally (100/15min), strict only on login (5/15min) and register (3/hour) | M | `[x]` |
-| BUG-014 | **Avatar upload should work via file upload, not just URL** — settings profile only accepts avatar URL, no file picker | Profile section should support image upload as primary avatar method | S | `[ ]` |
-| BUG-015 | **Avatar not shown in icon when present** — user avatar image should display in topbar/sidebar instead of initials fallback when available | Components use initials even when `avatarUrl` is set | S | `[ ]` |
-| BUG-016 | **Admin panel lacks content editing for core platform content** — GROWTH assessment questions, interest categories, and other structured content not editable via admin | Admin panel needs CRUD for assessment questions, interest categories, etc. | L | `[ ]` |
+| BUG-014 | **Avatar upload should work via file upload, not just URL** — settings profile only accepts avatar URL, no file picker | Removed confusing "Avatar URL" text input; file upload is now the sole method | S | `[x]` |
+| BUG-015 | **Avatar not shown in icon when present** — user avatar image should display in topbar/sidebar instead of initials fallback when available | Created `useProfileSync` hook to sync `/users/me` data back to Zustand store on dashboard load | S | `[x]` |
+| BUG-016 | **Admin panel lacks content editing for core platform content** — GROWTH assessment questions, interest categories, and other structured content not editable via admin | Added admin Categories and Assessment pages with full CRUD; `AssessmentQuestion` DB model with migration + seed data | L | `[x]` |
 
 ---
 

@@ -5,9 +5,11 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { CommandPalette } from '@/components/command-palette/command-palette';
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
+import { useProfileSync } from '@/hooks/use-profile-sync';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useProfileSync();
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--theme-background)' }}>

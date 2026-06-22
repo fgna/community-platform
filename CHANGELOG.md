@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.0] — 2026-06-22
+
+### Fixed
+- **BUG-014**: Avatar upload is now the sole method for setting profile pictures — removed confusing "Avatar URL" text input from Settings
+- **BUG-015**: User avatar now displays in topbar/sidebar icons instead of initials when present — added `useProfileSync` hook that syncs `/users/me` data back to Zustand auth store on every dashboard load
+- **BUG-016**: Admin panel now supports editing core platform content — added admin Categories page (CRUD with color/emoji management) and Assessment Questions page (CRUD grouped by GROWTH dimension with enable/disable toggle, sort order); `AssessmentQuestion` database model with migration and 30 seeded default questions; assessment service reads from DB with hardcoded fallback
+
+---
+
 ## [1.29.0] — 2026-06-22
 
 ### Added
