@@ -13,6 +13,15 @@ const DIMENSION_LABELS: Record<string, string> = {
   H: 'Holistic Balance',
 };
 
+const DIMENSION_CATEGORIES: Record<string, string[]> = {
+  G: ['growth', 'learning'],
+  R: ['productivity'],
+  O: ['leadership'],
+  W: ['wellbeing', 'wellness'],
+  T: ['teamwork', 'culture'],
+  H: ['wellbeing', 'wellness'],
+};
+
 const DEFAULT_QUESTIONS = [
   { id: 'G1', dimension: 'G', text: 'I actively seek out new learning opportunities.' },
   { id: 'G2', dimension: 'G', text: 'I embrace challenges as chances to grow.' },
@@ -175,6 +184,14 @@ export class AssessmentsService {
 
     const weakDimensions = ranked.slice(0, 3);
 
+    const categorySlugs = [...new Set(weakDimensions.flatMap((d) => DIMENSION_CATEGORIES[d.key] ?? []))];
+    const matchingCategories = categorySlugs.length > 0
+      ? await this.prisma.category.findMany({
+          where: { slug: { in: categorySlugs } },
+          select: { id: true, name: true, slug: true, icon: true, color: true },
+        })
+      : [];
+
     const dimensionKeywords: Record<string, string[]> = {
       G: ['growth', 'mindset', 'learning', 'development', 'feedback'],
       R: ['rhythm', 'habit', 'routine', 'productivity', 'focus', 'time'],
@@ -232,10 +249,14 @@ export class AssessmentsService {
     const progressMap = new Map(userProgress.map((p) => [p.courseId, p.percentage]));
 
     return {
-      dimensions: weakDimensions.map((d) => ({
-        ...d,
-        suggestion: this.getDimensionSuggestion(d.key, d.score),
-      })),
+      dimensions: weakDimensions.map((d) => {
+        const dimCatSlugs = DIMENSION_CATEGORIES[d.key] ?? [];
+        return {
+          ...d,
+          suggestion: this.getDimensionSuggestion(d.key, d.score),
+          categories: matchingCategories.filter((c) => dimCatSlugs.includes(c.slug)),
+        };
+      }),
       courses: courses.map((c) => ({
         ...c,
         progress: progressMap.get(c.id) ?? 0,
