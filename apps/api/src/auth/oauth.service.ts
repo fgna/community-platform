@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 interface OAuthUserInfo {
   providerAccountId: string;
   email: string;
+  emailVerified: boolean;
   name: string;
   avatarUrl?: string;
 }
@@ -116,6 +117,9 @@ export class OAuthService {
     });
 
     if (existingUser) {
+      if (!userInfo.emailVerified) {
+        throw new BadRequestException('Cannot link account: email not verified by provider');
+      }
       if (!existingUser.isActive) {
         throw new UnauthorizedException('Account is deactivated');
       }
@@ -175,9 +179,9 @@ export class OAuthService {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!res.ok) throw new BadRequestException('Failed to fetch Google user info');
-    const data = await res.json() as { id: string; email: string; name: string; picture?: string };
+    const data = await res.json() as { id: string; email: string; name: string; picture?: string; verified_email?: boolean };
     if (!data.email) throw new BadRequestException('Google account has no email');
-    return { providerAccountId: data.id, email: data.email, name: data.name, avatarUrl: data.picture };
+    return { providerAccountId: data.id, email: data.email, emailVerified: data.verified_email === true, name: data.name, avatarUrl: data.picture };
   }
 
   private async exchangeLinkedInCode(code: string, redirectUri: string) {
@@ -201,9 +205,9 @@ export class OAuthService {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!res.ok) throw new BadRequestException('Failed to fetch LinkedIn user info');
-    const data = await res.json() as { sub: string; email: string; name: string; picture?: string };
+    const data = await res.json() as { sub: string; email: string; name: string; picture?: string; email_verified?: boolean };
     if (!data.email) throw new BadRequestException('LinkedIn account has no email');
-    return { providerAccountId: data.sub, email: data.email, name: data.name, avatarUrl: data.picture };
+    return { providerAccountId: data.sub, email: data.email, emailVerified: data.email_verified === true, name: data.name, avatarUrl: data.picture };
   }
 
   private requireGoogleConfig() {

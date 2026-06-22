@@ -23,27 +23,30 @@ export class BillingService {
     const priceId = process.env.STRIPE_PRICE_ID;
     if (!priceId) throw new BadRequestException('Billing is not configured');
 
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { id: true, email: true, stripeCustomerId: true, membershipTier: true },
-    });
+    const customerId = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
 
-    if (user.membershipTier === 'PREMIUM') {
-      throw new BadRequestException('Already on Premium plan');
-    }
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { id: true, email: true, stripeCustomerId: true, membershipTier: true },
+      });
 
-    let customerId = user.stripeCustomerId;
-    if (!customerId) {
+      if (user.membershipTier === 'PREMIUM') {
+        throw new BadRequestException('Already on Premium plan');
+      }
+
+      if (user.stripeCustomerId) return user.stripeCustomerId;
+
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { userId: user.id },
       });
-      customerId = customer.id;
-      await this.prisma.user.update({
+      await tx.user.update({
         where: { id: userId },
-        data: { stripeCustomerId: customerId },
+        data: { stripeCustomerId: customer.id },
       });
-    }
+      return customer.id;
+    });
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -51,7 +54,7 @@ export class BillingService {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { userId: user.id },
+      metadata: { userId },
     });
 
     return { url: session.url };

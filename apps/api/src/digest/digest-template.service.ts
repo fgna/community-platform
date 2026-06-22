@@ -66,7 +66,8 @@ export class DigestTemplateService {
   async renderPreview(id: string): Promise<string> {
     const template = await this.findOne(id);
     const sections = (template.sections as string[]) || [];
-    const accentColor = template.accentColor || '#c5a880';
+    const rawAccent = template.accentColor || '#c5a880';
+    const accentColor = /^#[0-9a-fA-F]{3,8}$/.test(rawAccent) ? rawAccent : '#c5a880';
 
     const sectionHtmlParts = sections.map((section) => {
       switch (section) {
@@ -94,7 +95,7 @@ export class DigestTemplateService {
         <!-- Header -->
         <tr><td style="padding: 24px 32px; background: rgba(17,24,39,0.9); border-radius: 12px 12px 0 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
           ${template.logoUrl ? `<img src="${this.escapeHtml(template.logoUrl)}" alt="Logo" style="max-height: 40px; margin-bottom: 12px;" />` : ''}
-          ${template.headerHtml || `<div style="font-size: 20px; font-weight: 600; color: ${accentColor};">Community Digest</div>`}
+          ${template.headerHtml ? this.escapeHtml(template.headerHtml) : `<div style="font-size: 20px; font-weight: 600; color: ${accentColor};">Community Digest</div>`}
         </td></tr>
 
         <!-- Greeting -->
@@ -113,7 +114,7 @@ export class DigestTemplateService {
 
         <!-- Footer -->
         <tr><td style="padding: 16px 32px; background: rgba(17,24,39,0.7); border-radius: 0 0 12px 12px;">
-          ${template.footerHtml || `<div style="font-size: 12px; color: #6b7280; text-align: center;">You're receiving this digest based on your preferences.</div>`}
+          ${template.footerHtml ? this.escapeHtml(template.footerHtml) : `<div style="font-size: 12px; color: #6b7280; text-align: center;">You're receiving this digest based on your preferences.</div>`}
         </td></tr>
       </table>
     </td></tr>

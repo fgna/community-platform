@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUrl, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class OAuthCallbackDto {
@@ -8,7 +8,7 @@ export class OAuthCallbackDto {
   code: string;
 
   @ApiProperty({ example: 'http://localhost:3000/auth/callback/google' })
-  @IsString()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   @MaxLength(2048)
   redirectUri: string;
 
