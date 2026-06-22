@@ -1,6 +1,5 @@
-import { Controller, Get, Patch, Post, Delete, Param, Body, Query, Put, Res, Header } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Param, Body, Query, Put, StreamableFile, Header } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Response } from 'express';
 import { AdminService } from './admin.service';
 import { ReportsService } from './reports.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -124,57 +123,54 @@ export class AdminController {
   @Get('reports/members')
   @ApiOperation({ summary: 'Export members as CSV' })
   @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="members.csv"')
   async exportMembers(
     @Query('from') from?: string,
     @Query('to') to?: string,
-    @Res() res?: Response,
-  ) {
+  ): Promise<StreamableFile> {
     const csv = await this.reportsService.exportMembersCsv(
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
     );
-    res!.setHeader('Content-Disposition', 'attachment; filename="members.csv"');
-    res!.send(csv);
+    return new StreamableFile(Buffer.from(csv, 'utf-8'));
   }
 
   @Get('reports/posts')
   @ApiOperation({ summary: 'Export posts as CSV' })
   @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="posts.csv"')
   async exportPosts(
     @Query('from') from?: string,
     @Query('to') to?: string,
-    @Res() res?: Response,
-  ) {
+  ): Promise<StreamableFile> {
     const csv = await this.reportsService.exportPostsCsv(
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
     );
-    res!.setHeader('Content-Disposition', 'attachment; filename="posts.csv"');
-    res!.send(csv);
+    return new StreamableFile(Buffer.from(csv, 'utf-8'));
   }
 
   @Get('reports/events')
   @ApiOperation({ summary: 'Export events as CSV' })
   @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="events.csv"')
   async exportEvents(
     @Query('from') from?: string,
     @Query('to') to?: string,
-    @Res() res?: Response,
-  ) {
+  ): Promise<StreamableFile> {
     const csv = await this.reportsService.exportEventsCsv(
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
     );
-    res!.setHeader('Content-Disposition', 'attachment; filename="events.csv"');
-    res!.send(csv);
+    return new StreamableFile(Buffer.from(csv, 'utf-8'));
   }
 
   @Get('reports/course-progress')
   @ApiOperation({ summary: 'Export course progress as CSV' })
   @Header('Content-Type', 'text/csv')
-  async exportCourseProgress(@Res() res?: Response) {
+  @Header('Content-Disposition', 'attachment; filename="course-progress.csv"')
+  async exportCourseProgress(): Promise<StreamableFile> {
     const csv = await this.reportsService.exportCourseProgressCsv();
-    res!.setHeader('Content-Disposition', 'attachment; filename="course-progress.csv"');
-    res!.send(csv);
+    return new StreamableFile(Buffer.from(csv, 'utf-8'));
   }
 }
