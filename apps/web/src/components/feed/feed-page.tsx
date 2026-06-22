@@ -9,13 +9,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
-import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X } from 'lucide-react';
+import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X, HelpCircle, Megaphone, Hand, MessageSquare, Trophy } from 'lucide-react';
 import { getInitials } from '@community/shared';
 import { renderMarkdown, extractHashtags } from '@/lib/markdown';
+
+const POST_TYPE_TABS = [
+  { key: undefined as string | undefined, label: 'All', icon: Clock },
+  { key: 'DISCUSSION', label: 'Discussion', icon: MessageSquare },
+  { key: 'QUESTION', label: 'Questions', icon: HelpCircle },
+  { key: 'ANNOUNCEMENT', label: 'Announcements', icon: Megaphone },
+  { key: 'INTRODUCTION', label: 'Introductions', icon: Hand },
+  { key: 'SUCCESS_STORY', label: 'Success Stories', icon: Trophy },
+] as const;
 
 export function FeedPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState<'latest' | 'trending'>('latest');
+  const [postTypeFilter, setPostTypeFilter] = useState<string | undefined>(undefined);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // Listen for hashtag clicks from PostCard
@@ -24,7 +34,7 @@ export function FeedPage() {
     window.addEventListener('feed:hashtag', handler);
     return () => window.removeEventListener('feed:hashtag', handler);
   }, []);
-  const { data, isLoading, error } = useFeed();
+  const { data, isLoading, error } = useFeed(1, 20, postTypeFilter);
   const { data: trendingData, isLoading: trendingLoading } = useTrendingFeed();
   const createPost = useCreatePost();
   const [content, setContent] = useState('');
@@ -63,6 +73,27 @@ export function FeedPage() {
           </button>
         ))}
       </div>
+
+      {/* Post type filter */}
+      {tab === 'latest' && (
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          {POST_TYPE_TABS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={label}
+              onClick={() => setPostTypeFilter(key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+              style={{
+                background: postTypeFilter === key ? 'rgba(197,168,128,0.12)' : 'transparent',
+                color: postTypeFilter === key ? 'var(--theme-primary)' : 'var(--theme-text-muted)',
+                border: postTypeFilter === key ? '1px solid rgba(197,168,128,0.2)' : '1px solid transparent',
+              }}
+            >
+              <Icon size={13} />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Active hashtag filter */}
       {activeTag && (

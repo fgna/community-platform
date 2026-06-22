@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X } from 'lucide-react';
+import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Search, Compass, Star, Trophy, Sparkles, BookOpen, BarChart3, Vote, UsersRound, Bookmark } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -10,9 +10,21 @@ import { getInitials } from '@community/shared';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/feed', label: 'Community Feed', icon: MessageCircle },
+  { href: '/questions', label: 'Questions', icon: HelpCircle },
   { href: '/courses', label: 'Learning Hub', icon: GraduationCap },
+  { href: '/journal', label: 'Journal', icon: BookOpen },
+  { href: '/assessment', label: 'Self-Assessment', icon: BarChart3 },
+  { href: '/learning-groups', label: 'Learning Groups', icon: UsersRound },
   { href: '/events', label: 'Events', icon: Calendar },
+  { href: '/event-proposals', label: 'Event Proposals', icon: Vote },
+  { href: '/recordings', label: 'Recordings', icon: Play },
+  { href: '/explore', label: 'Explore', icon: Compass },
+  { href: '/testimonials', label: 'Stories', icon: Star },
+  { href: '/leadership-ai', label: 'Leadership & AI', icon: Sparkles },
+  { href: '/success-stories', label: 'Success Stories', icon: Trophy },
   { href: '/members', label: 'Members', icon: Users },
+  { href: '/search', label: 'Search', icon: Search },
+  { href: '/bookmarks', label: 'Saved', icon: Bookmark },
   { href: '/messages', label: 'Messages', icon: Mail },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

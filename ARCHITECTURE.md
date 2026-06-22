@@ -15,6 +15,7 @@ community-platform/
 │   ├── shared/       # Shared TypeScript types & utilities
 │   ├── themes/       # Theme token definitions
 │   └── ui/           # Shared UI component re-exports
+├── nginx/            # Nginx config templates & init script
 ├── turbo.json        # Turborepo pipeline
 ├── pnpm-workspace.yaml
 └── docker-compose.yml
@@ -62,6 +63,10 @@ AppModule
 ├── EventsModule — events, RSVPs
 ├── AdminModule  — admin operations (role-guarded)
 ├── GdprModule   — GDPR compliance endpoints
+├── MessagesModule — private 1:1 messaging
+├── NotificationsModule — in-app notifications
+├── InvitesModule — token-based invite system
+├── SearchModule — platform-wide search
 └── HealthModule — health check endpoint
 ```
 
@@ -85,6 +90,9 @@ Browser → Next.js middleware (auth check)
         → Next.js page (RSC or client component)
         → TanStack Query hook → apiClient (axios)
         → NestJS controller → service → Prisma → PostgreSQL
+
+Production (with proxy profile):
+Browser → Nginx (TLS termination) → Next.js / NestJS → Prisma → PostgreSQL
 ```
 
 ## Infrastructure
@@ -94,5 +102,8 @@ See `docker-compose.yml` for full service configuration. Services:
 - `redis` (Redis 7 Alpine) — available for caching/sessions
 - `api` (NestJS) — depends on postgres + redis health checks
 - `web` (Next.js) — depends on api health check
+- `nginx` (Nginx 1 Alpine) — reverse proxy + TLS termination (profile: proxy)
+- `certbot` (Let's Encrypt) — certificate provisioning/renewal (profile: proxy)
+- `backup` (PostgreSQL 16 Alpine) — on-demand pg_dump (profile: backup)
 
-Health checks ensure services start in correct order.
+Health checks ensure services start in correct order. The `nginx` and `certbot` services are activated via the `proxy` Docker Compose profile; the `backup` service via the `backup` profile.

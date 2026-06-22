@@ -44,6 +44,7 @@ export class AuthService {
         name: true,
         role: true,
         avatarUrl: true,
+        membershipTier: true,
         createdAt: true,
       },
     });
@@ -84,6 +85,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        membershipTier: user.membershipTier,
       },
       ...tokens,
     };

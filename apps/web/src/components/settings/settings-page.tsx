@@ -11,10 +11,16 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2 } from 'lucide-react';
+import { LogOut, Palette, User, Bell, Shield, Download, Trash2, Loader2, Mail, CalendarDays, AlarmClock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
+
+const DIGEST_OPTIONS = [
+  { value: 'DAILY', label: 'Daily', description: 'Receive a summary every morning at 8 AM' },
+  { value: 'WEEKLY', label: 'Weekly', description: 'Receive a summary every Monday at 8 AM' },
+  { value: 'NONE', label: 'Off', description: 'No email digests' },
+] as const;
 
 function getInitials(name: string) {
   return name
@@ -31,20 +37,21 @@ export function SettingsPage() {
   const { updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [profileName, setProfileName] = useState(user?.name ?? '');
   const [profileBio, setProfileBio] = useState('');
   const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? '');
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['me'],
     queryFn: () => apiClient.get('/users/me').then((r) => r.data),
   });
 
+  const profileInitialized = useRef(false);
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || profileInitialized.current) return;
+    profileInitialized.current = true;
     setProfileName(profile.name ?? '');
     setProfileBio(profile.bio ?? '');
     setProfileAvatar(profile.avatarUrl ?? '');
@@ -188,6 +195,7 @@ export function SettingsPage() {
                     id="name"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
+                    disabled={profileLoading}
                     className="mt-1"
                   />
                 </div>
@@ -197,7 +205,8 @@ export function SettingsPage() {
                     id="bio"
                     value={profileBio}
                     onChange={(e) => setProfileBio(e.target.value)}
-                    placeholder="Tell us about yourself"
+                    disabled={profileLoading}
+                    placeholder={profileLoading ? 'Loading…' : 'Tell us about yourself'}
                     className="mt-1"
                   />
                 </div>
@@ -207,6 +216,7 @@ export function SettingsPage() {
                     id="avatar"
                     value={profileAvatar}
                     onChange={(e) => setProfileAvatar(e.target.value)}
+                    disabled={profileLoading}
                     placeholder="https://..."
                     className="mt-1"
                   />
@@ -299,20 +309,117 @@ export function SettingsPage() {
         </TabsContent>
 
         {/* Notifications tab */}
-        <TabsContent value="notifications" className="mt-6">
+        <TabsContent value="notifications" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Notification Preferences</CardTitle>
-              <CardDescription>Control how and when you receive notifications.</CardDescription>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail size={16} /> Email Digest
+              </CardTitle>
+              <CardDescription>
+                Get a summary of new posts, events, and notifications delivered to your inbox.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {DIGEST_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    apiClient.patch('/users/me/digest', { frequency: opt.value }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['me'] });
+                    });
+                  }}
+                  className="flex items-center gap-3 w-full p-3 rounded-lg text-left transition-all"
+                  style={{
+                    border: `2px solid ${profile?.emailDigest === opt.value ? 'var(--theme-primary)' : 'var(--theme-border)'}`,
+                    background: profile?.emailDigest === opt.value ? 'rgba(197,168,128,0.06)' : 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                    style={{ borderColor: profile?.emailDigest === opt.value ? 'var(--theme-primary)' : 'var(--theme-text-muted)' }}
+                  >
+                    {profile?.emailDigest === opt.value && (
+                      <div className="w-2 h-2 rounded-full" style={{ background: 'var(--theme-primary)' }} />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{opt.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>{opt.description}</p>
+                  </div>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CalendarDays size={16} /> Calendar Invites
+              </CardTitle>
+              <CardDescription>
+                Receive .ics calendar invites when you RSVP to events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+                    Send calendar invites
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
+                    Attach an .ics file to the RSVP confirmation email so it appears in your calendar app.
+                  </p>
+                </div>
+                <Switch
+                  checked={profile?.calendarInvites ?? true}
+                  onCheckedChange={(checked) => {
+                    apiClient.patch('/users/me/calendar-invites', { calendarInvites: checked }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['me'] });
+                    });
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlarmClock size={16} /> Event Reminders
+              </CardTitle>
+              <CardDescription>
+                Get reminded about upcoming events you&apos;ve RSVP&apos;d to.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
+                    Email reminders
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
+                    Receive email reminders 24 hours and 1 hour before events you&apos;re attending.
+                  </p>
+                </div>
+                <Switch
+                  checked={profile?.eventReminders ?? true}
+                  onCheckedChange={(checked) => {
+                    apiClient.patch('/users/me/event-reminders', { eventReminders: checked }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['me'] });
+                    });
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">In-App Notifications</CardTitle>
+              <CardDescription>Control in-app notification preferences.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {[
-                {
-                  label: 'Email notifications',
-                  description: 'Receive notifications about activity in your feed.',
-                  value: emailNotifs,
-                  onChange: setEmailNotifs,
-                },
                 {
                   label: 'Push notifications',
                   description: 'Receive push notifications in your browser.',

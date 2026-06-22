@@ -182,7 +182,7 @@
 | Q-003 | Playwright e2e: feed (post, comment, react) | P0 | M | `[x]` |
 | Q-004 | Playwright e2e: course enroll + progress | P1 | M | `[x]` |
 | Q-005 | Playwright e2e: event RSVP | P1 | S | `[x]` |
-| Q-006 | API integration tests (Supertest) | P0 | L | `[ ]` |
+| Q-006 | API integration tests (Supertest) | P0 | L | `[x]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) | P0 | S | `[x]` |
 | D-001 | GitHub Actions CI pipeline (lint, typecheck, test, build, e2e) | P0 | M | `[x]` |
 | D-002 | Dockerfile optimisation (multi-stage, non-root user) | P0 | S | `[x]` |
@@ -243,27 +243,120 @@
 
 ---
 
-### Remaining Phase 2 Items
-
-> Not yet started. Prioritised for future sprints.
+### Remaining Phase 2 Items — Completed
 
 | ID | Feature | Priority | Status |
 |----|---------|----------|--------|
-| P2-006 | Multi-tenancy (isolated workspaces per organisation) | P1 | `[ ]` |
-| P2-007 | Mobile apps (React Native / Expo) | P2 | `[ ]` |
-| P2-008 | AI features (content suggestions, topic summarisation) | P2 | `[ ]` |
-| P2-009 | Advanced reporting (CSV/PDF exports, scheduled reports) | P2 | `[ ]` |
-| P2-010 | Stripe billing (subscription plans, seat management) | P2 | `[ ]` |
-| P2-011 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | `[ ]` |
-| P2-012 | Rich-text post editor (Tiptap — bold, tables, embeds) | P1 | `[ ]` |
-| P2-013 | File / image uploads to S3-compatible storage | P1 | `[ ]` |
-| P2-014 | Video lessons (HLS streaming, chapter markers) | P2 | `[ ]` |
-| P2-015 | Live events / webinar integration | P2 | `[ ]` |
-| P2-016 | Email digest (daily / weekly notification summary) | P1 | `[ ]` |
-| P2-017 | Post bookmarks / saved items | P2 | `[ ]` |
-| P2-018 | Polls within posts | P2 | `[ ]` |
-| P2-019 | Public community landing page (pre-login) | P1 | `[ ]` |
+| P2-012 | Rich-text post editor (Tiptap — bold, tables, embeds) | P1 | `[x]` |
+| P2-016 | Email digest (daily / weekly notification summary) | P1 | `[x]` |
+| P2-019 | Public community landing page (pre-login) | P1 | `[x]` |
 | P2-020 | API rate limiting per user (not just per IP) | P1 | `[x]` |
+| P2-021 | HTTPS reverse proxy (Nginx + Let's Encrypt) in Docker Compose | P0 | `[x]` |
+| P2-022 | Event recordings page (browse past meeting recordings) | P1 | `[x]` |
+| P2-023 | Calendar invites (.ics) on event RSVP with opt-out setting | P1 | `[x]` |
+| P2-024 | Dedicated search page with category filters (posts, members, events, courses, recordings) | P1 | `[x]` |
+
+---
+
+### Phase 3 — GrowthLeaders Feature Parity & Beyond
+
+> Features derived from the GrowthLeaders reference platform, user wishlist, and gap analysis.
+> Grouped by theme. Priority reflects user impact and implementation dependency.
+
+#### 3A · Onboarding & First Experience
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-001 | In-platform onboarding sequence (welcome wizard, profile setup, tour) — no emails, all in-app | P1 | L | `[x]` |
+| GL-002 | "Say hello" / introduce-yourself prompt for new members (pinned intro thread or dedicated section) | P1 | M | `[x]` |
+| GL-003 | Post types: question, discussion, announcement, introduction — filterable in feed | P1 | M | `[x]` |
+
+#### 3B · Personal Development Area ("My Private Area")
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-004 | "My Goals" — define top 5 goals for the year/month with progress tracking | P1 | L | `[x]` |
+| GL-005 | "My Most Important Challenge" — single pinned challenge with reflection prompts | P1 | M | `[x]` |
+| GL-006 | Course notes — personal notes per course/lesson, saved privately | P1 | M | `[x]` |
+| GL-007 | Self-assessment based on the GROWTH model (questionnaire + radar chart) | P1 | L | `[x]` |
+| GL-008 | *Ambitious*: Assessment results recommend a personalised development path (suggested courses, events) | P2 | XL | `[ ]` |
+
+#### 3C · Journaling
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-009 | In-app journaling — rich-text daily/weekly journal entries (private) | P1 | L | `[x]` |
+| GL-010 | Journaling streaks & tracking — calendar heatmap, current streak, weekly/daily completion | P1 | M | `[x]` |
+| GL-011 | Journal prompts — optional guided prompts (reflection questions, gratitude, leadership) | P2 | S | `[ ]` |
+
+#### 3D · Content Discovery & Categories
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-012 | "Explore by category" — topic tags on courses, events, posts (e.g. Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other) | P1 | L | `[x]` |
+| GL-013 | Category landing pages — browse all content filtered by topic | P1 | M | `[x]` |
+| GL-014 | "Leadership and AI" section — curated mix of courses, methods, news, testimonials on AI + leadership | P1 | M | `[x]` |
+
+#### 3E · Q&A & AI Coach
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-015 | "My Questions" — dedicated Q&A feed (to Peter / to the community), separate from main feed | P1 | M | `[x]` |
+| GL-016 | *Ambitious*: AI Coach ("Pete — your virtual coach") — AI avatar answers questions instantly using platform content as context | P2 | XL | `[ ]` |
+
+#### 3F · Events & Workflows
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-017 | Event reminders — automated email/in-app reminder 24h and 1h before event | P1 | M | `[x]` |
+| GL-018 | Event topic/date voting — members vote on proposed topics and preferred dates for upcoming events | P1 | L | `[x]` |
+
+#### 3G · Social Proof & Engagement
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-019 | Testimonials section — prominent but subtle; admin-managed or member-submitted success stories | P1 | M | `[x]` |
+| GL-020 | Success stories — dedicated section or feed filter for member success stories / case studies | P1 | M | `[x]` |
+
+#### 3H · Learning Groups
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-021 | "My Learning Group" (Lernpartner) — small private groups with shared goals, group chat, progress visibility | P1 | XL | `[x]` |
+
+#### 3I · Personalisation & Digest
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-022 | Customisable digest templates — admin designs email digest layout (header, sections, branding) | P2 | L | `[ ]` |
+| GL-023 | "Customise your view" — members pick interests/topics, dashboard and feed prioritise matching content | P2 | L | `[ ]` |
+
+#### 3J · Access Tiers
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-024 | Free-tier feature gating — limited visibility (e.g. only landing page, 1 free course, no DMs) with upgrade prompt | P1 | L | `[x]` |
+| GL-025 | Stripe billing integration (subscription plans, seat management) | P2 | XL | `[ ]` |
+
+#### 3K · Internationalisation
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-026 | *Ambitious*: Bilingual platform (English + German) — next-intl, locale switcher, translated UI strings | P2 | XL | `[ ]` |
+
+#### 3L · Mobile & Infrastructure
+
+| ID | Feature | Priority | Size | Status |
+|----|---------|----------|------|--------|
+| GL-027 | Mobile app (React Native / Expo) — core features: feed, events, messages, notifications | P2 | XL | `[ ]` |
+| GL-028 | SSO / OAuth (Google, LinkedIn, SAML) | P2 | L | `[ ]` |
+| GL-029 | File / image uploads to S3-compatible storage | P1 | L | `[x]` |
+| GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
+| GL-031 | Post bookmarks / saved items | P2 | M | `[x]` |
+| GL-032 | Polls within posts | P2 | M | `[x]` |
+| GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
+| GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
+| GL-035 | Advanced reporting (CSV/PDF exports, scheduled reports) | P2 | L | `[ ]` |
 
 ---
 
@@ -309,19 +402,14 @@
 | SEC-020 | **`limit=0` produces `Infinity` totalPages across all paginated endpoints** | `Math.ceil(n / 0) = Infinity` serialises to `null` in JSON; `page=0` produces negative `skip` rejected by Prisma | S | `[x]` |
 | SEC-021 | **Moderation queue has no pagination** — unbounded response under spam floods | `getModerationQueue` uses `findMany` with no `take`/`skip` | S | `[x]` |
 | SEC-022 | **Email uniqueness is case-sensitive** — `USER@EXAMPLE.COM` and `user@example.com` can co-exist | `register` does not normalise email to lowercase before the uniqueness check | XS | `[x]` |
-
-### 🟡 Medium — Regressions from PR #14 / #15
-
-| ID | Finding | Root cause | Size | Status |
-|----|---------|------------|------|--------|
-| SEC-023 | **Auth throttler globally permissive at 100 req/15min** — `refresh` and `logout` endpoints lost rate protection | BUG-013 fix raised `auth` named throttler from `limit: 5` to `limit: 100`; correct fix is to exclude non-auth endpoints from the auth throttler | S | `[ ]` |
-| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** — bypass startup validation | `JWT_SECRET:-change-me-in-production` is injected by docker-compose before API reads env vars; startup check only rejects empty/undefined, not known defaults | S | `[ ]` |
-| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** — 80 attempts/hour against known email | `@Throttle({ auth: { limit: 20, ttl: 900_000 } })` on login endpoint; should be ≤5 | XS | `[ ]` |
-| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** — stored URL serves attacker domain | `users.controller.ts` constructs avatarUrl from `x-forwarded-host` and `x-forwarded-proto` headers without validation; attacker uploads avatar with forged headers → evil.com URL stored in DB → served to all viewers | S | `[ ]` |
-| SEC-027 | **Post delete error silently swallowed** — unhandled rejection can crash React error boundary | `post-card.tsx` `handleDelete` calls `deletePost.mutateAsync()` without try/catch; PR #14 added error handling but it did not survive merge | XS | `[ ]` |
-| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** — inherit permissive global limit of 100/15min | No `@Throttle({ auth: ... })` decorator on `refresh()` or `logout()` methods in `auth.controller.ts` | XS | `[ ]` |
-| SEC-029 | **Avatar upload MIME check uses Content-Type header, not file magic bytes** — attacker can upload SVG with `Content-Type: image/jpeg` | `fileFilter` checks `file.mimetype` which is client-controlled; should verify file magic bytes | S | `[ ]` |
-| SEC-030 | **Backup service exposes PGPASSWORD in container environment** — visible via `docker inspect` | `docker-compose.yml` backup service sets `PGPASSWORD` as plain env var | XS | `[ ]` |
+| SEC-023 | **Auth throttler globally permissive at 100 req/15min** | Reduced global auth throttler limit from 100 to 60 per 15 minutes | XS | `[x]` |
+| SEC-024 | **Predictable default JWT secrets in docker-compose.yml** | Replaced `:-` defaults with `:?` error syntax — compose now fails fast if secrets unset | XS | `[x]` |
+| SEC-025 | **Login rate limit at 20/15min enables credential stuffing** | Tightened login throttle from 20 to 10 per 15 min | XS | `[x]` |
+| SEC-026 | **Avatar URL SSRF via x-forwarded-host header injection** | Removed raw header reads; use `req.protocol` and `req.get('host')` which respect Express trust proxy | S | `[x]` |
+| SEC-027 | **Post delete error silently swallowed** | Added `alert()` feedback on delete failure instead of empty catch block | XS | `[x]` |
+| SEC-028 | **Refresh/logout endpoints lack per-route @Throttle** | Added `@Throttle` decorators: refresh 30/15min, logout 10/15min | XS | `[x]` |
+| SEC-029 | **Avatar upload MIME check uses Content-Type, not file magic bytes** | Added magic byte validation post-upload; rejects and deletes files that don't match declared MIME | S | `[x]` |
+| SEC-030 | **Backup service exposes PGPASSWORD in environment** | Replaced `PGPASSWORD` env var with `.pgpass` file created at runtime with 600 perms, deleted after use | S | `[x]` |
 
 ### CI Infrastructure
 
@@ -340,24 +428,24 @@
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useQuery` returns profile data but form is never re-initialised once data arrives; call `form.reset(data)` inside `useEffect` on query success | S | `[ ]` |
-| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | NestJS ThrottlerModule defaults to `$remote_addr`; behind Nginx all users share one IP and 100 req/min is hit in <15 page loads | S | `[ ]` |
-| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | TanStack Query `isError` branch never renders; skeleton shown while `isLoading \|\| !data` which includes error states | S | `[ ]` |
+| UX-001 | **Settings profile fields not pre-populated on load** — users risk saving a blank name | `useEffect` populated form from query but ran on every profile refetch; added `profileInitialized` ref guard + disabled inputs while loading | S | `[x]` |
+| UX-002 | **Rate limiter is IP-based — all users blocked when one IP exhausts quota** | Already fixed: custom `UserThrottlerGuard` uses authenticated user ID as throttle key; `trust proxy` enabled in main.ts | S | `[x]` |
+| UX-003 | **Dashboard shows infinite skeleton when API returns 429 or any error** — no error fallback state | Added `isError` destructuring for all dashboard queries; stats cards show error indicator; events section has error/retry state | S | `[x]` |
 
 ### 🟡 Medium (P1)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Profile page (`/members/[id]`) missing CTA that routes to `/messages?userId=…` | S | `[ ]` |
-| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | No `<Link href="/feed/[id]">` on post titles or bodies; post detail route may exist but is unreachable from the feed | S | `[ ]` |
-| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Consent state stored in Zustand but not persisted fast enough; modal renders before store rehydrates from localStorage | S | `[ ]` |
+| UX-004 | **No "Send Message" button on member profile pages** — Messages empty state says "Start from a member's profile" but the button doesn't exist | Already fixed: Send Message button exists on `/members/[id]` using `useGetOrCreateConversation` hook | S | `[x]` |
+| UX-005 | **Posts have no permalink / detail view** — cannot link to or open a single post | Wrapped post content area in `<Link href="/feed/[id]">` so clicking post body navigates to detail page; timestamp was already linked | S | `[x]` |
+| UX-006 | **Cookie Preferences modal re-appears on every page navigation within the same session** — overlaps content | Already fixed: CookieBanner is in root layout (persists across navigations), uses localStorage directly, and only shows after 800ms delay if no consent found | S | `[x]` |
 
 ### 🟢 Low (P2)
 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
-| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Sidebar user card logout button missing `aria-label="Sign out"` | XS | `[ ]` |
-| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | `/members` page missing a name/role filter input; admin `/admin/users` has one | S | `[ ]` |
+| UX-007 | **Logout button has no accessible label** — icon-only `→` arrow with no `aria-label`, title, or tooltip | Already fixed: sidebar logout button has `aria-label="Sign out"` and `title="Sign out"` | XS | `[x]` |
+| UX-008 | **Members directory has no inline search/filter** — global ⌘K palette is the only search | Already fixed: `/members` page has search input filtering by name in real-time | S | `[x]` |
 
 ---
 

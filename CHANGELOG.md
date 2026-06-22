@@ -5,6 +5,145 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] — 2026-06-21
+
+### Added
+- **Post Bookmarks (GL-031)**: Save/unsave posts with toggle button in post action bar; `/bookmarks` page listing all saved posts with pagination; `Bookmark` model with unique user+post constraint; bookmark status indicator (filled icon when saved); sidebar "Saved" nav item
+
+---
+
+## [1.24.0] — 2026-06-21
+
+### Added
+- **Learning Groups (GL-021)**: Small peer learning groups (max 8 members) with real-time group chat, member avatars, join/leave/create/delete; creator management (add/remove members); group listing and detail views with message history; `/learning-groups` page with glassmorphism-themed cards
+- **Free-Tier Gating (GL-024)**: `MembershipTier` enum (FREE/PREMIUM) on User model; `PremiumGuard` and `@RequirePremium()` decorator for backend route protection; `TierService` with admin tier management; `<PremiumGate>` wrapper component and `<UpgradePrompt>` for frontend feature gating; tier info API endpoint; admins bypass all tier restrictions
+- **Shared Tier Types**: `MembershipTier` enum, `TierStatus` interface, `PREMIUM_FEATURES` config, and `FREE_TIER_LIMITS`/`PREMIUM_TIER_LIMITS` in `@community/shared`
+
+---
+
+## [1.23.0] — 2026-06-21
+
+### Added
+- **GROWTH Self-Assessment**: 30-question assessment across 6 leadership dimensions (Growth mindset, Rhythms, Ownership, Willpower, Teamwork, Holistic balance); SVG radar chart visualization; dimension score breakdown; assessment history; retake flow at `/assessment`
+- **Event Proposals**: Admin-created event proposals with topic voting and date preference selection; members upvote proposals and pick preferred dates from options; date vote distribution display; admin can close/delete proposals; `/event-proposals` page
+- **S3 File Uploads**: Unified upload service supporting S3-compatible storage (MinIO, DigitalOcean Spaces, AWS) with local disk fallback; image uploads (5MB max) and file uploads (20MB max); drag-and-drop `ImageUpload` component with preview; `Upload` model tracking metadata
+
+### Fixed
+- **SUCCESS_STORY post type rejected by API** — Added `SUCCESS_STORY` to `PostTypeEnum` in create-post DTO so the validation pipe accepts the new type
+- **Category content pages empty** — API returned `{ data, total }` objects but UI expected arrays; changed API to return flat arrays
+- **Event reminder 24h/1h overlap** — Events created less than 75 minutes before start received both 24h and 1h reminders simultaneously; added lower bound to 24h query
+- **Introduction banner not activating composer** — `CreatePost` state was initialized once from props; added `key` prop to remount when intro type changes
+- **E2E logout test blocked by onboarding modal** — Onboarding wizard overlay intercepted pointer events; test now dismisses the modal before attempting logout
+
+---
+
+## [1.22.0] — 2026-06-21
+
+### Added
+- **Journaling**: Private daily journal entries at `/journal` with calendar grid, day selection, auto-save editor, mood tracking; streak stats (current/longest streak, total entries, 30-day count); `JournalEntry` model with upsert API and month-based listing
+- **Onboarding Wizard**: 4-step welcome sequence for new members — welcome screen, profile setup (name/bio/avatar), interest selection (category chips), and feature tour; shown as modal overlay on first login; `onboardingCompleted` flag on User model
+
+---
+
+## [1.21.0] — 2026-06-21
+
+### Added
+- **My Goals**: Personal goal tracker on dashboard — up to 5 goals with title, description, progress bar (0-100%), target date, and status (active/completed/paused); drag-to-reorder support; full CRUD API with 5-goal limit enforcement
+- **Leadership & AI**: Curated `/leadership-ai` page showcasing AI-tagged courses, posts, and events from the category system; hero section with gradient, sectioned content with links to full explore view
+- **Success Stories**: New `SUCCESS_STORY` post type with purple badge; dedicated `/success-stories` page; "Share Your Story" CTA with filtered feed; type added to feed filters and post composer
+
+---
+
+## [1.20.0] — 2026-06-21
+
+### Added
+- **My Challenge**: Personal "Most Important Challenge" card on the dashboard — set a challenge with title, description, reflection, and status (active/completed/archived); upsert API on User model
+- **Q&A Feed**: Dedicated `/questions` page filtered to QUESTION-type posts with "Ask a Question" button; sidebar nav link added
+- **Testimonials**: Member-submitted success stories with admin approval workflow; featured badge support; `/testimonials` page with story grid and submission form; full CRUD API with admin moderation endpoints
+
+---
+
+## [1.19.0] — 2026-06-21
+
+### Added
+- **Introduction Banner**: New members see a welcome prompt on the feed to introduce themselves; auto-dismissed after posting an INTRODUCTION-type post; dismissible via close button (localStorage)
+- **Course Notes**: Private per-lesson notes with auto-save (800ms debounce); collapsible "My Notes" section below lesson content; `CourseNote` model with upsert API
+- **Category Landing Pages**: Dedicated `/explore/:slug` route with category header (icon, description, stats), and sectioned content (posts, courses, events); explore grid now links to landing pages
+
+---
+
+## [1.18.0] — 2026-06-21
+
+### Added
+- **Post Types**: Posts can be typed as Discussion, Question, Announcement, or Introduction — with colored badges in the feed and type-based filtering
+- **Content Categories**: Category model with 8 default topics (Growth, Rhythms, Empowerment, Impact, Teams, Balance, AI, Other); many-to-many tagging for posts, courses, and events; category selector in post composer
+- **Explore Page**: New `/explore` page with category grid — click a category to browse its posts, courses, and events
+- **Categories API**: Full CRUD at `/categories` with content aggregation endpoint (`GET /categories/:slug/content`)
+- **Event Reminders**: Automated email and in-app reminders sent 24h and 1h before events to RSVP'd attendees; cron job runs every 15 minutes with duplicate-prevention flags
+- **Event Reminders Settings**: Toggle in Settings → Notifications to enable/disable event reminder emails
+
+---
+
+## [1.17.0] — 2026-06-17
+
+### Added
+- **Search Page**: Dedicated `/search` page with category filters (All, Posts, Members, Events, Courses, Recordings), debounced search input, URL query param sync, and sectioned results
+- **Search API**: Extended `GET /api/search?q=` to include recordings in results
+- **Sidebar**: Search link added to navigation
+
+---
+
+## [1.16.0] — 2026-06-17
+
+### Added
+- **Recordings**: New `/recordings` page to browse recordings from past events — video-card grid with thumbnails, duration, search, and pagination
+- **Recordings API**: `GET /events/recordings/all` (paginated listing), `GET /events/:id/recordings`, `POST /events/:id/recordings` (admin), `DELETE /events/recordings/:id` (admin)
+- **Recording Model**: `Recording` model linked to events with title, description, URL, duration, and thumbnail
+- **Sidebar**: Recordings link added to navigation
+
+---
+
+## [1.15.0] — 2026-06-17
+
+### Added
+- **Calendar Invites**: `.ics` calendar invite attached to RSVP confirmation email when user RSVPs "Going" to an event
+- **Calendar Settings**: Toggle in Settings → Notifications to enable/disable calendar invite emails
+- **ICS Generator**: `ics.util.ts` generates standards-compliant iCalendar files with event details, location, and meeting URL
+
+---
+
+## [1.14.0] — 2026-06-17
+
+### Added
+- **Landing Page**: Public community landing page at `/` with hero, feature grid, and CTA — visible to unauthenticated visitors; authenticated users redirect to dashboard
+- **Rich-Text Editor**: Tiptap-based post editor with toolbar (heading, bold, italic, code, lists, blockquote, links, divider) replacing the plain textarea; plain-text mode toggle available
+- **Email Digest**: Daily and weekly email digest with trending posts, event count, and unread notifications; configurable per user via Settings → Notifications; uses nodemailer with SMTP; logs to console when SMTP is not configured
+- **Email Digest Settings**: Radio-button selector in Settings → Notifications for Daily / Weekly / Off preference
+
+### Changed
+- **Middleware**: Root path `/` is now public (was redirecting to `/dashboard` for all visitors)
+- **Post Rendering**: Post cards detect HTML (from rich editor) vs plain markdown and apply the correct CSS class
+
+---
+
+## [1.13.0] — 2026-06-17
+
+### Added
+- **Testing**: Integration tests for users, admin, GDPR, and health modules (Q-006 complete — all 8 API modules now covered)
+
+---
+
+## [1.12.0] — 2026-06-17
+
+### Added
+- **HTTPS**: Nginx reverse proxy with automatic Let's Encrypt TLS via `--profile proxy`
+- **HTTPS**: `init-ssl.sh` script for one-command certificate provisioning
+- **HTTPS**: HTTP-only proxy mode for deployments behind a cloud load balancer
+- **HTTPS**: Security headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+- **HTTPS**: Certbot service for certificate renewal
+
+---
+
 ## [1.11.0] — 2026-06-17
 
 ### Added

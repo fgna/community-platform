@@ -13,11 +13,9 @@ export function CookieBanner() {
 
   useEffect(() => {
     setMounted(true);
-    const consent = localStorage.getItem('cookie-consent');
-    if (!consent) {
-      const t = setTimeout(() => setShow(true), 800);
-      return () => clearTimeout(t);
-    }
+    if (localStorage.getItem('cookie-consent')) return;
+    const t = setTimeout(() => setShow(true), 800);
+    return () => clearTimeout(t);
   }, []);
 
   const handleAccept = async (analytics: boolean, marketing: boolean) => {

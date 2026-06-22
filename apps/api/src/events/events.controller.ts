@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { CreateRecordingDto } from './dto/create-recording.dto';
 import { RsvpDto } from './dto/rsvp.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -63,5 +64,36 @@ export class EventsController {
   @ApiOperation({ summary: 'Cancel RSVP' })
   cancelRsvp(@Param('id') id: string, @CurrentUser() user: any) {
     return this.eventsService.cancelRsvp(id, user.id);
+  }
+
+  // ── Recordings ─────────────────────────────────────────────────────────
+
+  @Get('recordings/all')
+  @ApiOperation({ summary: 'List all recordings (paginated)' })
+  findAllRecordings(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.eventsService.findAllRecordings(Number(page), Number(limit));
+  }
+
+  @Get(':id/recordings')
+  @ApiOperation({ summary: 'Get recordings for an event' })
+  findRecordings(@Param('id') id: string) {
+    return this.eventsService.findRecordingsByEvent(id);
+  }
+
+  @Post(':id/recordings')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Add recording to an event (Admin only)' })
+  createRecording(@Param('id') id: string, @Body() dto: CreateRecordingDto) {
+    return this.eventsService.createRecording(id, dto);
+  }
+
+  @Delete('recordings/:recordingId')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete a recording (Admin only)' })
+  deleteRecording(@Param('recordingId') recordingId: string) {
+    return this.eventsService.deleteRecording(recordingId);
   }
 }

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
+import { UpsertNoteDto } from './dto/upsert-note.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -75,6 +76,22 @@ export class CoursesController {
     @CurrentUser() user: any,
   ) {
     return this.coursesService.completeLesson(id, user.id, dto.lessonId);
+  }
+
+  @Get('lessons/:lessonId/notes')
+  @ApiOperation({ summary: 'Get the current user\'s note for a lesson' })
+  getNote(@Param('lessonId') lessonId: string, @CurrentUser() user: any) {
+    return this.coursesService.getNote(user.id, lessonId);
+  }
+
+  @Put('lessons/:lessonId/notes')
+  @ApiOperation({ summary: 'Create or update the current user\'s note for a lesson' })
+  upsertNote(
+    @Param('lessonId') lessonId: string,
+    @Body() dto: UpsertNoteDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.coursesService.upsertNote(user.id, lessonId, dto.content);
   }
 
   @Get('lessons/:lessonId')

@@ -131,7 +131,126 @@ THROTTLE_LIMIT=100
 
 ---
 
-## Production deployment (VPS / cloud)
+## Hetzner Quick Start (Recommended)
+
+The cheapest production-ready option. A Hetzner CX22 (2 vCPU, 4 GB RAM, ~€4.50/month) comfortably runs the full stack.
+
+### 1. Create a server
+
+1. Sign up at [hetzner.com/cloud](https://www.hetzner.com/cloud/)
+2. Create a new project → Add Server
+3. **Location**: Falkenstein or Helsinki (EU, GDPR-friendly)
+4. **Image**: Ubuntu 24.04
+5. **Type**: CX22 (2 vCPU, 4 GB RAM, 40 GB disk) — shared CPU is fine
+6. **SSH key**: Add your public key (recommended over password)
+7. **Networking**: Enable public IPv4
+8. **Firewall**: Create one allowing inbound TCP on ports 22 (SSH), 80 (HTTP), 443 (HTTPS)
+9. Create the server and note the IP address
+
+### 2. Initial server setup
+
+```bash
+# SSH in
+ssh root@YOUR_SERVER_IP
+
+# Update system
+apt update && apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Create a non-root deploy user (optional but recommended)
+adduser deploy
+usermod -aG docker deploy
+```
+
+### 3. Deploy the platform
+
+```bash
+# Switch to deploy user (or stay as root)
+su - deploy
+
+# Clone
+git clone https://github.com/fgna/community-platform.git
+cd community-platform
+
+# Configure
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+
+```env
+# Generate secrets (run each command, paste output into .env)
+# openssl rand -hex 32
+
+JWT_SECRET=<paste-64-char-hex>
+JWT_REFRESH_SECRET=<paste-64-char-hex>
+POSTGRES_PASSWORD=<paste-strong-password>
+
+DOMAIN=yourdomain.com
+SSL_EMAIL=you@yourdomain.com
+
+CORS_ORIGINS=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+```
+
+### 4. Point DNS and start
+
+Point your domain's A record to the server IP, then:
+
+```bash
+# Build and start the core services
+docker compose up --build -d
+
+# Run migrations and seed
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma db seed
+
+# Provision SSL certificate and start nginx
+./nginx/init-ssl.sh
+
+# Verify
+docker compose --profile proxy ps   # all containers healthy
+curl https://yourdomain.com         # should load the login page
+```
+
+### 5. Set up automatic certificate renewal and backups
+
+```bash
+# Add to crontab (crontab -e)
+# Renew SSL every Sunday at 3am
+0 3 * * 0  cd /home/deploy/community-platform && docker compose run --rm certbot renew --quiet && docker compose exec nginx nginx -s reload
+
+# Daily backup at 2am
+0 2 * * *  cd /home/deploy/community-platform && docker compose --profile backup run --rm backup
+```
+
+### 6. Updating
+
+```bash
+cd /home/deploy/community-platform
+git pull
+docker compose up --build -d
+docker compose exec api npx prisma migrate deploy
+```
+
+### Cost breakdown
+
+| Resource | Cost |
+|----------|------|
+| Hetzner CX22 (2 vCPU, 4 GB) | ~€4.50/month |
+| 20 GB volume (optional, for data) | ~€0.88/month |
+| Domain name | ~€10/year |
+| Let's Encrypt TLS | Free |
+| **Total** | **~€5.50/month** |
+
+---
+
+## Generic VPS deployment
+
+Works on any VPS provider (DigitalOcean, Contabo, AWS Lightsail, Azure, etc.). Minimum: 1 vCPU, 2 GB RAM, 20 GB disk.
 
 ### First deploy
 
@@ -145,16 +264,19 @@ cd community-platform
 
 # 3. Configure secrets
 cp .env.example .env
-# Set JWT_SECRET, JWT_REFRESH_SECRET, DATABASE_URL, CORS_ORIGINS, NEXT_PUBLIC_API_URL
+# Set JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, DOMAIN, CORS_ORIGINS, NEXT_PUBLIC_API_URL
 
 # 4. Build and start
 docker compose up --build -d
 
 # 5. Migrate and seed (first deploy only)
-docker compose exec api pnpm prisma migrate deploy
-docker compose exec api pnpm prisma db seed
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma db seed
 
-# 6. Verify
+# 6. Enable HTTPS (optional — requires domain + DNS pointed to server)
+./nginx/init-ssl.sh
+
+# 7. Verify
 docker compose ps                  # all containers should show "healthy"
 curl http://localhost:3001/health  # {"status":"ok"}
 ```
@@ -164,18 +286,18 @@ curl http://localhost:3001/health  # {"status":"ok"}
 ```bash
 git pull
 docker compose up --build -d
-docker compose exec api pnpm prisma migrate deploy
+docker compose exec api npx prisma migrate deploy
 ```
 
 ### Services
 
 | Service  | URL                             | Notes                              |
 |----------|---------------------------------|------------------------------------|
-| Web      | http://localhost:3000           |                                    |
-| API      | http://localhost:3001           |                                    |
+| Web      | http://localhost:3000           | (via nginx: https://yourdomain.com) |
+| API      | http://localhost:3001           | (via nginx: https://yourdomain.com/api) |
 | API Docs | http://localhost:3001/api/docs  | Swagger UI (non-production only)   |
-| Postgres | localhost:5432                  |                                    |
-| Redis    | localhost:6379                  |                                    |
+| Postgres | localhost:5432                  | Not exposed when using nginx       |
+| Redis    | localhost:6379                  | Not exposed when using nginx       |
 
 ```bash
 docker compose ps        # check health status
@@ -185,55 +307,76 @@ docker compose down      # stop and remove containers
 
 ---
 
-## Reverse proxy (nginx + TLS)
+## HTTPS with Nginx + Let's Encrypt
 
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com api.yourdomain.com;
-    return 301 https://$host$request_uri;
-}
+The platform includes a built-in Nginx reverse proxy with automatic TLS via Let's Encrypt. It runs behind the `proxy` Docker Compose profile so it doesn't interfere with local development.
 
-server {
-    listen 443 ssl;
-    server_name yourdomain.com;
+### Setup
 
-    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+**1. Configure your domain in `.env`**
 
-    location / {
-        proxy_pass         http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header   Upgrade $http_upgrade;
-        proxy_set_header   Connection 'upgrade';
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
+```env
+DOMAIN=yourdomain.com
+SSL_EMAIL=admin@yourdomain.com
+SSL_STAGING=0
 
-server {
-    listen 443 ssl;
-    server_name api.yourdomain.com;
-
-    ssl_certificate     /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
-
-    location / {
-        proxy_pass       http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+CORS_ORIGINS=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 
+**2. Point DNS to your server**
+
+Create an A record for `yourdomain.com` pointing to your server's IP.
+
+**3. Provision certificates and start**
+
 ```bash
-certbot --nginx -d yourdomain.com -d api.yourdomain.com
+# First time — provisions Let's Encrypt certificate and starts nginx
+./nginx/init-ssl.sh
+
+# Start everything (subsequent runs)
+docker compose --profile proxy up -d
+```
+
+**4. Certificate renewal**
+
+Certificates are valid for 90 days. Renew with:
+
+```bash
+docker compose run --rm certbot renew
+docker compose exec nginx nginx -s reload
+```
+
+Add this to a cron job for automatic renewal:
+
+```bash
+0 3 * * 0  cd /path/to/community-platform && docker compose run --rm certbot renew --quiet && docker compose exec nginx nginx -s reload
+```
+
+### How it works
+
+| URL path      | Proxied to    | Notes                                         |
+|---------------|---------------|-----------------------------------------------|
+| `/api/*`      | `api:3001`    | Strips `/api` prefix                          |
+| `/uploads/*`  | `api:3001`    | Static file caching (7 days)                  |
+| `/*`          | `web:3000`    | Next.js frontend                              |
+
+- HTTP (port 80) redirects to HTTPS (port 443)
+- TLS 1.2+ only, HSTS enabled, OCSP stapling
+- Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`
+- WebSocket upgrade supported (for future real-time features)
+
+### Testing with staging certificates
+
+Set `SSL_STAGING=1` in `.env` to use Let's Encrypt staging servers (avoids rate limits during testing). Browsers will show a certificate warning — this is expected.
+
+### Without HTTPS (HTTP-only proxy)
+
+To use nginx as a reverse proxy without TLS (e.g., behind a cloud load balancer that terminates TLS):
+
+```bash
+NGINX_CONF_TEMPLATE=default-no-ssl.conf.template docker compose --profile proxy up -d nginx
 ```
 
 ---

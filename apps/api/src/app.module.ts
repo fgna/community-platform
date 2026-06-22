@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,9 +16,21 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
 import { SearchModule } from './search/search.module';
 import { InvitesModule } from './invites/invites.module';
+import { EmailModule } from './email/email.module';
+import { DigestService } from './email/digest.service';
+import { CategoriesModule } from './categories/categories.module';
+import { TestimonialsModule } from './testimonials/testimonials.module';
+import { GoalsModule } from './goals/goals.module';
+import { JournalModule } from './journal/journal.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { EventProposalsModule } from './event-proposals/event-proposals.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { LearningGroupsModule } from './learning-groups/learning-groups.module';
+import { TierModule } from './tier/tier.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -25,10 +38,9 @@ import { InvitesModule } from './invites/invites.module';
         limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
       },
       {
-        // Auth throttler — permissive globally, strict on auth routes via @Throttle
         name: 'auth',
         ttl: 900_000,  // 15 minutes
-        limit: 100,
+        limit: 60,
       },
     ]),
     PrismaModule,
@@ -44,8 +56,19 @@ import { InvitesModule } from './invites/invites.module';
     MessagesModule,
     SearchModule,
     InvitesModule,
+    EmailModule,
+    CategoriesModule,
+    TestimonialsModule,
+    GoalsModule,
+    JournalModule,
+    AssessmentsModule,
+    EventProposalsModule,
+    UploadsModule,
+    LearningGroupsModule,
+    TierModule,
   ],
   providers: [
+    DigestService,
     // UserThrottlerGuard uses authenticated userId as throttle key (falls back to IP),
     // which is more accurate than IP-based limiting behind a reverse proxy.
     { provide: APP_GUARD, useClass: UserThrottlerGuard },

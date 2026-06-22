@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
 
 @Injectable()
 export class UsersService {
@@ -86,7 +87,29 @@ export class UsersService {
   }
 
   async getProfile(id: string) {
-    return this.findOne(id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        role: true,
+        createdAt: true,
+        hasIntroduced: true,
+        onboardingCompleted: true,
+        emailDigest: true,
+        calendarInvites: true,
+        eventReminders: true,
+        membershipTier: true,
+        _count: {
+          select: { posts: true, courseProgress: true, eventRsvps: true },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   async findOneWithFollow(id: string, requesterId: string) {
@@ -130,5 +153,65 @@ export class UsersService {
   async unfollow(followerId: string, followingId: string) {
     await this.prisma.follow.deleteMany({ where: { followerId, followingId } });
     return { following: false };
+  }
+
+  async updateCalendarInvites(userId: string, calendarInvites: boolean) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { calendarInvites },
+      select: { id: true, calendarInvites: true },
+    });
+  }
+
+  async updateEventReminders(userId: string, eventReminders: boolean) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { eventReminders },
+      select: { id: true, eventReminders: true },
+    });
+  }
+
+  async updateDigestPreference(userId: string, frequency: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { emailDigest: frequency as any },
+      select: { id: true, emailDigest: true },
+    });
+  }
+
+  async getChallenge(userId: string) {
+    return this.prisma.challenge.findUnique({
+      where: { userId },
+    });
+  }
+
+  async upsertChallenge(userId: string, dto: UpsertChallengeDto) {
+    return this.prisma.challenge.upsert({
+      where: { userId },
+      create: {
+        userId,
+        title: dto.title,
+        description: dto.description,
+        reflection: dto.reflection,
+        status: dto.status as any,
+      },
+      update: {
+        title: dto.title,
+        description: dto.description,
+        reflection: dto.reflection,
+        status: dto.status as any,
+      },
+    });
+  }
+
+  async completeOnboarding(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+      select: { id: true, onboardingCompleted: true },
+    });
   }
 }
