@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Smartphone, Download, CheckCircle, Wifi, Shield, AlertCircle } from 'lucide-react';
+import { Smartphone, Download, CheckCircle, Wifi, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const features = [
@@ -10,21 +9,9 @@ const features = [
   { icon: CheckCircle, text: 'Quick access to journal & feed' },
 ];
 
-const externalApkUrl = process.env.NEXT_PUBLIC_APK_URL;
+const downloadUrl = process.env.NEXT_PUBLIC_APK_URL || '/api/download-app';
 
 export default function GetAppPage() {
-  const [apkAvailable, setApkAvailable] = useState<boolean | null>(
-    externalApkUrl ? true : null,
-  );
-  const downloadUrl = externalApkUrl || '/api/download-app';
-
-  useEffect(() => {
-    if (externalApkUrl) return;
-    fetch('/api/download-app', { method: 'HEAD' })
-      .then((r) => setApkAvailable(r.ok))
-      .catch(() => setApkAvailable(false));
-  }, []);
-
   return (
     <div className="max-w-lg mx-auto py-12 px-4 space-y-8 animate-fade-in">
       <div className="text-center space-y-4">
@@ -62,28 +49,12 @@ export default function GetAppPage() {
       </div>
 
       <div className="text-center space-y-3">
-        {apkAvailable === false ? (
-          <div className="space-y-3">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-left"
-              style={{
-                background: 'rgba(234,179,8,0.08)',
-                border: '1px solid rgba(234,179,8,0.2)',
-                color: 'var(--theme-text)',
-              }}
-            >
-              <AlertCircle size={16} className="flex-shrink-0" style={{ color: '#eab308' }} />
-              The mobile app is not yet available for download. Please contact your administrator.
-            </div>
-          </div>
-        ) : (
-          <Button asChild size="lg" className="gap-2 w-full sm:w-auto" disabled={apkAvailable === null}>
-            <a href={downloadUrl} download={!externalApkUrl}>
-              <Download size={16} />
-              Download APK
-            </a>
-          </Button>
-        )}
+        <Button asChild size="lg" className="gap-2 w-full sm:w-auto">
+          <a href={downloadUrl} download>
+            <Download size={16} />
+            Download APK
+          </a>
+        </Button>
         <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
           Android 8.0+ required &middot; Allow installs from unknown sources in Settings
         </p>
