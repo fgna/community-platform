@@ -54,6 +54,7 @@ model User {
   learningGroupMembers LearningGroupMember[]
   learningGroupMessages LearningGroupMessage[]
   bookmarks            Bookmark[]
+  interests            UserInterest[]
 }
 
 enum Role {
@@ -407,6 +408,7 @@ model Category {
   posts       PostCategory[]
   courses     CourseCategory[]
   events      EventCategory[]
+  interests   UserInterest[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
@@ -612,4 +614,16 @@ model Bookmark {
 
   @@unique([userId, postId])
   @@index([userId, createdAt(sort: Desc)])
+}
+
+model UserInterest {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, categoryId])
+  @@index([userId])
 }
