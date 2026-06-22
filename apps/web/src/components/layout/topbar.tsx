@@ -121,10 +121,10 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild className="gap-2 cursor-pointer">
-            <a href="/app/community.apk" download>
+            <Link href="/get-app">
               <Smartphone size={14} />
               {tn('getTheApp')}
-            </a>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

@@ -151,11 +151,11 @@ export class JournalService {
       create: {
         userId,
         date: parsedDate,
-        content: dto.content,
+        content: JSON.parse(JSON.stringify(dto.content)),
         mood: dto.mood,
       },
       update: {
-        content: dto.content,
+        content: JSON.parse(JSON.stringify(dto.content)),
         mood: dto.mood,
       },
     });

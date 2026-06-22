@@ -1,7 +1,7 @@
 /**
  * ADVERSARIAL TESTS: Journal
  *
- * SEC-040: No content length limit in DTO — unbounded payload
+ * SEC-040: Content fields must be bounded — nested validation enforces limits
  * SEC-041: mood field is free-text string — no enum validation
  * SEC-042: date param parsed unsafely — NaN/Invalid Date propagated to DB
  */
@@ -14,6 +14,21 @@ import { BadRequestException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
+
+function validContent() {
+  return {
+    threeGoals: ['Goal 1', 'Goal 2', 'Goal 3'],
+    mustDoTasks: [
+      { text: 'Task 1', done: false },
+      { text: 'Task 2', done: false },
+      { text: 'Task 3', done: true },
+    ],
+    whoIWantToBe: 'Best version of myself',
+    lookingForwardTo: 'Learning something new',
+    importantPeople: 'My team',
+    thoughts: 'Feeling good about today.',
+  };
+}
 
 function buildMockPrisma() {
   return {
@@ -36,58 +51,60 @@ async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
   return module.get<JournalService>(JournalService);
 }
 
-describe('[SEC-040] unbounded content field', () => {
-  it('UpsertJournalDto rejects content exceeding max length', async () => {
-    const hugeContent = 'x'.repeat(1_000_000); // 1MB of text
+describe('[SEC-040] structured content validation', () => {
+  it('UpsertJournalDto rejects non-object content', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
-      content: hugeContent,
+      content: 'x'.repeat(1_000_000),
     });
 
     const errors = await validate(dto);
-
-    // SEC-040 FIX: @MaxLength(50000) now rejects oversized content
     expect(errors.filter((e) => e.property === 'content').length).toBeGreaterThan(0);
   });
 
-  it('UpsertJournalDto accepts content within max length', async () => {
-    const normalContent = 'x'.repeat(50000);
+  it('UpsertJournalDto rejects oversized thoughts field', async () => {
+    const content = validContent();
+    content.thoughts = 'x'.repeat(10001);
+    const dto = plainToInstance(UpsertJournalDto, { content });
+
+    const errors = await validate(dto);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('UpsertJournalDto accepts valid structured content', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
-      content: normalContent,
+      content: validContent(),
       mood: 'grateful',
     });
 
     const errors = await validate(dto);
-    expect(errors.filter((e) => e.property === 'content')).toHaveLength(0);
+    expect(errors).toHaveLength(0);
   });
 });
 
 describe('[SEC-041] mood field accepts arbitrary strings', () => {
   it('mood rejects XSS payloads', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
-      content: 'Today was fine.',
+      content: validContent(),
       mood: '<script>alert("xss")</script>',
     });
 
     const errors = await validate(dto);
-
-    // SEC-041 FIX: mood now validates against an enum of valid moods
     expect(errors.filter((e) => e.property === 'mood').length).toBeGreaterThan(0);
   });
 
   it('mood rejects extremely long strings', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
-      content: 'Entry.',
+      content: validContent(),
       mood: 'A'.repeat(50000),
     });
 
     const errors = await validate(dto);
-    // SEC-041 FIX: @MaxLength(50) and @IsIn() reject oversized/invalid mood strings
     expect(errors.filter((e) => e.property === 'mood').length).toBeGreaterThan(0);
   });
 
   it('mood accepts valid mood values', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
-      content: 'Entry.',
+      content: validContent(),
       mood: 'grateful',
     });
 
@@ -115,7 +132,7 @@ describe('[SEC-042] unsafe date parsing in journal service', () => {
   it('upsert() with malformed date throws BadRequestException', async () => {
     // SEC-042 FIX: Service now validates date format before parsing
     await expect(
-      service.upsert('u1', '__proto__', { content: 'test', mood: 'grateful' }),
+      service.upsert('u1', '__proto__', { content: validContent(), mood: 'grateful' }),
     ).rejects.toThrow(BadRequestException);
   });
 

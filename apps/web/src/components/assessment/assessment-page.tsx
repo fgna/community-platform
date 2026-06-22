@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, ChevronRight, ChevronLeft, BarChart3, RotateCcw } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft, BarChart3, RotateCcw, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { PageHeader } from '@/components/common/page-header';
@@ -219,6 +219,25 @@ export function AssessmentPage() {
                       </span>
                     </div>
                     <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{d.suggestion}</p>
+                    {d.categories?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {d.categories.map((cat: any) => (
+                          <Link
+                            key={cat.slug}
+                            href={`/explore/${cat.slug}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all hover:scale-105"
+                            style={{
+                              background: 'rgba(197,168,128,0.08)',
+                              color: 'var(--theme-primary)',
+                              border: '1px solid rgba(197,168,128,0.15)',
+                            }}
+                          >
+                            <Compass size={10} />
+                            Explore {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
