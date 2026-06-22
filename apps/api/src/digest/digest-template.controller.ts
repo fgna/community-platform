@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Header, Res } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Header, StreamableFile } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Response } from 'express';
 import { DigestTemplateService } from './digest-template.service';
 import { CreateDigestTemplateDto } from './dto/create-digest-template.dto';
 import { UpdateDigestTemplateDto } from './dto/update-digest-template.dto';
@@ -29,10 +28,10 @@ export class DigestTemplateController {
   @Get('preview/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Preview rendered digest template HTML (Admin only)' })
-  async preview(@Param('id') id: string, @Res() res: Response) {
+  @Header('Content-Type', 'text/html')
+  async preview(@Param('id') id: string): Promise<StreamableFile> {
     const html = await this.digestTemplateService.renderPreview(id);
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    return new StreamableFile(Buffer.from(html, 'utf-8'));
   }
 
   @Get(':id')
