@@ -14,6 +14,7 @@ import { EventCard } from '@/components/events/event-card';
 import { PostSkeleton } from '@/components/common/loading-skeleton';
 import { MyChallenge } from '@/components/dashboard/my-challenge';
 import { MyGoals } from '@/components/dashboard/my-goals';
+import { EventProposalsSection } from '@/components/event-proposals/event-proposals-section';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -81,6 +82,7 @@ export default function DashboardPage() {
           ) : (
             <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>{t('noUpcomingEvents')}</p>
           )}
+          <EventProposalsSection compact />
         </div>
       </div>
 

@@ -22,6 +22,7 @@ import {
   isToday,
 } from 'date-fns';
 import type { CommunityEvent } from '@community/shared';
+import { EventProposalsSection } from '@/components/event-proposals/event-proposals-section';
 
 function EventCard({ event }: { event: CommunityEvent }) {
   const { user } = useAuth();
@@ -291,6 +292,8 @@ export function EventsPage() {
           </button>
         </div>
       </div>
+
+      <EventProposalsSection />
 
       {isLoading ? (
         <div className="space-y-4">

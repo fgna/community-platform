@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] — 2026-06-22
+
+### Changed
+- Event Proposals now shown inline on top of the Events page and as a compact widget on the Dashboard — no longer a separate page
+- Removed Event Proposals sidebar link; old `/event-proposals` URL redirects to `/events`
+
+---
+
 ## [1.33.0] — 2026-06-22
 
 ### Security
