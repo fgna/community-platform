@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ValidateNested, MaxLength, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsArray, ValidateNested, MaxLength, IsIn, ArrayMaxSize } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -22,6 +22,7 @@ export class ChatDto {
   @ApiPropertyOptional({ type: [ChatHistoryMessage] })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   @ValidateNested({ each: true })
   @Type(() => ChatHistoryMessage)
   history?: ChatHistoryMessage[];

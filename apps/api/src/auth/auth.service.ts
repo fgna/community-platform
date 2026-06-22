@@ -19,7 +19,10 @@ export class AuthService {
     const email = dto.email.toLowerCase().trim();
 
     if (dto.inviteToken) {
-      await this.invitesService.validateInvite(dto.inviteToken);
+      const invite = await this.invitesService.validateInvite(dto.inviteToken);
+      if (invite.email.toLowerCase().trim() !== email) {
+        throw new BadRequestException('Invite was issued for a different email address');
+      }
     }
 
     const existing = await this.prisma.user.findUnique({

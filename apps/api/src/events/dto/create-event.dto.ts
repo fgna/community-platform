@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsDateString, IsInt, MinLength, MaxLength, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsDateString, IsInt, IsUrl, MinLength, MaxLength, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateEventDto {
@@ -34,7 +34,7 @@ export class CreateEventDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   meetingUrl?: string;
 
   @ApiPropertyOptional()
