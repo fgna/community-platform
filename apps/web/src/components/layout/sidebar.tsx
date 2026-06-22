@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Search, Compass, Star, Trophy, Sparkles, BookOpen, BarChart3, Vote, UsersRound, Bookmark } from 'lucide-react';
+import { Home, MessageCircle, HelpCircle, GraduationCap, Calendar, Users, Settings, Shield, LogOut, ChevronRight, Mail, X, Play, Search, Compass, Star, Trophy, Sparkles, BookOpen, BarChart3, Vote, UsersRound, Bookmark, Bot } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@community/shared';
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/recordings', label: 'Recordings', icon: Play },
   { href: '/explore', label: 'Explore', icon: Compass },
   { href: '/testimonials', label: 'Stories', icon: Star },
+  { href: '/ai-coach', label: 'AI Coach', icon: Bot },
   { href: '/leadership-ai', label: 'Leadership & AI', icon: Sparkles },
   { href: '/success-stories', label: 'Success Stories', icon: Trophy },
   { href: '/members', label: 'Members', icon: Users },

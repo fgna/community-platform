@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UsersService {
@@ -103,13 +104,33 @@ export class UsersService {
         calendarInvites: true,
         eventReminders: true,
         membershipTier: true,
+        passwordHash: true,
         _count: {
           select: { posts: true, courseProgress: true, eventRsvps: true },
         },
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    const { passwordHash, ...rest } = user;
+    return { ...rest, hasPassword: !!passwordHash };
+  }
+
+  async setPassword(userId: string, currentPassword: string | undefined, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.passwordHash) {
+      if (!currentPassword) throw new BadRequestException('Current password is required');
+      const valid = await argon2.verify(user.passwordHash, currentPassword);
+      if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    return { message: 'Password updated' };
   }
 
   async findOneWithFollow(id: string, requesterId: string) {
@@ -213,5 +234,51 @@ export class UsersService {
       data: { onboardingCompleted: true },
       select: { id: true, onboardingCompleted: true },
     });
+  }
+
+  async getInterests(userId: string) {
+    const interests = await this.prisma.userInterest.findMany({
+      where: { userId },
+      select: {
+        categoryId: true,
+        category: {
+          select: { id: true, name: true, slug: true, icon: true, color: true },
+        },
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return interests.map((i) => i.category);
+  }
+
+  async updateInterests(userId: string, categoryIds: string[]) {
+    // Validate that all category IDs exist
+    if (categoryIds.length > 0) {
+      const existingCategories = await this.prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true },
+      });
+      const existingIds = new Set(existingCategories.map((c) => c.id));
+      const invalidIds = categoryIds.filter((id) => !existingIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new NotFoundException(`Categories not found: ${invalidIds.join(', ')}`);
+      }
+    }
+
+    // Replace all interests in a transaction
+    await this.prisma.$transaction([
+      this.prisma.userInterest.deleteMany({ where: { userId } }),
+      ...(categoryIds.length > 0
+        ? [
+            this.prisma.userInterest.createMany({
+              data: categoryIds.map((categoryId) => ({ userId, categoryId })),
+              skipDuplicates: true,
+            }),
+          ]
+        : []),
+    ]);
+
+    return this.getInterests(userId);
   }
 }

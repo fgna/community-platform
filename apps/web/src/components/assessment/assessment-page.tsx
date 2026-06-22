@@ -10,13 +10,16 @@ import {
   useAssessmentQuestions,
   useLatestAssessment,
   useAssessmentHistory,
+  useAssessmentRecommendations,
   useSubmitAssessment,
 } from '@/hooks/use-assessments';
+import Link from 'next/link';
 
 export function AssessmentPage() {
   const { data: questions, isLoading: questionsLoading } = useAssessmentQuestions();
   const { data: latest, isLoading: latestLoading } = useLatestAssessment();
   const { data: history } = useAssessmentHistory();
+  const { data: recommendations } = useAssessmentRecommendations();
   const submitMutation = useSubmitAssessment();
 
   const [mode, setMode] = useState<'view' | 'assess'>('view');
@@ -197,6 +200,73 @@ export function AssessmentPage() {
               <RotateCcw size={14} className="mr-1.5" /> Retake Assessment
             </Button>
           </div>
+
+          {/* Development Path */}
+          {recommendations?.dimensions?.length > 0 && (
+            <div className="rounded-xl p-6 space-y-4" style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>Your Development Path</h3>
+              <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
+                Based on your assessment, here are your focus areas and personalized recommendations.
+              </p>
+
+              <div className="space-y-3">
+                {recommendations.dimensions.map((d: any) => (
+                  <div key={d.key} className="p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-border)' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{d.label}</span>
+                      <span className="text-xs font-medium" style={{ color: d.score < 3 ? '#ef4444' : d.score < 4 ? '#eab308' : '#22c55e' }}>
+                        {d.score.toFixed(1)}/5
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{d.suggestion}</p>
+                  </div>
+                ))}
+              </div>
+
+              {recommendations.courses?.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)' }}>Suggested Courses</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {recommendations.courses.map((c: any) => (
+                      <Link key={c.id} href={`/courses/${c.id}`} className="block p-3 rounded-lg transition-all hover:opacity-80" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-border)' }}>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>{c.title}</p>
+                        <p className="text-xs truncate mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>{c.description}</p>
+                        {c.progress > 0 && (
+                          <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${c.progress}%`, background: 'var(--theme-primary)' }} />
+                          </div>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {recommendations.events?.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)' }}>Upcoming Relevant Events</h4>
+                  <div className="space-y-2">
+                    {recommendations.events.map((e: any) => (
+                      <Link key={e.id} href={`/events/${e.id}`} className="flex items-center gap-3 p-3 rounded-lg transition-all hover:opacity-80" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-border)' }}>
+                        <div className="text-center flex-shrink-0 w-10">
+                          <p className="text-xs font-bold" style={{ color: 'var(--theme-primary)' }}>
+                            {new Date(e.startsAt).toLocaleDateString(undefined, { day: 'numeric' })}
+                          </p>
+                          <p className="text-[10px] uppercase" style={{ color: 'var(--theme-text-muted)' }}>
+                            {new Date(e.startsAt).toLocaleDateString(undefined, { month: 'short' })}
+                          </p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>{e.title}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--theme-text-muted)' }}>{e.description}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* History */}
           {history?.data?.length > 1 && (

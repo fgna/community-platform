@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitAssessmentDto } from './dto/submit-assessment.dto';
 
@@ -68,6 +68,29 @@ export class AssessmentsService {
   }
 
   async submit(userId: string, dto: SubmitAssessmentDto) {
+    // SEC-043/044: Validate that submitted questionIds exactly match the expected set
+    const validQuestionIds = new Set(QUESTIONS.map((q) => q.id));
+    const submittedIds = new Set(dto.answers.map((a) => a.questionId));
+
+    // Check for invalid questionIds
+    for (const id of submittedIds) {
+      if (!validQuestionIds.has(id)) {
+        throw new BadRequestException(`Invalid questionId: ${id}`);
+      }
+    }
+
+    // Check that all expected questions are answered (exact 1:1 match)
+    if (submittedIds.size !== validQuestionIds.size) {
+      throw new BadRequestException(
+        `Expected exactly ${validQuestionIds.size} unique question answers, got ${submittedIds.size}.`,
+      );
+    }
+
+    // Check for duplicate questionIds
+    if (dto.answers.length !== submittedIds.size) {
+      throw new BadRequestException('Duplicate questionIds are not allowed.');
+    }
+
     const scores: Record<string, number> = {};
 
     for (const dim of GROWTH_DIMENSIONS) {
@@ -131,5 +154,105 @@ export class AssessmentsService {
       ...assessment,
       dimensionLabels: DIMENSION_LABELS,
     };
+  }
+
+  async getRecommendations(userId: string) {
+    const assessment = await this.prisma.assessment.findFirst({
+      where: { userId },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    if (!assessment) return { dimensions: [], courses: [], events: [] };
+
+    const scores = assessment.scores as Record<string, number>;
+
+    const ranked = GROWTH_DIMENSIONS
+      .map((d) => ({ key: d, label: DIMENSION_LABELS[d], score: scores[d] ?? 0 }))
+      .sort((a, b) => a.score - b.score);
+
+    const weakDimensions = ranked.slice(0, 3);
+
+    const dimensionKeywords: Record<string, string[]> = {
+      G: ['growth', 'mindset', 'learning', 'development', 'feedback'],
+      R: ['rhythm', 'habit', 'routine', 'productivity', 'focus', 'time'],
+      O: ['ownership', 'accountability', 'responsibility', 'initiative', 'leadership'],
+      W: ['resilience', 'willpower', 'stress', 'persistence', 'grit'],
+      T: ['team', 'communication', 'collaboration', 'conflict', 'trust'],
+      H: ['balance', 'wellness', 'health', 'well-being', 'values'],
+    };
+
+    const allKeywords = weakDimensions.flatMap((d) => dimensionKeywords[d.key] ?? []);
+    const keywordPattern = allKeywords.join('|');
+
+    const [courses, events] = await Promise.all([
+      this.prisma.course.findMany({
+        where: {
+          isPublished: true,
+          OR: [
+            { title: { contains: keywordPattern.split('|')[0], mode: 'insensitive' } },
+            { description: { contains: keywordPattern.split('|')[0], mode: 'insensitive' } },
+            ...allKeywords.slice(1, 6).map((kw) => ({ title: { contains: kw, mode: 'insensitive' as const } })),
+            ...allKeywords.slice(1, 6).map((kw) => ({ description: { contains: kw, mode: 'insensitive' as const } })),
+          ],
+        },
+        take: 6,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          coverUrl: true,
+        },
+      }),
+      this.prisma.event.findMany({
+        where: {
+          startsAt: { gte: new Date() },
+          OR: [
+            ...allKeywords.slice(0, 6).map((kw) => ({ title: { contains: kw, mode: 'insensitive' as const } })),
+            ...allKeywords.slice(0, 6).map((kw) => ({ description: { contains: kw, mode: 'insensitive' as const } })),
+          ],
+        },
+        take: 4,
+        orderBy: { startsAt: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          startsAt: true,
+        },
+      }),
+    ]);
+
+    const userProgress = await this.prisma.progress.findMany({
+      where: { userId },
+      select: { courseId: true, percentage: true },
+    });
+    const progressMap = new Map(userProgress.map((p) => [p.courseId, p.percentage]));
+
+    return {
+      dimensions: weakDimensions.map((d) => ({
+        ...d,
+        suggestion: this.getDimensionSuggestion(d.key, d.score),
+      })),
+      courses: courses.map((c) => ({
+        ...c,
+        progress: progressMap.get(c.id) ?? 0,
+      })),
+      events,
+    };
+  }
+
+  private getDimensionSuggestion(dimension: string, score: number): string {
+    if (score >= 4) return 'Strong area — keep it up!';
+    if (score >= 3) return 'Good foundation. Small improvements here will compound.';
+
+    const suggestions: Record<string, string> = {
+      G: 'Try setting a daily learning goal and seeking feedback from a peer this week.',
+      R: 'Start with one keystone habit — a consistent morning routine or weekly review.',
+      O: 'Pick one commitment this week and follow through completely, no matter how small.',
+      W: 'Practice the "5-minute rule" — commit to just 5 minutes on a challenging task.',
+      T: 'Schedule a 1-on-1 with a colleague this week to practice active listening.',
+      H: 'Block 30 minutes daily for a non-work activity that energises you.',
+    };
+    return suggestions[dimension] ?? 'Focus on small, consistent improvements.';
   }
 }

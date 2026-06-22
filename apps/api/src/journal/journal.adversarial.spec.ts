@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { JournalService } from './journal.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
@@ -36,7 +37,7 @@ async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
 }
 
 describe('[SEC-040] unbounded content field', () => {
-  it('UpsertJournalDto has no @MaxLength on content', async () => {
+  it('UpsertJournalDto rejects content exceeding max length', async () => {
     const hugeContent = 'x'.repeat(1_000_000); // 1MB of text
     const dto = plainToInstance(UpsertJournalDto, {
       content: hugeContent,
@@ -44,13 +45,24 @@ describe('[SEC-040] unbounded content field', () => {
 
     const errors = await validate(dto);
 
-    // SEC-040: No validation error — DTO only has @IsString() @IsNotEmpty()
+    // SEC-040 FIX: @MaxLength(50000) now rejects oversized content
+    expect(errors.filter((e) => e.property === 'content').length).toBeGreaterThan(0);
+  });
+
+  it('UpsertJournalDto accepts content within max length', async () => {
+    const normalContent = 'x'.repeat(50000);
+    const dto = plainToInstance(UpsertJournalDto, {
+      content: normalContent,
+      mood: 'grateful',
+    });
+
+    const errors = await validate(dto);
     expect(errors.filter((e) => e.property === 'content')).toHaveLength(0);
   });
 });
 
 describe('[SEC-041] mood field accepts arbitrary strings', () => {
-  it('mood accepts any string including XSS payloads', async () => {
+  it('mood rejects XSS payloads', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
       content: 'Today was fine.',
       mood: '<script>alert("xss")</script>',
@@ -58,14 +70,25 @@ describe('[SEC-041] mood field accepts arbitrary strings', () => {
 
     const errors = await validate(dto);
 
-    // SEC-041: mood is @IsString() @IsOptional() with no enum constraint
-    expect(errors.filter((e) => e.property === 'mood')).toHaveLength(0);
+    // SEC-041 FIX: mood now validates against an enum of valid moods
+    expect(errors.filter((e) => e.property === 'mood').length).toBeGreaterThan(0);
   });
 
-  it('mood accepts extremely long strings', async () => {
+  it('mood rejects extremely long strings', async () => {
     const dto = plainToInstance(UpsertJournalDto, {
       content: 'Entry.',
       mood: 'A'.repeat(50000),
+    });
+
+    const errors = await validate(dto);
+    // SEC-041 FIX: @MaxLength(50) and @IsIn() reject oversized/invalid mood strings
+    expect(errors.filter((e) => e.property === 'mood').length).toBeGreaterThan(0);
+  });
+
+  it('mood accepts valid mood values', async () => {
+    const dto = plainToInstance(UpsertJournalDto, {
+      content: 'Entry.',
+      mood: 'grateful',
     });
 
     const errors = await validate(dto);
@@ -82,40 +105,48 @@ describe('[SEC-042] unsafe date parsing in journal service', () => {
     service = await buildService(prisma);
   });
 
-  it('findOne() with garbage date creates Invalid Date sent to Prisma', async () => {
+  it('findOne() with garbage date throws BadRequestException', async () => {
     const badDate = 'not-a-date';
-    const parsed = new Date(badDate + 'T00:00:00.000Z');
 
-    // SEC-042: The date becomes Invalid Date — Prisma behavior is undefined
-    expect(isNaN(parsed.getTime())).toBe(true);
+    // SEC-042 FIX: Service now validates date format before parsing
+    await expect(service.findOne('u1', badDate)).rejects.toThrow(BadRequestException);
   });
 
-  it('upsert() with malformed date passes Invalid Date to Prisma where clause', async () => {
-    prisma.journalEntry.upsert.mockResolvedValue({ id: 'j1' });
-
-    // SEC-042: Service constructs new Date(date + 'T00:00:00.000Z') with no validation
-    // Prisma may throw or silently create a record with a bad date
-    const parsed = new Date('__proto__T00:00:00.000Z');
-    expect(isNaN(parsed.getTime())).toBe(true);
+  it('upsert() with malformed date throws BadRequestException', async () => {
+    // SEC-042 FIX: Service now validates date format before parsing
+    await expect(
+      service.upsert('u1', '__proto__', { content: 'test', mood: 'grateful' }),
+    ).rejects.toThrow(BadRequestException);
   });
 
-  it('month query parameter with injected values parsed by split("-")', () => {
-    // The service does: month.split('-').map(Number)
-    const maliciousMonth = '2026-13'; // month 13 doesn't exist
-    const [year, mon] = maliciousMonth.split('-').map(Number);
-    const startDate = new Date(Date.UTC(year, mon - 1, 1));
-
-    // JavaScript Date wraps: month 12 (0-indexed) = January of next year
-    expect(startDate.getUTCMonth()).toBe(0); // January, not an error
-    expect(startDate.getUTCFullYear()).toBe(2027); // Silently moved to 2027
+  it('month query parameter with invalid month value is rejected', async () => {
+    // SEC-042 FIX: Service now validates month format (YYYY-MM with valid month range)
+    await expect(service.findAll('u1', '2026-13')).rejects.toThrow(BadRequestException);
   });
 
-  it('month param with extra segments does not error', () => {
-    const weirdMonth = '2026-06-INJECTED';
-    const [year, mon] = weirdMonth.split('-').map(Number);
+  it('month param with extra segments is rejected', async () => {
+    // SEC-042 FIX: Extra segments after YYYY-MM are now rejected
+    await expect(service.findAll('u1', '2026-06-INJECTED')).rejects.toThrow(BadRequestException);
+  });
 
-    expect(year).toBe(2026);
-    expect(mon).toBe(6);
-    // The extra segment is silently ignored by split + destructuring
+  it('valid dates are accepted', async () => {
+    prisma.journalEntry.findUnique.mockResolvedValue({
+      id: 'j1',
+      userId: 'u1',
+      date: new Date('2026-06-15T00:00:00.000Z'),
+      content: 'test',
+      mood: 'grateful',
+    });
+
+    const result = await service.findOne('u1', '2026-06-15');
+    expect(result).toBeDefined();
+    expect(result.id).toBe('j1');
+  });
+
+  it('valid month is accepted', async () => {
+    prisma.journalEntry.findMany.mockResolvedValue([]);
+
+    const result = await service.findAll('u1', '2026-06');
+    expect(result).toEqual([]);
   });
 });

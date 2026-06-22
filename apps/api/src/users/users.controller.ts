@@ -10,6 +10,8 @@ import { UpdateDigestDto } from './dto/update-digest.dto';
 import { UpdateCalendarInvitesDto } from './dto/update-calendar-invites.dto';
 import { UpdateEventRemindersDto } from './dto/update-event-reminders.dto';
 import { UpsertChallengeDto } from './dto/upsert-challenge.dto';
+import { UpdateInterestsDto } from './dto/update-interests.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
@@ -97,6 +99,12 @@ export class UsersController {
     return { avatarUrl };
   }
 
+  @Post('me/password')
+  @ApiOperation({ summary: 'Set or change password' })
+  setPassword(@CurrentUser() user: any, @Body() dto: SetPasswordDto) {
+    return this.usersService.setPassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
   @Patch('me/digest')
   @ApiOperation({ summary: 'Update email digest preference' })
   updateDigest(@CurrentUser() user: any, @Body() dto: UpdateDigestDto) {
@@ -131,6 +139,18 @@ export class UsersController {
   @ApiOperation({ summary: 'Mark onboarding as completed' })
   completeOnboarding(@CurrentUser() user: any) {
     return this.usersService.completeOnboarding(user.id);
+  }
+
+  @Get('me/interests')
+  @ApiOperation({ summary: 'Get current user interests (categories)' })
+  getInterests(@CurrentUser() user: any) {
+    return this.usersService.getInterests(user.id);
+  }
+
+  @Put('me/interests')
+  @ApiOperation({ summary: 'Set/replace current user interests (array of category IDs)' })
+  updateInterests(@CurrentUser() user: any, @Body() dto: UpdateInterestsDto) {
+    return this.usersService.updateInterests(user.id, dto.categoryIds);
   }
 
   @Get(':id')

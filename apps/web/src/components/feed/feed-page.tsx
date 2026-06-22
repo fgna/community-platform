@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useFeed, useCreatePost, useTrendingFeed } from '@/hooks/use-feed';
 import { useAuth } from '@/hooks/use-auth';
+import { useInterests } from '@/hooks/use-interests';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +25,7 @@ const POST_TYPE_TABS = [
 
 export function FeedPage() {
   const { user } = useAuth();
+  const { data: interests } = useInterests();
   const [tab, setTab] = useState<'latest' | 'trending'>('latest');
   const [postTypeFilter, setPostTypeFilter] = useState<string | undefined>(undefined);
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -34,7 +36,8 @@ export function FeedPage() {
     window.addEventListener('feed:hashtag', handler);
     return () => window.removeEventListener('feed:hashtag', handler);
   }, []);
-  const { data, isLoading, error } = useFeed(1, 20, postTypeFilter);
+  const prioritize = interests && interests.length > 0 ? 'interests' : undefined;
+  const { data, isLoading, error } = useFeed(1, 20, postTypeFilter, prioritize);
   const { data: trendingData, isLoading: trendingLoading } = useTrendingFeed();
   const createPost = useCreatePost();
   const [content, setContent] = useState('');

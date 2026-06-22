@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { SocialButtons } from '@/components/auth/social-buttons';
 
 interface LoginForm {
   email: string;
@@ -39,6 +40,8 @@ export default function LoginPage() {
       <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--theme-text)' }}>
         Sign in to your account
       </h2>
+
+      <SocialButtons />
 
       {loginError && (
         <div

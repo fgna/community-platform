@@ -11,6 +11,7 @@ import {
   useDeleteJournal,
   useJournalStats,
 } from '@/hooks/use-journal';
+import { JournalPrompts } from './journal-prompts';
 
 const MOODS = [
   { value: 'grateful', label: 'Grateful', emoji: '🙏' },
@@ -111,6 +112,14 @@ export function JournalPage() {
     setSelectedMood(null);
     setIsDirty(false);
   }, [selectedDate, deleteMutation]);
+
+  const handlePromptSelect = useCallback((text: string) => {
+    const prefix = editorContent.trim() ? editorContent.trimEnd() + '\n\n' : '';
+    setEditorContent(prefix + text + '\n');
+    setIsDirty(true);
+    // Focus the textarea so the user can continue writing
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  }, [editorContent]);
 
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
@@ -416,6 +425,9 @@ export function JournalPage() {
                 ))}
               </div>
             </div>
+
+            {/* Daily Prompts */}
+            <JournalPrompts onSelect={handlePromptSelect} />
 
             {/* Text editor */}
             {entryLoading ? (

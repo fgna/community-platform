@@ -2,12 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { PaginatedPosts } from '@community/shared';
 
-export function useFeed(page = 1, limit = 20, type?: string) {
+export function useFeed(page = 1, limit = 20, type?: string, prioritize?: string) {
   return useQuery({
-    queryKey: ['feed', page, limit, type],
+    queryKey: ['feed', page, limit, type, prioritize],
     queryFn: async () => {
       const params: Record<string, any> = { page, limit };
       if (type) params.type = type;
+      if (prioritize) params.prioritize = prioritize;
       const { data } = await apiClient.get<PaginatedPosts>('/posts', { params });
       return data;
     },

@@ -1,12 +1,13 @@
 /**
  * ADVERSARIAL TESTS: Tier / Premium Upgrade
  *
- * SEC-031: POST /tier/upgrade has no payment verification — any auth user can self-promote to PREMIUM
- * SEC-032: POST /tier/admin/:userId/:tier accepts arbitrary strings (no enum validation)
+ * SEC-031: POST /tier/upgrade — self-upgrade disabled (returns 501) until billing is integrated
+ * SEC-032: POST /tier/admin/:userId/:tier — enum validation rejects invalid tier strings
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
+import { NotImplementedException, BadRequestException } from '@nestjs/common';
 import { TierService } from './tier.service';
 import { TierController } from './tier.controller';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,7 +35,7 @@ async function buildModule(prisma: ReturnType<typeof buildMockPrisma>) {
   };
 }
 
-describe('[SEC-031] free tier self-upgrade bypass', () => {
+describe('[SEC-031] free tier self-upgrade bypass — FIXED', () => {
   let prisma: ReturnType<typeof buildMockPrisma>;
   let service: TierService;
 
@@ -43,27 +44,21 @@ describe('[SEC-031] free tier self-upgrade bypass', () => {
     ({ service } = await buildModule(prisma));
   });
 
-  it('upgradeTier() promotes user without any payment check', async () => {
-    prisma.user.update.mockResolvedValue({ id: 'free-user', membershipTier: 'PREMIUM' });
-
-    const result = await service.upgradeTier('free-user');
-
-    expect(result.membershipTier).toBe('PREMIUM');
-    // SEC-031: upgrade succeeds with zero payment/billing verification
-    // This test documents the current (insecure) behaviour: once a fix adds
-    // payment verification, this call will throw or require a payment token.
+  it('upgradeTier() throws NotImplementedException (disabled until billing)', async () => {
+    // SEC-031 FIX: self-upgrade is disabled — no payment system exists yet
+    await expect(service.upgradeTier('free-user')).rejects.toThrow(NotImplementedException);
+    // Prisma should never be called
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
-  it('controller upgrade() exposes unauthenticated tier promotion', async () => {
-    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: 'PREMIUM' });
-
-    const result = await service.upgradeTier('u1');
-    expect(result.membershipTier).toBe('PREMIUM');
-    // No @Roles guard on the upgrade endpoint — any authenticated user reaches it
+  it('controller upgrade() also rejects self-upgrade', async () => {
+    // SEC-031 FIX: the service throws before any DB call
+    await expect(service.upgradeTier('u1')).rejects.toThrow(NotImplementedException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });
 
-describe('[SEC-032] arbitrary tier string injection', () => {
+describe('[SEC-032] arbitrary tier string injection — FIXED', () => {
   let prisma: ReturnType<typeof buildMockPrisma>;
   let service: TierService;
 
@@ -72,31 +67,38 @@ describe('[SEC-032] arbitrary tier string injection', () => {
     ({ service } = await buildModule(prisma));
   });
 
-  it('setTier() accepts arbitrary string values without enum validation', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', membershipTier: 'FREE' });
-    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: 'SUPERADMIN' });
-
-    const result = await service.setTier('u1', 'SUPERADMIN');
-
-    // SEC-032: "SUPERADMIN" is not a valid MembershipTier enum value,
-    // but the service casts `tier as any` and Prisma may accept it
-    expect(result.membershipTier).toBe('SUPERADMIN');
+  it('setTier() rejects arbitrary string values with enum validation', async () => {
+    // SEC-032 FIX: "SUPERADMIN" is not a valid tier and is now rejected
+    await expect(service.setTier('u1', 'SUPERADMIN')).rejects.toThrow(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
-  it('setTier() does not reject empty-string tier', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', membershipTier: 'FREE' });
-    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: '' });
-
-    const result = await service.setTier('u1', '');
-    expect(result.membershipTier).toBe('');
+  it('setTier() rejects empty-string tier', async () => {
+    // SEC-032 FIX: empty string is not a valid tier
+    await expect(service.setTier('u1', '')).rejects.toThrow(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
-  it('setTier() does not reject extremely long tier string', async () => {
+  it('setTier() rejects extremely long tier string', async () => {
     const longTier = 'A'.repeat(10000);
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', membershipTier: 'FREE' });
-    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: longTier });
+    // SEC-032 FIX: arbitrary strings are rejected
+    await expect(service.setTier('u1', longTier)).rejects.toThrow(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
 
-    const result = await service.setTier('u1', longTier);
-    expect(result.membershipTier).toBe(longTier);
+  it('setTier() accepts valid tier FREE', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', membershipTier: 'PREMIUM' });
+    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: 'FREE' });
+
+    const result = await service.setTier('u1', 'FREE');
+    expect(result.membershipTier).toBe('FREE');
+  });
+
+  it('setTier() accepts valid tier PREMIUM', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', membershipTier: 'FREE' });
+    prisma.user.update.mockResolvedValue({ id: 'u1', membershipTier: 'PREMIUM' });
+
+    const result = await service.setTier('u1', 'PREMIUM');
+    expect(result.membershipTier).toBe('PREMIUM');
   });
 });

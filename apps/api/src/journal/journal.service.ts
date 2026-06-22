@@ -1,15 +1,115 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
+import { CreatePromptDto, UpdatePromptDto, CreateCategoryDto, UpdateCategoryDto } from './dto/create-prompt.dto';
+
+const DATE_REGEX = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const MONTH_REGEX = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+
+function validateDateParam(date: string): Date {
+  if (!DATE_REGEX.test(date)) {
+    throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD.');
+  }
+  const parsed = new Date(date + 'T00:00:00.000Z');
+  if (isNaN(parsed.getTime())) {
+    throw new BadRequestException('Invalid date value.');
+  }
+  return parsed;
+}
+
+function validateMonthParam(month: string): void {
+  if (!MONTH_REGEX.test(month)) {
+    throw new BadRequestException('Invalid month format. Expected YYYY-MM.');
+  }
+}
 
 @Injectable()
 export class JournalService {
   constructor(private prisma: PrismaService) {}
 
+  async getDailyPrompts() {
+    const allPrompts = await this.prisma.journalPrompt.findMany({
+      where: { isActive: true, category: { isActive: true } },
+      include: { category: { select: { name: true, color: true } } },
+      orderBy: [{ category: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+    });
+
+    if (allPrompts.length === 0) return [];
+
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    const count = Math.min(3, allPrompts.length);
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const index = (dayOfYear * 3 + i) % allPrompts.length;
+      const p = allPrompts[index];
+      result.push({ id: p.id, text: p.text, category: p.category.name, color: p.category.color });
+    }
+    return result;
+  }
+
+  // ── Category CRUD (admin) ────────────────────────────────────────────
+
+  async getCategories() {
+    return this.prisma.journalPromptCategory.findMany({
+      orderBy: { sortOrder: 'asc' },
+      include: { _count: { select: { prompts: true } } },
+    });
+  }
+
+  async createCategory(dto: CreateCategoryDto) {
+    return this.prisma.journalPromptCategory.create({ data: dto });
+  }
+
+  async updateCategory(id: string, dto: UpdateCategoryDto) {
+    return this.prisma.journalPromptCategory.update({ where: { id }, data: dto });
+  }
+
+  async deleteCategory(id: string) {
+    await this.prisma.journalPromptCategory.delete({ where: { id } });
+    return { message: 'Category deleted' };
+  }
+
+  // ── Prompt CRUD (admin) ──────────────────────────────────────────────
+
+  async getPrompts(categoryId?: string) {
+    const where: any = {};
+    if (categoryId) where.categoryId = categoryId;
+    return this.prisma.journalPrompt.findMany({
+      where,
+      orderBy: [{ category: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+      include: { category: { select: { id: true, name: true, color: true } } },
+    });
+  }
+
+  async createPrompt(dto: CreatePromptDto) {
+    return this.prisma.journalPrompt.create({
+      data: dto,
+      include: { category: { select: { id: true, name: true, color: true } } },
+    });
+  }
+
+  async updatePrompt(id: string, dto: UpdatePromptDto) {
+    return this.prisma.journalPrompt.update({
+      where: { id },
+      data: dto,
+      include: { category: { select: { id: true, name: true, color: true } } },
+    });
+  }
+
+  async deletePrompt(id: string) {
+    await this.prisma.journalPrompt.delete({ where: { id } });
+    return { message: 'Prompt deleted' };
+  }
+
   async findAll(userId: string, month?: string) {
     const where: any = { userId };
 
     if (month) {
+      validateMonthParam(month);
       // month is in YYYY-MM format
       const [year, mon] = month.split('-').map(Number);
       const startDate = new Date(Date.UTC(year, mon - 1, 1));
@@ -27,7 +127,7 @@ export class JournalService {
   }
 
   async findOne(userId: string, date: string) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
     const entry = await this.prisma.journalEntry.findUnique({
       where: {
         userId_date: { userId, date: parsedDate },
@@ -42,7 +142,7 @@ export class JournalService {
   }
 
   async upsert(userId: string, date: string, dto: UpsertJournalDto) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
 
     return this.prisma.journalEntry.upsert({
       where: {
@@ -62,7 +162,7 @@ export class JournalService {
   }
 
   async delete(userId: string, date: string) {
-    const parsedDate = new Date(date + 'T00:00:00.000Z');
+    const parsedDate = validateDateParam(date);
 
     const entry = await this.prisma.journalEntry.findUnique({
       where: {

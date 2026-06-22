@@ -48,40 +48,92 @@ export class PostsService {
     private notifications: NotificationsService,
   ) {}
 
-  async findAll(page = 1, limit = 20, userId?: string, type?: string) {
+  async findAll(page = 1, limit = 20, userId?: string, type?: string, prioritize?: string) {
     limit = Math.max(1, Math.min(limit, 100));
     page = Math.max(1, page);
     const skip = (page - 1) * limit;
     const where: any = { isHidden: false };
     if (type) where.type = type;
+
+    const selectWithUser = {
+      ...postSelect,
+      reactions: userId
+        ? { where: { userId }, select: { id: true, type: true, userId: true } }
+        : false,
+      poll: {
+        select: {
+          ...pollSelect,
+          options: {
+            select: {
+              id: true,
+              text: true,
+              order: true,
+              _count: { select: { votes: true } },
+              votes: userId ? { where: { userId }, select: { id: true } } : false,
+            },
+            orderBy: { order: 'asc' as const },
+          },
+          votes: userId ? { where: { userId }, select: { optionId: true } } : false,
+        },
+      },
+    };
+
+    // When prioritizing by user interests, fetch user's interest category IDs
+    // and sort matching posts first, then the rest by date
+    if (prioritize === 'interests' && userId) {
+      const userInterests = await this.prisma.userInterest.findMany({
+        where: { userId },
+        select: { categoryId: true },
+      });
+      const interestCategoryIds = userInterests.map((i) => i.categoryId);
+
+      if (interestCategoryIds.length > 0) {
+        // Fetch all posts (both matching and non-matching) in a single query,
+        // then sort in-memory: pinned first, then interest-matching by date, then rest by date
+        const [allData, total] = await Promise.all([
+          this.prisma.post.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+            select: selectWithUser,
+          }),
+          this.prisma.post.count({ where }),
+        ]);
+
+        // Sort: pinned first, then posts matching user interests, then the rest
+        const interestSet = new Set(interestCategoryIds);
+        const sorted = allData.sort((a: any, b: any) => {
+          // Pinned posts always stay on top
+          if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+
+          const aMatches = a.categories?.some((pc: any) => interestSet.has(pc.category?.id ?? pc.categoryId));
+          const bMatches = b.categories?.some((pc: any) => interestSet.has(pc.category?.id ?? pc.categoryId));
+
+          if (aMatches && !bMatches) return -1;
+          if (!aMatches && bMatches) return 1;
+
+          // Same priority group — sort by date
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        return {
+          data: sorted,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.post.findMany({
         where,
         skip,
         take: limit,
         orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
-        select: {
-          ...postSelect,
-          reactions: userId
-            ? { where: { userId }, select: { id: true, type: true, userId: true } }
-            : false,
-          poll: {
-            select: {
-              ...pollSelect,
-              options: {
-                select: {
-                  id: true,
-                  text: true,
-                  order: true,
-                  _count: { select: { votes: true } },
-                  votes: userId ? { where: { userId }, select: { id: true } } : false,
-                },
-                orderBy: { order: 'asc' as const },
-              },
-              votes: userId ? { where: { userId }, select: { optionId: true } } : false,
-            },
-          },
-        },
+        select: selectWithUser,
       }),
       this.prisma.post.count({ where }),
     ]);

@@ -5,10 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.28.0] — 2026-06-22
 
 ### Added
+- **SSO / OAuth (GL-028)**: Google and LinkedIn OAuth login via authorization code flow; `OAuthAccount` model linking providers to users; automatic account linking when OAuth email matches existing account; OAuth-only users (no password) fully supported; "Connected Accounts" section in Settings to link/unlink providers; password set/change UI for OAuth-only users; social login buttons on login and register pages; CSRF protection via `state` parameter; graceful degradation when OAuth env vars not configured
+- **Stripe Billing (GL-025)**: Stripe Checkout for FREE→PREMIUM subscription upgrade; Stripe Customer Portal for subscription management (cancel, update payment); webhook handler for `checkout.session.completed`, `customer.subscription.updated/deleted`, `invoice.payment_failed`; `stripeCustomerId` and `stripeSubscriptionId` on User model; pricing page at `/pricing`; subscription management in Settings; billing success page; automatic downgrade on subscription cancellation; graceful degradation when Stripe env vars not set
+- **Assessment Recommendations (GL-008)**: Personalized development path based on GROWTH assessment scores; identifies top 3 weakest dimensions with actionable suggestions; keyword-based course and event recommendations; progress-aware course cards; `GET /assessments/recommendations` endpoint; "Your Development Path" section in assessment results view
+- **AI Coach (GL-016)**: Virtual leadership development coach powered by Claude; contextual coaching using member's GROWTH assessment scores, goals, platform courses, and upcoming events; chat interface with suggested prompts and conversation history; system prompt enforcing GROWTH framework focus; `GET /ai-coach/status` and `POST /ai-coach/chat` endpoints; graceful degradation when `ANTHROPIC_API_KEY` not configured; sidebar navigation link
+
+---
+
+## [1.27.0] — 2026-06-22
+
+### Added
+- **Digest Templates (GL-022)**: Admin-managed email digest templates with CRUD; configurable header/footer HTML, accent color, logo, and section selection (new posts, upcoming events, new courses, community stats); template activation (only one active at a time); HTML preview rendering; admin Digests page at `/admin/digests`
+- **Interest Preferences (GL-023)**: Members pick interest categories in Settings > Interests; feed prioritises posts matching selected interests; `UserInterest` model linking users to categories; `GET/PUT /users/me/interests` endpoints; `?prioritize=interests` feed query parameter
+- **Admin Journal Prompts (GL-011 enhancement)**: Journal prompts moved from hardcoded to fully admin-editable; `JournalPromptCategory` and `JournalPrompt` database models; admin CRUD for categories (create, edit, delete, show/hide) and prompts (create, edit, delete, show/hide); category color management; admin page at `/admin/journal-prompts`; 30 default prompts seeded across 5 categories
 - **Adversarial tests SEC-031–044**: 30 tests across 6 new files covering tier self-upgrade bypass, S3 path traversal, upload MIME spoofing, learning group TOCTOU race, event proposal privacy leak, journal input validation, and assessment score manipulation
+
+### Fixed
+- **SEC-031**: Tier self-upgrade bypass — `upgradeTier()` now disabled (throws NotImplementedException) until billing integration
+- **SEC-032**: Tier enum injection — `setTier()` validates against whitelist of valid tier values
+- **SEC-033**: S3 path traversal — local storage validates resolved path stays within upload directory
+- **SEC-034**: Upload MIME spoofing — validates magic bytes match claimed MIME type; blocks dangerous extensions
+- **SEC-035**: Learning group join race condition — wrapped in database transaction to enforce maxMembers
+- **SEC-036**: Learning group data leak — non-members see only public info (name, description, member count)
+- **SEC-037**: Event proposal date array bomb — `@ArrayMaxSize(20)` on proposedDates DTO
+- **SEC-038**: Event proposal vote privacy — non-admin voters see only aggregate counts, not individual votes
+- **SEC-039**: Event proposal vote race condition — wrapped in transaction; validates dateVotes against proposedDates
+- **SEC-040**: Journal content size limit — `@MaxLength(50000)` on journal content field
+- **SEC-041**: Journal mood injection — validates mood against whitelist with `@IsIn(VALID_MOODS)`
+- **SEC-042**: Journal date injection — strict regex validation on date and month parameters
+- **SEC-043**: Assessment question injection — validates each questionId exists in server-side question set
+- **SEC-044**: Assessment score manipulation — validates exact question set match; rejects duplicates
+
+### Changed
+- Journal prompts now read from database instead of hardcoded array; prompt colors come from admin-configured category colors
+
+---
+
+## [1.26.0] — 2026-06-22
+
+### Added
+- **Journal Prompts (GL-011)**: 30 curated daily prompts across 5 categories (Reflection, Gratitude, Leadership, Growth, Challenge); deterministic daily rotation showing 3 prompts per day; clickable prompt cards that populate the journal editor; color-coded category tags; `GET /journal/prompts` endpoint
+- **CSV Export Reports (GL-035)**: Admin-only CSV export endpoints for members, posts, events, and course progress; date range filtering; download via browser blob; admin Reports page at `/admin/reports` with download cards and date pickers
 
 ---
 

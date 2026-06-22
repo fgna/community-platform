@@ -1,8 +1,10 @@
-import { Controller, Get, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Put, Post, Delete, Body, Param, Query, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JournalService } from './journal.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
+import { CreatePromptDto, UpdatePromptDto, CreateCategoryDto, UpdateCategoryDto } from './dto/create-prompt.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('journal')
 @ApiBearerAuth()
@@ -17,11 +19,80 @@ export class JournalController {
     return this.journalService.findAll(user.id, month);
   }
 
+  @Get('prompts')
+  @ApiOperation({ summary: 'Get daily journal prompts' })
+  getDailyPrompts() {
+    return this.journalService.getDailyPrompts();
+  }
+
   @Get('stats')
   @ApiOperation({ summary: 'Get journal streak stats' })
   getStats(@CurrentUser() user: any) {
     return this.journalService.getStats(user.id);
   }
+
+  // ── Admin: Prompt Categories ─────────────────────────────────────────
+
+  @Get('admin/categories')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'List all prompt categories (admin)' })
+  getCategories() {
+    return this.journalService.getCategories();
+  }
+
+  @Post('admin/categories')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create a prompt category (admin)' })
+  createCategory(@Body() dto: CreateCategoryDto) {
+    return this.journalService.createCategory(dto);
+  }
+
+  @Patch('admin/categories/:id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update a prompt category (admin)' })
+  updateCategory(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+    return this.journalService.updateCategory(id, dto);
+  }
+
+  @Delete('admin/categories/:id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete a prompt category (admin)' })
+  deleteCategory(@Param('id') id: string) {
+    return this.journalService.deleteCategory(id);
+  }
+
+  // ── Admin: Prompts ───────────────────────────────────────────────────
+
+  @Get('admin/prompts')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'List all prompts (admin)' })
+  @ApiQuery({ name: 'categoryId', required: false })
+  getPrompts(@Query('categoryId') categoryId?: string) {
+    return this.journalService.getPrompts(categoryId);
+  }
+
+  @Post('admin/prompts')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create a prompt (admin)' })
+  createPrompt(@Body() dto: CreatePromptDto) {
+    return this.journalService.createPrompt(dto);
+  }
+
+  @Patch('admin/prompts/:id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update a prompt (admin)' })
+  updatePrompt(@Param('id') id: string, @Body() dto: UpdatePromptDto) {
+    return this.journalService.updatePrompt(id, dto);
+  }
+
+  @Delete('admin/prompts/:id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete a prompt (admin)' })
+  deletePrompt(@Param('id') id: string) {
+    return this.journalService.deletePrompt(id);
+  }
+
+  // ── User: Journal entries ────────────────────────────────────────────
 
   @Get(':date')
   @ApiOperation({ summary: 'Get journal entry for a specific date' })

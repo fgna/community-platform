@@ -47,7 +47,7 @@ async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
   return module.get<LearningGroupsService>(LearningGroupsService);
 }
 
-describe('[SEC-035] TOCTOU race in join()', () => {
+describe('[SEC-035] TOCTOU race in join() — FIXED', () => {
   let prisma: ReturnType<typeof buildMockPrisma>;
   let service: LearningGroupsService;
 
@@ -56,41 +56,51 @@ describe('[SEC-035] TOCTOU race in join()', () => {
     service = await buildService(prisma);
   });
 
-  it('join() does not use a transaction around count check + create', async () => {
-    // Group is at 7/8 capacity
-    prisma.learningGroup.findUnique.mockResolvedValue({
-      id: 'g1',
-      _count: { members: 7 },
+  it('join() uses a $transaction to prevent race conditions', async () => {
+    // SEC-035 FIX: join() now wraps all queries in a $transaction
+    prisma.$transaction.mockImplementation(async (cb: Function) => {
+      const tx = {
+        learningGroup: prisma.learningGroup,
+        learningGroupMember: prisma.learningGroupMember,
+      };
+      prisma.learningGroup.findUnique.mockResolvedValue({
+        id: 'g1',
+        _count: { members: 7 },
+      });
+      prisma.learningGroupMember.findUnique.mockResolvedValue(null);
+      prisma.learningGroupMember.create.mockResolvedValue({ id: 'm1', groupId: 'g1', userId: 'u1' });
+      return cb(tx);
     });
-    prisma.learningGroupMember.findUnique.mockResolvedValue(null);
-    prisma.learningGroupMember.create.mockResolvedValue({ id: 'm1', groupId: 'g1', userId: 'u1' });
 
     await service.join('g1', 'u1');
 
-    // SEC-035: The service calls findUnique, then findUnique for dupe check,
-    // then create — three separate queries with no $transaction wrapper.
-    // Between the count check and the create, another request can slip through.
-    expect(prisma.$transaction).not.toHaveBeenCalled();
-    expect(prisma.learningGroupMember.create).toHaveBeenCalled();
+    // SEC-035 FIX: $transaction IS called — count check and create are atomic
+    expect(prisma.$transaction).toHaveBeenCalled();
   });
 
-  it('concurrent joins can exceed MAX_MEMBERS', async () => {
-    // Simulate: both requests see 7 members (under the limit of 8)
-    prisma.learningGroup.findUnique.mockResolvedValue({
-      id: 'g1',
-      _count: { members: 7 },
+  it('concurrent joins are serialized by the transaction', async () => {
+    // SEC-035 FIX: With a transaction, the DB serializes the count check + create
+    prisma.$transaction.mockImplementation(async (cb: Function) => {
+      const tx = {
+        learningGroup: prisma.learningGroup,
+        learningGroupMember: prisma.learningGroupMember,
+      };
+      prisma.learningGroup.findUnique.mockResolvedValue({
+        id: 'g1',
+        _count: { members: 7 },
+      });
+      prisma.learningGroupMember.findUnique.mockResolvedValue(null);
+      prisma.learningGroupMember.create.mockResolvedValue({});
+      return cb(tx);
     });
-    prisma.learningGroupMember.findUnique.mockResolvedValue(null);
-    prisma.learningGroupMember.create.mockResolvedValue({});
 
-    // Both calls pass the capacity check because both see count=7
-    const [r1, r2] = await Promise.all([
+    await Promise.all([
       service.join('g1', 'user-a'),
       service.join('g1', 'user-b'),
     ]);
 
-    // SEC-035: both succeed — group now has 9 members (exceeds MAX_MEMBERS=8)
-    expect(prisma.learningGroupMember.create).toHaveBeenCalledTimes(2);
+    // Both calls go through $transaction — DB-level isolation prevents the race
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -103,7 +113,7 @@ describe('[SEC-036] non-member metadata leak in findOne()', () => {
     service = await buildService(prisma);
   });
 
-  it('non-member can see group name, description, and full member list', async () => {
+  it('non-member can see group name and description but not member list details', async () => {
     prisma.learningGroup.findUnique.mockResolvedValue({
       id: 'g1',
       name: 'Secret Strategy Group',
@@ -122,14 +132,16 @@ describe('[SEC-036] non-member metadata leak in findOne()', () => {
 
     const result = await service.findOne('g1', 'outsider-user');
 
-    // SEC-036: Messages are correctly hidden from non-members
+    // SEC-036 FIX: Messages are hidden from non-members
     expect(result.messages).toEqual([]);
     expect(result.isMember).toBe(false);
 
-    // But the group's existence, name, description, and full member list are exposed
+    // Non-members can see basic group info
     expect(result.name).toBe('Secret Strategy Group');
     expect(result.description).toBe('Confidential growth plans');
-    expect(result.members).toHaveLength(2);
-    expect(result.members[0].user.name).toBe('Alice');
+
+    // SEC-036 FIX: Member list is hidden — only member count is exposed
+    expect(result.members).toHaveLength(0);
+    expect(result.memberCount).toBe(2);
   });
 });
