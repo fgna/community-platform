@@ -360,7 +360,7 @@ export function JournalPage() {
                 {/* 2. Must-do tasks */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-primary)' }}>
-                    Was heute erreicht werden muss
+                    Was heute erledigt werden muss
                   </label>
                   <div className="space-y-1.5">
                     {content.mustDoTasks.map((task, i) => (
