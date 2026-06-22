@@ -63,11 +63,9 @@ export default function GetAppPage() {
 
       <div className="text-center space-y-3">
         {apkAvailable === false ? (
-          <div
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <div
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-left"
               style={{
                 background: 'rgba(234,179,8,0.08)',
                 border: '1px solid rgba(234,179,8,0.2)',
@@ -75,8 +73,7 @@ export default function GetAppPage() {
               }}
             >
               <AlertCircle size={16} className="flex-shrink-0" style={{ color: '#eab308' }} />
-              The APK is included in Docker deployments. For dev environments, set
-              NEXT_PUBLIC_APK_URL or build via: <code className="px-1 py-0.5 rounded text-xs" style={{ background: 'rgba(255,255,255,0.06)' }}>cd apps/mobile-android && docker build -t apk-builder . && docker run --rm -v $(pwd):/app apk-builder ./gradlew assembleRelease</code>
+              The mobile app is not yet available for download. Please contact your administrator.
             </div>
           </div>
         ) : (
