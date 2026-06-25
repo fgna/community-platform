@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Flame, Award, BookOpen, Trash2, Loader2, CheckSquare, Square, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Award, BookOpen, Trash2, Loader2, CheckSquare, Square } from 'lucide-react';
 import {
   useJournalEntries,
   useJournalEntry,
@@ -72,48 +72,23 @@ interface SectionFieldProps {
 }
 
 function SectionField({ label, value, onChange, placeholder, rows = 2 }: SectionFieldProps) {
-  const hasValue = value.trim() !== '';
-  const [open, setOpen] = useState(hasValue);
-
-  useEffect(() => {
-    if (hasValue) setOpen(true);
-  }, [hasValue]);
-
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 w-full text-left group"
-      >
-        <ChevronDown
-          size={14}
-          className="transition-transform duration-200 flex-shrink-0"
-          style={{ color: 'var(--theme-primary)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-        />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-primary)' }}>
-          {label}
-        </span>
-        {!open && hasValue && (
-          <span className="text-xs truncate max-w-[200px] ml-1" style={{ color: 'var(--theme-text-muted)' }}>
-            — {value.slice(0, 50)}
-          </span>
-        )}
-      </button>
-      {open && (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={rows}
-          className="w-full p-3 mt-1.5 rounded-lg text-sm leading-relaxed resize-y focus:outline-none focus:ring-1"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid var(--theme-border)',
-            color: 'var(--theme-text)',
-          }}
-        />
-      )}
+    <div className="space-y-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-primary)' }}>
+        {label}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full p-3 rounded-lg text-sm leading-relaxed resize-y focus:outline-none focus:ring-1"
+        style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid var(--theme-border)',
+          color: 'var(--theme-text)',
+        }}
+      />
     </div>
   );
 }
