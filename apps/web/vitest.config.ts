@@ -12,14 +12,17 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      // Only gate on store + lib — components need E2E, not unit tests
-      include: ['src/store/**', 'src/lib/**'],
+      // Gate on store + the specific lib files that have unit tests.
+      // Other lib files (markdown, oauth, query-client, render-post-content,
+      // theme-provider) are exercised via E2E and will be added here as
+      // unit tests are written.
+      include: ['src/store/**', 'src/lib/api-client.ts', 'src/lib/utils.ts'],
       exclude: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
       thresholds: {
-        lines: 50,
-        functions: 50,
-        branches: 40,
-        statements: 50,
+        lines: 70,
+        functions: 60,
+        branches: 60,
+        statements: 70,
       },
     },
   },
