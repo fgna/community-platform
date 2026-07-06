@@ -12,11 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `apps/api/src/redis/redis.module.ts` — global `@Global()` NestJS module providing an `ioredis` client under the `REDIS_CLIENT` injection token; uses `lazyConnect: true` to prevent startup failure when Redis is temporarily unavailable
+- `RELEASE_CHECKLIST.md` — concrete per-release checklist covering pre-release, deployment, post-deployment verification, and rollback steps (HAR-010)
+- `.github/dependabot.yml` — weekly automated dependency updates for npm (grouped by production/development) and GitHub Actions ecosystems (HAR-003)
+- `dependency-audit` CI job — runs `pnpm audit --audit-level=high` on every push/PR; fails CI on high/critical vulnerabilities (HAR-003)
+- Coverage thresholds in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — 50% baseline floor; CI now fails on coverage regression (HAR-004)
+- Section 0 in `scripts/verify-vps-deployment.sh` — six env-var checks before deployment validation (HAR-008)
 
 ### Changed
 - `apps/api/src/auth/auth.service.ts` — three async Redis helpers replace the in-memory Map: `checkLoginAttempts`, `recordFailedAttempt`, `clearLoginAttempts`; all handle Redis errors gracefully with `Logger.warn`
 - `apps/api/src/auth/auth.service.spec.ts` — added `REDIS_CLIENT` mock provider
 - `.github/workflows/ci.yml` — added `redis:7-alpine` service and `REDIS_URL` env var to `test-api` job
+- `PRODUCTION_READINESS.md` — added link to `RELEASE_CHECKLIST.md` in the Reference section
 
 ## [1.35.0] — 2026-07-06
 

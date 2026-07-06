@@ -7,6 +7,17 @@ export default defineConfig({
     root: './',
     include: ['src/**/*.spec.ts'],
     setupFiles: ['./src/test-setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary'],
+      // Baseline floor — raise after measuring with: pnpm test:coverage
+      thresholds: {
+        lines: 20,
+        functions: 20,
+        branches: 30,
+        statements: 20,
+      },
+    },
   },
   plugins: [
     swc.vite({
