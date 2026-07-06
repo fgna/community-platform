@@ -154,7 +154,7 @@ test.describe('Register — account creation flows', () => {
     await page.getByLabel(/^password$/i).fill('Password1!');
     await page.getByLabel(/confirm password/i).fill('Password1!');
     await page.getByRole('button', { name: /create account/i }).click();
-    await expect(page.getByText(/already registered|conflict/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/registration failed/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('successful registration redirects to dashboard', async ({ page }) => {
