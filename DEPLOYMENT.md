@@ -118,7 +118,7 @@ API_PORT=3001
 NODE_ENV=production
 
 # Web
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 
 # CORS (comma-separated list of allowed origins)
@@ -192,7 +192,7 @@ DOMAIN=yourdomain.com
 SSL_EMAIL=you@yourdomain.com
 
 CORS_ORIGINS=https://yourdomain.com
-NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_API_URL=https://yourdomain.com
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 
@@ -321,7 +321,7 @@ SSL_EMAIL=admin@yourdomain.com
 SSL_STAGING=0
 
 CORS_ORIGINS=https://yourdomain.com
-NEXT_PUBLIC_API_URL=https://yourdomain.com/api
+NEXT_PUBLIC_API_URL=https://yourdomain.com
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 
@@ -358,7 +358,7 @@ Add this to a cron job for automatic renewal:
 
 | URL path      | Proxied to    | Notes                                         |
 |---------------|---------------|-----------------------------------------------|
-| `/api/*`      | `api:3001`    | Strips `/api` prefix                          |
+| `/api/*`      | `api:3001`    | Preserves `/api` prefix                       |
 | `/uploads/*`  | `api:3001`    | Static file caching (7 days)                  |
 | `/*`          | `web:3000`    | Next.js frontend                              |
 

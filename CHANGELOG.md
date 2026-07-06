@@ -150,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **GROWTH Self-Assessment**: 30-question assessment across 6 leadership dimensions (Growth mindset, Rhythms, Ownership, Willpower, Teamwork, Holistic balance); SVG radar chart visualization; dimension score breakdown; assessment history; retake flow at `/assessment`
 - **Event Proposals**: Admin-created event proposals with topic voting and date preference selection; members upvote proposals and pick preferred dates from options; date vote distribution display; admin can close/delete proposals; `/event-proposals` page
-- **S3 File Uploads**: Unified upload service supporting S3-compatible storage (MinIO, DigitalOcean Spaces, AWS) with local disk fallback; image uploads (5MB max) and file uploads (20MB max); drag-and-drop `ImageUpload` component with preview; `Upload` model tracking metadata
+- **S3 File Uploads**: Unified upload service supporting S3-compatible storage (MinIO, DigitalOcean Spaces, AWS) with local disk fallback; image uploads (10MB max) and file uploads (50MB max); drag-and-drop `ImageUpload` component with preview; `Upload` model tracking metadata
 
 ### Fixed
 - **SUCCESS_STORY post type rejected by API** — Added `SUCCESS_STORY` to `PostTypeEnum` in create-post DTO so the validation pipe accepts the new type
