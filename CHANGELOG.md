@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OPS-011**: Refresh tokens now set as httpOnly, Secure, SameSite=Strict cookies by the API on login, register, and token refresh; browser sends them automatically so JS never needs to read the value. The JWT refresh strategy accepts cookie-first with request-body fallback for non-browser clients.
 
 ### Added
+- `RELEASE_CHECKLIST.md` — concrete per-release checklist covering pre-release, deployment, post-deployment verification, and rollback steps (HAR-010)
+- `.github/dependabot.yml` — weekly automated dependency updates for npm (grouped by production/development) and GitHub Actions ecosystems (HAR-003)
+- `dependency-audit` CI job — runs `pnpm audit --audit-level=high` on every push/PR; fails CI on high/critical vulnerabilities (HAR-003)
+- Coverage thresholds in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — scoped include + 50–60% baseline floor; CI now fails on coverage regression (HAR-004)
+- Section 0 in `scripts/verify-vps-deployment.sh` — six env-var checks before deployment validation (HAR-008)
+
+### Changed
+- `PRODUCTION_READINESS.md` — added link to `RELEASE_CHECKLIST.md` in the Reference section
+
+### Added
 - **OPS-012**: Structured JSON logging via `nestjs-pino` — production output is machine-readable JSON; development uses pino-pretty for readable output. Authorization and Cookie headers are redacted from HTTP access logs.
 - **HAR-008 / Q-007 (baseline)**: Coverage thresholds added to both vitest configs. API gated on 4 service files (50% floor). Web gated on store + lib layer (60% floor). Path to 90% overall after measuring actuals.
 - **HAR-008**: `scripts/verify-vps-deployment.sh` extended with Section 0 — env-var pre-flight checks (JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS, NODE_ENV, Swagger disabled).

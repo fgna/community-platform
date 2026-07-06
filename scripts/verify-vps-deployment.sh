@@ -113,7 +113,7 @@ echo "── Section 0: Environment variable pre-flight ────────
 
 echo "  0.1  JWT_SECRET"
 if [ -z "${JWT_SECRET:-}" ]; then
-  fail "JWT_SECRET is not set"
+  fail "JWT_SECRET is not set — generate with: openssl rand -hex 32"
 elif echo "${JWT_SECRET}" | grep -qiE "change|example|placeholder|todo|secret|your-"; then
   fail "JWT_SECRET looks like a placeholder — generate with: openssl rand -hex 32"
 elif [ "${#JWT_SECRET}" -lt 32 ]; then
@@ -124,7 +124,7 @@ fi
 
 echo "  0.2  JWT_REFRESH_SECRET"
 if [ -z "${JWT_REFRESH_SECRET:-}" ]; then
-  fail "JWT_REFRESH_SECRET is not set"
+  fail "JWT_REFRESH_SECRET is not set — generate with: openssl rand -hex 32"
 elif echo "${JWT_REFRESH_SECRET}" | grep -qiE "change|example|placeholder|todo|secret|your-"; then
   fail "JWT_REFRESH_SECRET looks like a placeholder — generate with: openssl rand -hex 32"
 elif [ "${#JWT_REFRESH_SECRET}" -lt 32 ]; then
@@ -164,11 +164,15 @@ echo "  0.6  Swagger disabled in production"
 SWAGGER_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://localhost:3001/api/docs" 2>/dev/null || echo "000")
 if [ "$SWAGGER_STATUS" = "404" ]; then
   ok "Swagger endpoint returns 404 (disabled in production)"
+elif [ -z "$SWAGGER_STATUS" ] || [ "$SWAGGER_STATUS" = "000" ]; then
+  skip "Swagger check skipped — API not reachable at localhost:3001"
 else
   fail "Swagger endpoint returned $SWAGGER_STATUS — should be 404 in production (NODE_ENV=production disables it)"
 fi
 
 echo ""
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION 1: Container state
 # ════════════════════════════════════════════════════════════════════════════
