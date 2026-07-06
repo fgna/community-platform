@@ -15,18 +15,18 @@ android {
         versionName = "1.0"
     }
 
-    val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
-    val keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
-    val canSign = keystorePassword != null && keyPassword != null
+    val envStorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
+    val envKeyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
+    val canSign = envStorePassword != null && envKeyPassword != null
 
     if (canSign) {
         signingConfigs {
             create("release") {
                 val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as? String
                 storeFile = keystorePath?.let { file(it) } ?: file("release.keystore")
-                storePassword = keystorePassword
+                storePassword = envStorePassword
                 keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: "community"
-                keyPassword = keyPassword
+                keyPassword = envKeyPassword
             }
         }
     }
