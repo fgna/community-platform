@@ -3,8 +3,14 @@
 # Run after deployment or after `docker compose up` to catch basic issues.
 #
 # Usage:
+#   # Dev mode (direct):
 #   ./scripts/smoke-test.sh
+#
+#   # Production mode (through nginx proxy):
 #   API_URL=https://yourdomain.com WEB_URL=https://yourdomain.com ./scripts/smoke-test.sh
+#
+# In proxy mode, API_URL and WEB_URL point to the same domain — nginx routes
+# /health and /api/* to the API and everything else to the web frontend.
 #
 # Exit codes: 0 = all checks passed, 1 = one or more checks failed
 
@@ -78,12 +84,32 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "community_api"; then
   if echo "$MIGRATE_OUT" | grep -q "Database schema is up to date"; then
     ok "Database migrations are up to date"
   elif echo "$MIGRATE_OUT" | grep -q "pending"; then
-    fail "There are pending database migrations — run: make migrate"
+    fail "There are pending database migrations — run: docker compose exec api npx prisma migrate deploy"
   else
     echo "  [SKIP] Could not determine migration status"
   fi
 else
   echo "  [SKIP] community_api container not running — skipping migration check"
+fi
+
+# ── 6. Nginx /health route goes to API, not web (proxy mode) ─────────────────
+echo "6. Nginx /health routing"
+if [ "$API_URL" != "http://localhost:3001" ]; then
+  HEALTH_CONTENT=$(curl -sf --max-time 10 "$API_URL/health" 2>/dev/null || echo "")
+  if [ -z "$HEALTH_CONTENT" ]; then
+    fail "GET $API_URL/health returned no response"
+  elif echo "$HEALTH_CONTENT" | grep -qi "<!DOCTYPE"; then
+    fail "/health returned HTML — nginx is routing /health to web, not to the API"
+  else
+    STATUS=$(echo "$HEALTH_CONTENT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+    if [ "$STATUS" = "ok" ] || [ "$STATUS" = "degraded" ]; then
+      ok "/health via proxy returns API JSON: $STATUS"
+    else
+      fail "/health via proxy returned unexpected content: $HEALTH_CONTENT"
+    fi
+  fi
+else
+  echo "  [SKIP] Not in proxy mode (API_URL=http://localhost:3001) — skipping nginx routing check"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────

@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **OPS-012**: Structured JSON logging via `nestjs-pino` — production output is machine-readable JSON; development uses pino-pretty for readable output. Authorization and Cookie headers are redacted from HTTP access logs.
-- **Q-007 (baseline)**: Coverage thresholds added to both vitest configs. API: 65% lines/functions/statements, 55% branches. Web (store + lib layer): 50% lines/functions/statements, 40% branches. Path to 90% overall after measuring actuals.
+- **HAR-008 / Q-007 (baseline)**: Coverage thresholds added to both vitest configs. API gated on 4 service files (50% floor). Web gated on store + lib layer (60% floor). Path to 90% overall after measuring actuals.
+- **HAR-008**: `scripts/verify-vps-deployment.sh` extended with Section 0 — env-var pre-flight checks (JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS, NODE_ENV, Swagger disabled).
 - Web unit tests for `auth.store`, `theme.store`, `utils`, and `api-client` (Q-001 rework — prior backlog entry was incorrectly marked done).
 - `withCredentials: true` on the web API client so the httpOnly refresh cookie is included in cross-origin requests.
 - `cookie-parser` middleware in API bootstrap.
@@ -29,15 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `scripts/preflight-production.sh` — validates `.env`, secrets strength, CORS, NODE_ENV, demo seed guard, Docker availability, and compose override file before deploying
 - `scripts/production-up.sh` — safe deployment wrapper that runs preflight → build → migrate → verify in sequence; explicitly excludes `docker-compose.override.yml`
-- `scripts/verify-vps-deployment.sh` — post-deployment smoke test covering env vars, container health, API/web reachability, Swagger disabled, security headers, PostgreSQL, uploads writability, and nginx TLS/redirect checks
+- `scripts/verify-vps-deployment.sh` — comprehensive VPS deployment verification script covering container state, port exposure, API/web routing through nginx, TLS, database migration status, demo account check, uploads, security headers, seed guard, backup smoke test, and non-root container users
+- `scripts/restore.sh` — Docker-based database restore script; drops/recreates DB, runs pg_restore inside the postgres container, restarts the API, and re-applies migrations
 - `scripts/backup.sh` — point-in-time PostgreSQL backup via `pg_dump -Fc` with automatic pruning (keeps 30 most recent)
 - `scripts/restore-test.sh` — verifies a backup is restorable into a temporary test DB without touching the live database
 - `scripts/create-admin.sh` — bootstrap first admin user in production without running the demo seed
 - `.env.development.example` — development defaults separate from the production template
 
 ### Changed
+- `apps/web/Dockerfile` — removed Android SDK build stage (`eclipse-temurin:21-jdk-jammy`) that downloaded ~1.5 GB from Google's servers unconditionally; APK placeholder is now created at build time if the file is absent (CI pre-builds the APK separately)
+- `scripts/smoke-test.sh` — added nginx `/health` routing verification in proxy mode
+- `nginx/default-no-ssl.conf.template` — added upload caching headers (`expires 7d`, `Cache-Control: public, immutable`) to match the SSL template
 - `docker-compose.override.yml` — added documentation note that production deployments must explicitly exclude it with `-f docker-compose.yml`
 - CI `docker-smoke` job — added required env vars (`POSTGRES_PASSWORD`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`) now that compose uses `:?` required expansion
+- `DEPLOYMENT.md` — added Backup and Restore section with full Docker-based restore procedure
+- `PRODUCTION_READINESS.md` — added Deployment Verification section referencing `verify-vps-deployment.sh`
 
 ---
 

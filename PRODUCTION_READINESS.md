@@ -77,7 +77,7 @@ Complete these before handling real user data.
   # Add to crontab — daily at 2am
   0 2 * * *  cd /path/to/community-platform && docker compose --profile backup run --rm backup
   ```
-- [ ] Test restore from backup: `pg_restore -d community_platform /backups/community_YYYYMMDD.dump`
+- [ ] Test restore from backup: `./scripts/restore.sh data/backups/community_YYYYMMDD_HHMMSS.dump`
 - [ ] Store backups off-server (S3, Backblaze, rsync to second host)
 
 ### Certificate Renewal
@@ -91,6 +91,13 @@ Complete these before handling real user data.
 - [ ] Subscribe to Let's Encrypt expiry notifications (automatic with certbot)
 - [ ] Configure uptime monitoring (UptimeRobot, Freshping, etc.) on `https://yourdomain.com`
 - [ ] Review container logs after first deployment: `docker compose logs -f`
+
+### Deployment Verification
+- [ ] Run the VPS verification script after each deployment:
+  ```bash
+  DOMAIN=yourdomain.com ./scripts/verify-vps-deployment.sh
+  ```
+- [ ] All checks must pass (no `[FAIL]`) before serving real users
 
 ### Update Procedure
 - [ ] Document your update procedure:

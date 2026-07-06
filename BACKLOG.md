@@ -11,10 +11,210 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 
 | ID | Item | Priority | Size | Status |
 |----|------|----------|------|--------|
-| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[~]` |
+| HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[x]` |
+| HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[ ]` |
+| HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[ ]` |
+| HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[~]` |
+| HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[x]` |
+| HAR-006 | Backup/restore operationally verified — restore script + docs | P1 | M | `[x]` |
+| HAR-007 | Docker API image size — remove devDeps from production stage | P2 | M | `[ ]` |
+| HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
+| HAR-009 | Documentation accuracy pass | P2 | M | `[ ]` |
+| HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[ ]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
+
+---
+
+## Production Hardening
+
+Raises the platform from deployable beta to small-scale production-ready. Items are ordered by implementation priority — do not add product features; do not mark items complete without code + test evidence.
+
+### HAR-001 — httpOnly Secure cookie auth  `[ ]` P1 · L
+
+**Problem:** Access and refresh tokens are stored in Zustand persisted to `localStorage` (key `community-auth`). Any XSS can steal both. `auth-session` and `user-role` cookies are non-`HttpOnly` and lack `Secure`.
+
+**Goal:** Move refresh token to an `httpOnly; Secure; SameSite=Lax` cookie managed server-side. Keep minimal display state in Zustand (no long-lived secrets).
+
+**Requirements:**
+- Backend: add `cookie-parser`; set refresh-token cookie on login/register; read cookie on `/auth/refresh`; clear cookie on logout
+- Frontend: remove `refreshToken` from Zustand persist; set `withCredentials: true` on axios client; Zustand keeps only `user`, `accessToken` (in memory), `isAuthenticated`
+- Logout must clear cookie server-side
+- Refresh rotation must still work
+- Next.js middleware route guards must still work
+- E2E test: login → authenticated page → token expiry → auto-refresh → logout
+
+**Acceptance criteria:**
+- `refreshToken` absent from `localStorage` after login
+- `Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Lax` in login response
+- Login, refresh, logout all work
+- `SECURITY.md` updated to describe cookie model
+- `PRODUCTION_READINESS.md` httpOnly item marked `[x]`
+
+---
+
+### HAR-002 — Redis-backed brute-force protection  `[ ]` P1 · M
+
+**Problem:** `loginAttempts` is an in-memory `Map` on `AuthService` (`auth.service.ts` lines 24–27). Resets on any restart. Does not survive scale-out.
+
+**Goal:** Move per-email failed-attempt tracking to Redis with TTL.
+
+**Requirements:**
+- Use Redis `INCR` + `EXPIRE` for per-email failed-attempt counters
+- Track both email-based and IP-based attempts
+- TTL must match existing 15-minute window
+- Lockout after 10 attempts (same threshold) must be deterministic and tested
+- Do not leak whether an email exists (same error message for unknown email and locked account)
+- Keep existing global `@nestjs/throttler` layer
+
+**Acceptance criteria:**
+- Restarting API container does not reset active lockouts
+- Unit/integration tests cover: repeated failure → lockout → TTL expiry → success resets counter
+- `SECURITY.md` updated
+- `PRODUCTION_READINESS.md` Redis brute-force item marked `[x]`
+
+---
+
+### HAR-003 — Dependency audit in CI + Dependabot  `[ ]` P1 · S
+
+**Problem:** `pnpm audit` is listed as optional in `PRODUCTION_READINESS.md`; no Dependabot config exists.
+
+**Tasks:**
+1. Add CI job to `.github/workflows/ci.yml`: `pnpm audit --audit-level high` (fail on high/critical; document any known moderate findings)
+2. Create `.github/dependabot.yml` — npm/pnpm ecosystem (weekly, grouped minor/patch) + GitHub Actions ecosystem
+
+**Acceptance criteria:**
+- CI fails on newly introduced high/critical npm vulnerabilities
+- `.github/dependabot.yml` exists and is valid
+- `SECURITY.md` / `PRODUCTION_READINESS.md` audit item marked `[x]`
+
+---
+
+### HAR-004 — Coverage gates enforced in CI  `[ ]` P1 · S
+
+**Problem:** `vitest.config.ts` has no `coverage.thresholds`. CI collects coverage but never fails on regression. README and BACKLOG (Q-007) both note this is unresolved.
+
+**Tasks:**
+1. Run `pnpm test:coverage` on API and web; record actual coverage numbers
+2. Set thresholds at ≤ current baseline (never exceed current; goal is to prevent regression)
+3. CI must fail below thresholds
+
+**Acceptance criteria:**
+- `pnpm test:coverage` fails when coverage drops below configured thresholds
+- CI fails below threshold
+- README status table updated: "Coverage gates — Enforced"
+- Q-007 marked `[x]`
+
+---
+
+### HAR-005 — Production deployment safety  `[ ]` P1 · S
+
+**Problem:** `docker compose up` (no `-f`) auto-loads `docker-compose.override.yml` and exposes ports 3001 and 3000 on all interfaces. Easy to misuse on a production server.
+
+**Tasks — Option B (preferred):** Rename `docker-compose.override.yml` → `docker-compose.dev.yml`
+- `docker compose up` no longer auto-loads it (production safe by default)
+- Local dev command: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`
+- Update `DEPLOYMENT.md`, `README.md`, CI workflows
+
+**Tasks — Option A:** Create `scripts/deploy-production.sh`
+- Requires `.env` to exist
+- Validates `JWT_SECRET`, `JWT_REFRESH_SECRET`, `POSTGRES_PASSWORD` are set and not default values
+- Validates `CORS_ORIGINS` is not `*`
+- Runs `docker compose -f docker-compose.yml --profile proxy up --build -d`
+- Runs `docker compose exec api npx prisma migrate deploy`
+- Prints verification command
+
+**Acceptance criteria:**
+- Plain `docker compose up` no longer exposes api/web ports to host
+- Local dev still works via documented command
+- `scripts/deploy-production.sh` validates secrets and runs production compose
+- `scripts/verify-vps-deployment.sh` still valid
+- `DEPLOYMENT.md` updated
+
+---
+
+### HAR-006 — Backup/restore operationally verified  `[x]` P1 · M
+
+**Completed:** `scripts/restore.sh` created (Docker-based, with pg_terminate_backend, drop/recreate, pg_restore, migration re-apply). `DEPLOYMENT.md` has full backup and restore procedure. `PRODUCTION_READINESS.md` references `scripts/restore.sh`.
+
+**Remaining:** Verify on a Docker-enabled host; `PRODUCTION_READINESS.md` restore item should be ticked after live test.
+
+---
+
+### HAR-007 — Docker API image optimization  `[ ]` P2 · M
+
+**Problem:** `apps/api/Dockerfile` production stage copies full `node_modules` from the `deps` stage (including devDependencies like `@nestjs/cli`, Vitest, etc.) because Prisma client generation requires `prisma` as a devDep. Image is larger and carries unnecessary tooling.
+
+**Investigate:**
+1. Generate Prisma client in `builder` stage, then copy generated client + production deps only
+2. `pnpm deploy --prod` in monorepo context
+3. Manual copy of `dist/`, `node_modules/.prisma/`, `prisma/schema.prisma`, `prisma/migrations/`, and `node_modules` filtered to production only
+
+**Acceptance criteria:**
+- `docker build -f apps/api/Dockerfile .` succeeds
+- `docker compose up --build -d --wait` succeeds
+- API health check passes
+- `docker exec community_api npx prisma migrate deploy` works
+- Final image smaller than current (document trade-offs if full optimization is not feasible)
+
+---
+
+### HAR-008 — VPS verification script  `[~]` P1 · M
+
+**In progress** (PR #44 open). Script at `scripts/verify-vps-deployment.sh`.
+
+**Completed checks:** container state, port exposure, direct API health, nginx routing, TLS expiry, HSTS, migration status, Postgres not exposed, demo accounts, uploads writable, security headers, seed guard, backup smoke test, non-root users.
+
+**Still to add (from P8 spec):**
+- JWT secrets not placeholder/default values
+- `POSTGRES_PASSWORD` not default
+- `CORS_ORIGINS` does not contain `*`
+- `/api/docs` unavailable when `NODE_ENV=production`
+
+**Acceptance criteria:**
+- Script exits non-zero on critical failures
+- All checks from P8 spec implemented
+- `README.md` and `PRODUCTION_READINESS.md` direct operators to run script after deploy
+
+---
+
+### HAR-009 — Documentation accuracy pass  `[ ]` P2 · M
+
+**Files to review:** `README.md`, `FEATURE_STATUS.md`, `PRODUCTION_READINESS.md`, `SECURITY.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, `BACKLOG.md`
+
+**Rules:**
+- Do not claim "stable" without test + code evidence
+- Mark experimental modules (AI Coach, Stripe, OAuth) as such
+- Keep status "deployable beta" until HAR-001 through HAR-005 are complete
+- Remove/downgrade claims not backed by current code
+- All deployment instructions must use safe production compose command
+- Demo credentials marked local/demo only
+
+**Acceptance criteria:**
+- README status table matches `FEATURE_STATUS.md`
+- Security claims match implementation (especially after HAR-001/HAR-002)
+- Production checklist contains only current gaps
+- No outdated platform references (Railway/Vercel) unless marked historical
+
+---
+
+### HAR-010 — Release checklist  `[ ]` P2 · S
+
+**Deliverable:** `RELEASE_CHECKLIST.md` — concrete, command-based checklist. No vague "verify everything works" steps.
+
+**Contents:**
+- `git pull` + `pnpm install`
+- `pnpm lint && pnpm typecheck`
+- `pnpm test && pnpm test:coverage` (must pass gates)
+- `pnpm build`
+- Docker build + smoke test
+- Backup before deploy
+- Deploy: `./scripts/deploy-production.sh` (or documented compose command)
+- `docker compose exec api npx prisma migrate deploy`
+- `DOMAIN=<your-domain> ./scripts/verify-vps-deployment.sh`
+- Monitor logs 5 min post-deploy
 
 ---
 
