@@ -374,6 +374,7 @@ Add this to a cron job for automatic renewal:
 
 | URL path      | Proxied to    | Notes                                         |
 |---------------|---------------|-----------------------------------------------|
+| `/health`     | `api:3001`    | API health check (exact match)                |
 | `/api/*`      | `api:3001`    | Preserves `/api` prefix                       |
 | `/uploads/*`  | `api:3001`    | Static file caching (7 days)                  |
 | `/*`          | `web:3000`    | Next.js frontend                              |

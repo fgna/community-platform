@@ -20,7 +20,7 @@ These are enforced automatically — no operator action needed.
 - [x] nginx reverse proxy with TLS 1.2+, HSTS, OCSP stapling (when proxy profile active)
 - [x] Non-root container user (`nestjs`, uid 1001)
 - [x] Health checks on all services — Docker Compose waits for readiness before starting dependents
-- [x] Automatic database migrations run via `entrypoint.sh` on API container start
+- [x] Production-safe migration command documented: `docker compose exec api npx prisma migrate deploy`
 - [x] API Swagger UI disabled in production (`NODE_ENV=production`)
 
 ---
