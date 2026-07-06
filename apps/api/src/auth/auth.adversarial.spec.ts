@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { InvitesService } from '../invites/invites.service';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -44,6 +45,13 @@ const mockInvites = {
   consumeInvite: vi.fn(),
 };
 
+const mockRedis = {
+  get: vi.fn().mockResolvedValue(null),
+  incr: vi.fn().mockResolvedValue(1),
+  expire: vi.fn().mockResolvedValue(1),
+  del: vi.fn().mockResolvedValue(1),
+};
+
 async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
   const module = await Test.createTestingModule({
     providers: [
@@ -51,6 +59,7 @@ async function buildService(prisma: ReturnType<typeof buildMockPrisma>) {
       { provide: PrismaService, useValue: prisma },
       { provide: JwtService, useValue: mockJwt },
       { provide: InvitesService, useValue: mockInvites },
+      { provide: REDIS_CLIENT, useValue: mockRedis },
     ],
   }).compile();
   return module.get<AuthService>(AuthService);
