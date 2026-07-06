@@ -105,7 +105,7 @@ Get any user's public profile (includes follow status for current user).
 ### POST /users/me/avatar
 Upload an avatar image. Accepts `multipart/form-data` with a `file` field.
 - Allowed types: JPEG, PNG, GIF, WebP
-- Max size: 5 MB
+- Max size: 10 MB
 - Magic-byte validation ensures file content matches declared MIME type
 
 **Response 200:**
@@ -346,7 +346,7 @@ Anonymize and deactivate account (GDPR Article 17).
 | 401 | Unauthorized — missing or invalid token |
 | 403 | Forbidden — insufficient permissions |
 | 404 | Not Found |
-| 409 | Conflict — e.g., email already registered |
+| 409 | Conflict — e.g., duplicate resource |
 | 429 | Too Many Requests — rate limit exceeded |
 | 500 | Internal Server Error |
 
