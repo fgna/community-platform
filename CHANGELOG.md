@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.0] — 2026-07-06
+
+### Added
+- `scripts/restore.sh` — Docker-based database restore script; drops/recreates DB, runs pg_restore inside the postgres container, restarts the API, and re-applies migrations
+- `scripts/verify-vps-deployment.sh` — comprehensive VPS deployment verification script covering container state, port exposure, API/web routing through nginx, TLS, database migration status, demo account check, uploads, security headers, seed guard, backup smoke test, and non-root container users
+
+### Changed
+- `apps/web/Dockerfile` — removed Android SDK build stage (`eclipse-temurin:21-jdk-jammy`) that downloaded ~1.5 GB from Google's servers unconditionally; APK placeholder is now created at build time if the file is absent (CI pre-builds the APK separately)
+- `scripts/smoke-test.sh` — added check 6: nginx `/health` routing verification in proxy mode (confirms the response is API JSON, not Next.js HTML); improved usage comment to explain proxy mode; fixed migration fail message to reference the correct Docker command
+- `nginx/default-no-ssl.conf.template` — added upload caching headers (`expires 7d`, `Cache-Control: public, immutable`) to match the SSL template
+- `DEPLOYMENT.md` — added Backup and Restore section with full Docker-based restore procedure and reference to `scripts/restore.sh`
+- `PRODUCTION_READINESS.md` — replaced bare `pg_restore` host command with `./scripts/restore.sh` Docker-based restore; added Deployment Verification section referencing `verify-vps-deployment.sh`
+
 ## [1.34.0] — 2026-06-22
 
 ### Changed

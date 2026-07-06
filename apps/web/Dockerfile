@@ -1,21 +1,11 @@
-# Build context: repo root (docker compose -f apps/web/Dockerfile .)
-
-# ─── Stage 0: Build Android APK ─────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-jammy AS apk-builder
-ENV ANDROID_HOME=/opt/android-sdk
-ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
-    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
-         -O /tmp/cmdline-tools.zip && \
-    unzip -q /tmp/cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools && \
-    mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && \
-    rm /tmp/cmdline-tools.zip
-RUN yes | sdkmanager --licenses && \
-    sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
-WORKDIR /app
-COPY apps/mobile-android/ ./
-RUN chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+# Build context: repo root (docker build -f apps/web/Dockerfile .)
+#
+# APK handling:
+#   The Android APK is built separately (see apps/mobile-android and the
+#   build-apk CI job). Before running this Docker build in CI, download the
+#   APK artifact to apps/web/public/app/community.apk. In self-hosted
+#   deployments the file is absent — a placeholder is created automatically
+#   so the build succeeds without any Android toolchain.
 
 # ─── Stage 1: Node base ─────────────────────────────────────────────────────
 FROM node:20-alpine AS base
@@ -37,8 +27,12 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
-# Copy built APK into public directory before Next.js build
-COPY --from=apk-builder /app/app/build/outputs/apk/release/app-release.apk ./apps/web/public/app/community.apk
+# Ensure the APK download directory exists and has a placeholder if the real
+# APK was not provided in the build context (self-hosted / local build path).
+# CI provides the real APK by downloading the build-apk artifact beforehand.
+RUN mkdir -p apps/web/public/app && \
+    test -f apps/web/public/app/community.apk || \
+    touch apps/web/public/app/community.apk
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1

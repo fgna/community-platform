@@ -403,7 +403,7 @@ NGINX_CONF_TEMPLATE=default-no-ssl.conf.template docker compose --profile proxy 
 ```bash
 # Apply pending migrations (production-safe, never resets data)
 pnpm db:migrate
-# or in Docker: docker compose exec api pnpm prisma migrate deploy
+# or in Docker: docker compose exec api npx prisma migrate deploy
 
 # Seed initial data
 pnpm db:seed
@@ -416,6 +416,78 @@ cd apps/api && pnpm prisma migrate reset
 
 # Regenerate Prisma client after schema change
 cd apps/api && pnpm prisma generate
+```
+
+---
+
+## Backup and restore
+
+### Taking a backup
+
+The `backup` Compose profile runs `pg_dump -Fc` inside a disposable container and writes a timestamped dump file to `${DATA_DIR:-./data}/backups/`.
+
+```bash
+# Run once manually
+docker compose --profile backup run --rm backup
+
+# Dump lands at:
+ls -lh data/backups/
+```
+
+Add to crontab for daily automated backups:
+
+```bash
+# Daily backup at 2am (add via: crontab -e)
+0 2 * * *  cd /home/deploy/community-platform && docker compose --profile backup run --rm backup
+```
+
+Store backups off-server (S3, Backblaze, rsync) so they survive server failure.
+
+### Restoring from a backup
+
+Use the provided restore script — it stops the API, drops and recreates the database, runs `pg_restore`, restarts the API, and re-applies migrations:
+
+```bash
+./scripts/restore.sh data/backups/community_20260706_020000.dump
+```
+
+Or restore manually:
+
+```bash
+DUMP=data/backups/community_20260706_020000.dump
+
+# 1. Stop the API to prevent writes during restore
+docker compose stop api
+
+# 2. Terminate active connections and drop the database
+docker exec community_postgres sh -c "
+  PGPASSWORD='\$POSTGRES_PASSWORD' psql -U postgres -d postgres \
+    -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'community_platform';\"
+  PGPASSWORD='\$POSTGRES_PASSWORD' psql -U postgres -d postgres \
+    -c \"DROP DATABASE IF EXISTS community_platform;\"
+  PGPASSWORD='\$POSTGRES_PASSWORD' psql -U postgres -d postgres \
+    -c \"CREATE DATABASE community_platform OWNER postgres;\"
+"
+
+# 3. Copy dump into container and restore
+docker cp "$DUMP" community_postgres:/tmp/restore.dump
+docker exec community_postgres sh -c "
+  PGPASSWORD='\$POSTGRES_PASSWORD' pg_restore \
+    --no-owner --role=postgres \
+    --username=postgres --dbname=community_platform \
+    --host=localhost /tmp/restore.dump
+  rm /tmp/restore.dump
+"
+
+# 4. Restart API and apply any pending migrations
+docker compose start api
+docker compose exec api npx prisma migrate deploy
+```
+
+After restoring, run the smoke test to verify the instance is healthy:
+
+```bash
+API_URL=https://yourdomain.com WEB_URL=https://yourdomain.com ./scripts/smoke-test.sh
 ```
 
 ---
