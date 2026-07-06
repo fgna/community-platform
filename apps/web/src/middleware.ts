@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { randomUUID } from 'crypto';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health'];
 const AUTH_PATHS = ['/login', '/register'];
 const ADMIN_PATHS = ['/admin'];
 
 function withRequestId(response: NextResponse, request: NextRequest): NextResponse {
-  const requestId = request.headers.get('x-request-id') || randomUUID();
+  // crypto.randomUUID() is available globally in the Edge Runtime (Web Crypto API)
+  const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
   response.headers.set('x-request-id', requestId);
   return response;
 }
