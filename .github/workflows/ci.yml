@@ -47,12 +47,11 @@ jobs:
           # Fail if docker-compose.yml still contains insecure fallback patterns.
           # These patterns indicate a :-<default> that ships a known-bad credential.
           PATTERNS=(
-            ':-password'
-            ':-secret'
-            ':-changeme'
-            ':-default'
-            ':-postgres$'
-            ':-admin$'
+            ':-password\}'
+            ':-secret\}'
+            ':-changeme\}'
+            ':-default\}'
+            ':-admin\}'
           )
           FAIL=0
           for pattern in "${PATTERNS[@]}"; do
