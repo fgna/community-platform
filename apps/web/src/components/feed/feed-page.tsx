@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PostCard } from './post-card';
 import { Loader2, Send, Eye, PenLine, Clock, TrendingUp, X, HelpCircle, Megaphone, Hand, MessageSquare, Trophy } from 'lucide-react';
 import { getInitials } from '@community/shared';
+import DOMPurify from 'dompurify';
 import { renderMarkdown, extractHashtags } from '@/lib/markdown';
 
 const POST_TYPE_TABS = [
@@ -131,7 +132,7 @@ export function FeedPage() {
                         border: '1px solid var(--theme-border)',
                         color: 'var(--theme-text)',
                       }}
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(content) || '<span style="opacity:0.4">Nothing to preview</span>' }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMarkdown(content) || '<span style="opacity:0.4">Nothing to preview</span>') }}
                     />
                   ) : (
                     <Textarea

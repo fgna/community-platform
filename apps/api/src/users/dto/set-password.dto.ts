@@ -5,6 +5,8 @@ export class SetPasswordDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MinLength(1)
+  @MaxLength(128)
   currentPassword?: string;
 
   @ApiProperty()

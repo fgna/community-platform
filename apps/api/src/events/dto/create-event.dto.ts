@@ -25,6 +25,8 @@ export class CreateEventDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   location?: string;
 
   @ApiPropertyOptional()

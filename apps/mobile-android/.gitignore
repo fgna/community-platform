@@ -2,4 +2,4 @@
 build/
 local.properties
 *.apk
-!app/release.keystore
+release.keystore

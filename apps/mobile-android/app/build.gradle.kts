@@ -17,10 +17,13 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = "changeme"
-            keyAlias = "community"
-            keyPassword = "changeme"
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as? String
+            storeFile = keystorePath?.let { file(it) } ?: file("release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
+                ?: throw GradleException("KEYSTORE_PASSWORD environment variable or gradle property must be set for release builds")
+            keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: "community"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
+                ?: throw GradleException("KEY_PASSWORD environment variable or gradle property must be set for release builds")
         }
     }
 
