@@ -18,7 +18,7 @@ function validateConfig() {
   }
 
   if (process.env.NODE_ENV === 'production') {
-    const placeholders = ['change-me', 'changeme', 'your-', 'example', 'placeholder', 'todo', 'secret'];
+    const placeholders = ['change-me', 'changeme', 'your-secret', 'your-jwt', 'example', 'placeholder', 'todo', 'insert-', 'replace-', 'put-your'];
     for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET']) {
       const val = process.env[key] ?? '';
       if (placeholders.some((p) => val.toLowerCase().includes(p))) {
