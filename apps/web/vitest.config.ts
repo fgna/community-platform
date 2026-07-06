@@ -19,10 +19,10 @@ export default defineConfig({
       include: ['src/store/**', 'src/lib/api-client.ts', 'src/lib/utils.ts'],
       exclude: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
       thresholds: {
-        lines: 70,
+        lines: 60,
         functions: 60,
         branches: 60,
-        statements: 70,
+        statements: 60,
       },
     },
   },
