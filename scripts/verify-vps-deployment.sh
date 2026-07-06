@@ -7,15 +7,22 @@
 # Works in two modes:
 #   - Core mode (default): verifies api, web, postgres, redis — no nginx required.
 #   - Proxy mode: additionally verifies nginx routing, TLS, and security headers.
-#     Proxy mode activates automatically when DOMAIN is set to a real hostname AND
-#     the community_nginx container is running.
+#     Proxy mode activates automatically when community_nginx is running.
+#
+# TLS checks are skipped for IP addresses (Let's Encrypt requires a hostname).
+# Use the no-SSL nginx template when running against an IP:
+#   NGINX_CONF_TEMPLATE=default-no-ssl.conf.template \
+#     docker compose -f docker-compose.yml --profile proxy up -d
 #
 # Usage:
 #   # Core services only (no nginx required):
 #   ./scripts/verify-vps-deployment.sh
 #
-#   # With nginx proxy (full check):
+#   # With nginx + TLS (hostname required):
 #   DOMAIN=yourdomain.com ./scripts/verify-vps-deployment.sh
+#
+#   # With nginx, no TLS (IP address or plain HTTP):
+#   DOMAIN=12.34.56.78 ./scripts/verify-vps-deployment.sh
 #
 #   # Start nginx if not running:
 #   docker compose -f docker-compose.yml --profile proxy up -d nginx
@@ -51,14 +58,26 @@ PGPASS="${POSTGRES_PASSWORD:-password}"
 PGDB="${POSTGRES_DB:-community_platform}"
 DATA_DIR="${DATA_DIR:-./data}"
 
+# Determine whether TLS is expected.
+# TLS requires a real hostname — IP addresses and localhost never have Let's Encrypt certs.
+IS_IP=0
+if echo "$DOMAIN" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+  IS_IP=1
+fi
+
 USE_HTTPS=0
-if [ "$DOMAIN" != "localhost" ]; then
+if [ "$DOMAIN" != "localhost" ] && [ "$IS_IP" = "0" ]; then
   USE_HTTPS=1
   API_URL="https://$DOMAIN"
   WEB_URL="https://$DOMAIN"
 else
-  API_URL="http://localhost:3001"
-  WEB_URL="http://localhost:3000"
+  API_URL="http://$DOMAIN"
+  WEB_URL="http://$DOMAIN"
+  # Keep internal URLs for direct container checks
+  if [ "$DOMAIN" = "localhost" ]; then
+    API_URL="http://localhost:3001"
+    WEB_URL="http://localhost:3000"
+  fi
 fi
 
 PASS=0
@@ -79,8 +98,9 @@ fi
 
 echo ""
 echo "=== Community Platform VPS Deployment Verification ==="
-echo "Domain:       $DOMAIN"
+echo "Domain:       $DOMAIN$([ "$IS_IP" = "1" ] && echo " (IP address — TLS checks skipped)" || true)"
 echo "Proxy mode:   $([ "$NGINX_RUNNING" = "1" ] && echo "yes (nginx running)" || echo "no (nginx not running — proxy checks skipped)")"
+echo "HTTPS:        $([ "$USE_HTTPS" = "1" ] && echo "yes" || echo "no")"
 echo "API:          $API_URL"
 echo "Web:          $WEB_URL"
 echo "Date:         $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -288,9 +308,15 @@ elif [ "$USE_HTTPS" = "1" ] && [ "$NGINX_RUNNING" = "0" ]; then
   skip "4.2  TLS certificate — nginx not running"
   skip "4.3  HSTS header — nginx not running"
 else
-  skip "4.1  HTTP→HTTPS redirect (DOMAIN=localhost — no TLS expected)"
-  skip "4.2  TLS certificate (DOMAIN=localhost)"
-  skip "4.3  HSTS header (DOMAIN=localhost)"
+  if [ "$IS_IP" = "1" ]; then
+    skip "4.1  HTTP→HTTPS redirect (DOMAIN is an IP address — Let's Encrypt requires a hostname)"
+    skip "4.2  TLS certificate (IP address — use a hostname + init-ssl.sh for TLS)"
+    skip "4.3  HSTS header (IP address — no TLS)"
+  else
+    skip "4.1  HTTP→HTTPS redirect (DOMAIN=localhost — no TLS expected)"
+    skip "4.2  TLS certificate (DOMAIN=localhost)"
+    skip "4.3  HSTS header (DOMAIN=localhost)"
+  fi
 fi
 
 echo ""
