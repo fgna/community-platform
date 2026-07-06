@@ -1,5 +1,6 @@
 'use client';
 
+import { redirect } from 'next/navigation';
 import { Smartphone, Download, CheckCircle, Wifi, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +13,10 @@ const features = [
 const downloadUrl = process.env.NEXT_PUBLIC_APK_URL || '/app/community.apk';
 
 export default function GetAppPage() {
+  if (process.env.NEXT_PUBLIC_ENABLE_ANDROID_APP !== 'true') {
+    redirect('/dashboard');
+  }
+
   return (
     <div className="max-w-lg mx-auto py-12 px-4 space-y-8 animate-fade-in">
       <div className="text-center space-y-4">

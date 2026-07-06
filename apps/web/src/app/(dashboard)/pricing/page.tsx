@@ -4,7 +4,7 @@ import { useTier } from '@/hooks/use-tier';
 import { useBillingCheckout, useBillingPortal } from '@/hooks/use-billing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Star, Loader2 } from 'lucide-react';
+import { Check, Star, Loader2, Info } from 'lucide-react';
 
 const FREE_FEATURES = [
   'Community feed (limited posts)',
@@ -26,7 +26,37 @@ const PREMIUM_FEATURES = [
   'Priority support',
 ];
 
+const billingEnabled = process.env.NEXT_PUBLIC_ENABLE_BILLING === 'true';
+
+function BillingDisabledNotice() {
+  return (
+    <div className="max-w-lg mx-auto py-16 px-4 text-center space-y-6 animate-fade-in">
+      <div
+        className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"
+        style={{ background: 'rgba(197,168,128,0.08)' }}
+      >
+        <Info size={28} style={{ color: 'var(--theme-primary)' }} />
+      </div>
+      <h2 className="text-2xl font-bold" style={{ color: 'var(--theme-text)' }}>
+        Plans &amp; Pricing
+      </h2>
+      <p className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
+        Subscription management is handled by your community administrator.
+        Contact them to learn about available plans and upgrade options.
+      </p>
+    </div>
+  );
+}
+
 export default function PricingPage() {
+  if (!billingEnabled) {
+    return <BillingDisabledNotice />;
+  }
+
+  return <PricingPageContent />;
+}
+
+function PricingPageContent() {
   const { data: tier } = useTier();
   const checkout = useBillingCheckout();
   const portal = useBillingPortal();

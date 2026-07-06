@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { randomUUID } from 'crypto';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health'];
 const AUTH_PATHS = ['/login', '/register'];
 const ADMIN_PATHS = ['/admin'];
 
+function withRequestId(response: NextResponse, request: NextRequest): NextResponse {
+  const requestId = request.headers.get('x-request-id') || randomUUID();
+  response.headers.set('x-request-id', requestId);
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
+    return withRequestId(NextResponse.next(), request);
   }
 
   const authToken = request.cookies.get('auth-session')?.value;
@@ -37,7 +44,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  return withRequestId(NextResponse.next(), request);
 }
 
 export const config = {

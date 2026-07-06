@@ -21,6 +21,9 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
 | HAR-009 | Documentation accuracy pass | P2 | M | `[ ]` |
 | HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[x]` |
+| HAR-011 | Feature-flag gating for experimental modules (billing, Android app) | P1 | S | `[x]` |
+| HAR-012 | CSP hardening — remove `unsafe-eval` in production | P1 | XS | `[x]` |
+| HAR-013 | Request ID propagation (`x-request-id`) across web + API | P2 | XS | `[x]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
@@ -215,6 +218,37 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 - `docker compose exec api npx prisma migrate deploy`
 - `DOMAIN=<your-domain> ./scripts/verify-vps-deployment.sh`
 - Monitor logs 5 min post-deploy
+
+---
+
+### HAR-011 — Feature-flag gating for experimental modules  `[x]` P1 · S
+
+Experimental / not-yet-production-ready UI surfaces hidden behind explicit opt-in env vars so operators don't expose unfinished functionality by default.
+
+**Flags added:**
+- `NEXT_PUBLIC_ENABLE_BILLING=true` — shows Stripe billing UI and premium-gating; when unset, `/pricing` renders an "admin-managed" notice and `PremiumGate` passes content through unconditionally
+- `NEXT_PUBLIC_ENABLE_ANDROID_APP=true` — shows "Get the App" topbar link and serves `/get-app` download page; when unset, both are hidden and the route redirects to `/dashboard`
+
+**Other changes:**
+- Deleted `apps/web/src/hooks/use-ai-coach.ts` — dead code (AI Coach page already redirects to `/dashboard` since v1.34.0)
+- OAuth social buttons already self-gate via `NEXT_PUBLIC_GOOGLE_CLIENT_ID`/`NEXT_PUBLIC_LINKEDIN_CLIENT_ID` — no change needed
+- Added `NEXT_PUBLIC_ENABLE_BILLING` and `NEXT_PUBLIC_ENABLE_ANDROID_APP` entries to `.env.example` and `.env.production.example`
+
+---
+
+### HAR-012 — CSP hardening: remove `unsafe-eval` in production  `[x]` P1 · XS
+
+`apps/web/next.config.ts` CSP `script-src` directive removed `'unsafe-eval'` when `NODE_ENV === 'production'`. Dev mode retains it (required for Next.js HMR/Turbopack hot reload). Eliminates the highest-risk CSP bypass in production.
+
+---
+
+### HAR-013 — Request ID propagation (`x-request-id`)  `[x]` P2 · XS
+
+Every HTTP request now carries a `x-request-id` header through the stack:
+- **Web (`apps/web/src/middleware.ts`)**: reads incoming `x-request-id` or generates a new UUID; stamps it on the response via `response.headers.set`
+- **API (`apps/api/src/common/middleware/request-id.middleware.ts`)**: NestJS middleware reads or generates the ID; sets it on both `req.headers` (for downstream use) and the response header
+
+Enables log correlation across web → API → database layers without an external tracing system.
 
 ---
 

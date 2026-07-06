@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] — 2026-07-06
+
+### Added
+- Feature flags `NEXT_PUBLIC_ENABLE_BILLING` and `NEXT_PUBLIC_ENABLE_ANDROID_APP` gate experimental UI surfaces: pricing page, PremiumGate, and "Get the App" topbar link/page are hidden by default and only shown when the corresponding flag is set to `"true"` (HAR-011)
+- `apps/api/src/common/middleware/request-id.middleware.ts` — NestJS middleware that reads or generates a `x-request-id` UUID and stamps it on every API request and response (HAR-013)
+- Request ID stamped in web `middleware.ts` — Next.js edge middleware propagates `x-request-id` on every response, enabling log correlation across web and API (HAR-013)
+
+### Changed
+- `apps/web/next.config.ts` CSP `script-src` removes `'unsafe-eval'` when `NODE_ENV === 'production'`; dev mode retains it for Next.js HMR (HAR-012)
+- `/pricing` page renders an admin-managed notice instead of Stripe checkout UI when `NEXT_PUBLIC_ENABLE_BILLING` is not `"true"`
+- `PremiumGate` component passes children through unconditionally when billing is not enabled — no feature gates without an active billing system
+- `/get-app` page redirects to `/dashboard` when `NEXT_PUBLIC_ENABLE_ANDROID_APP` is not `"true"`; topbar "Get the App" link is hidden in the same condition
+- `.env.example` and `.env.production.example` document the new feature flag variables
+- `apps/api/src/app.module.ts` applies `RequestIdMiddleware` to all routes
+
+### Removed
+- `apps/web/src/hooks/use-ai-coach.ts` — dead code; AI Coach page redirects to `/dashboard` since v1.34.0 and no component imported this hook
+
 ## [1.36.0] — 2026-07-06
 
 ### Added

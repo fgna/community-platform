@@ -119,13 +119,17 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
               {t('settings')}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="gap-2 cursor-pointer">
-            <Link href="/get-app">
-              <Smartphone size={14} />
-              {tn('getTheApp')}
-            </Link>
-          </DropdownMenuItem>
+          {process.env.NEXT_PUBLIC_ENABLE_ANDROID_APP === 'true' && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                <Link href="/get-app">
+                  <Smartphone size={14} />
+                  {tn('getTheApp')}
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => logout()}
