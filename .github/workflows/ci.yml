@@ -35,6 +35,62 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+  # ─── Security Config Guard ──────────────────────────────────────────────────
+  security-config-guard:
+    name: Security Config Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject dangerous compose defaults
+        run: |
+          # Fail if docker-compose.yml still contains insecure fallback patterns.
+          # These patterns indicate a :-<default> that ships a known-bad credential.
+          PATTERNS=(
+            ':-password'
+            ':-secret'
+            ':-changeme'
+            ':-default'
+            ':-postgres$'
+            ':-admin$'
+          )
+          FAIL=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -qE "${pattern}" docker-compose.yml; then
+              echo "FAIL: docker-compose.yml contains insecure default matching '${pattern}'"
+              FAIL=1
+            fi
+          done
+          [ "$FAIL" -eq 0 ] || exit 1
+
+      - name: Reject demo seed in compose defaults
+        run: |
+          # SEED_DEMO_DATA must never default to true in the production compose file.
+          if grep -qE 'SEED_DEMO_DATA[[:space:]]*:[[:space:]]*true' docker-compose.yml; then
+            echo "FAIL: docker-compose.yml has SEED_DEMO_DATA=true — demo seed must not run in production"
+            exit 1
+          fi
+
+      - name: Verify required vars use :? not :- in docker-compose.yml
+        run: |
+          # These vars must use :? (error if unset) rather than :- (silent fallback).
+          REQUIRED_VARS=(
+            'POSTGRES_PASSWORD'
+            'JWT_SECRET'
+            'JWT_REFRESH_SECRET'
+            'CORS_ORIGINS'
+            'NEXT_PUBLIC_API_URL'
+            'NEXT_PUBLIC_APP_URL'
+          )
+          FAIL=0
+          for var in "${REQUIRED_VARS[@]}"; do
+            if grep -qE "\$\{${var}:-" docker-compose.yml; then
+              echo "FAIL: ${var} uses :- fallback in docker-compose.yml — must use :? to require explicit configuration"
+              FAIL=1
+            fi
+          done
+          [ "$FAIL" -eq 0 ] || exit 1
+
   # ─── Typecheck ──────────────────────────────────────────────────────────────
   typecheck:
     name: Typecheck
@@ -257,6 +313,10 @@ jobs:
     env:
       JWT_SECRET: ci-smoke-jwt-secret-at-least-32-chars
       JWT_REFRESH_SECRET: ci-smoke-refresh-secret-at-least-32-chars
+      POSTGRES_PASSWORD: ci-smoke-postgres-password-not-for-prod
+      CORS_ORIGINS: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.0] — 2026-07-06
+
+### Security
+- **OPS-003**: Hardened `docker-compose.yml` — replaced `:-` insecure fallbacks with `:?` required expansion for `POSTGRES_PASSWORD`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`; compose now fails fast when these are unset
+- **OPS-005**: Enhanced `main.ts` startup validation — refuses to start if JWT secrets contain placeholder strings or are shorter than 32 chars; refuses to start if `CORS_ORIGINS` is wildcard `*` in production
+- **OPS-010**: Added CI `security-config-guard` job — greps compose files for dangerous `:-` defaults and SEED_DEMO_DATA=true; fails the build if found
+
+### Added
+- `scripts/preflight-production.sh` — validates `.env`, secrets strength, CORS, NODE_ENV, demo seed guard, Docker availability, and compose override file before deploying
+- `scripts/production-up.sh` — safe deployment wrapper that runs preflight → build → migrate → verify in sequence; explicitly excludes `docker-compose.override.yml`
+- `scripts/verify-vps-deployment.sh` — post-deployment smoke test covering env vars, container health, API/web reachability, Swagger disabled, security headers, PostgreSQL, uploads writability, and nginx TLS/redirect checks
+- `scripts/backup.sh` — point-in-time PostgreSQL backup via `pg_dump -Fc` with automatic pruning (keeps 30 most recent)
+- `scripts/restore-test.sh` — verifies a backup is restorable into a temporary test DB without touching the live database
+- `scripts/create-admin.sh` — bootstrap first admin user in production without running the demo seed
+- `.env.development.example` — development defaults separate from the production template
+
+### Changed
+- `docker-compose.override.yml` — added documentation note that production deployments must explicitly exclude it with `-f docker-compose.yml`
+- CI `docker-smoke` job — added required env vars (`POSTGRES_PASSWORD`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`) now that compose uses `:?` required expansion
+
+---
+
 ## [1.34.0] — 2026-06-22
 
 ### Changed

@@ -469,6 +469,28 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 
 ---
 
+## Operational Hardening
+
+> Items from July 2026 operational hardening review. Goal: make production deployments
+> safe-by-default and easily verifiable.
+
+| ID | Item | Priority | Size | Status |
+|----|------|----------|------|--------|
+| OPS-001 | `scripts/preflight-production.sh` — validate .env and system state before deploying | P0 | S | `[x]` |
+| OPS-002 | `scripts/production-up.sh` — safe deployment wrapper (runs preflight, migrate, verify) | P0 | S | `[x]` |
+| OPS-003 | Harden `docker-compose.yml` — replace `:-` fallbacks with `:?` for POSTGRES_PASSWORD, CORS_ORIGINS, NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_URL | P0 | S | `[x]` |
+| OPS-004 | `.env.development.example` — dev defaults separate from production template | P1 | XS | `[x]` |
+| OPS-005 | `apps/api/src/main.ts` runtime validation — check placeholder secrets, CORS wildcard at startup | P0 | S | `[x]` |
+| OPS-006 | `scripts/create-admin.sh` — bootstrap first admin user without demo seed | P0 | S | `[x]` |
+| OPS-007 | `scripts/backup.sh` — pg_dump with retention pruning | P0 | S | `[x]` |
+| OPS-008 | `scripts/restore-test.sh` — verify backup is restorable without touching production DB | P0 | S | `[x]` |
+| OPS-009 | `scripts/verify-vps-deployment.sh` — post-deploy smoke test (env vars, containers, API health, Swagger disabled, TLS) | P0 | M | `[x]` |
+| OPS-010 | CI `security-config-guard` job — grep for dangerous `:-` defaults in compose files | P0 | S | `[x]` |
+| OPS-011 | httpOnly cookie migration for refresh tokens | P1 | M | `[ ]` |
+| OPS-012 | Structured JSON logging in production | P2 | S | `[ ]` |
+
+---
+
 ## UI / UX Bug Fixes — Exploratory QA Findings (June 2026)
 
 > Discovered by automated Playwright exploratory QA run on PR #6 (2026-06-16).
