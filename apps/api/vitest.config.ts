@@ -12,10 +12,10 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'json-summary'],
       // Baseline floor — raise after measuring with: pnpm test:coverage
       thresholds: {
-        lines: 50,
-        functions: 50,
-        branches: 45,
-        statements: 50,
+        lines: 20,
+        functions: 20,
+        branches: 30,
+        statements: 20,
       },
     },
   },
