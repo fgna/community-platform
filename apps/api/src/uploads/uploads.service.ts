@@ -12,8 +12,8 @@ const FILE_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // SEC-034: Dangerous file extensions that should always be blocked
 const BLOCKED_EXTENSIONS = new Set([
@@ -70,7 +70,7 @@ export class UploadsService {
       throw new BadRequestException('Invalid image type. Allowed: jpeg, png, gif, webp');
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      throw new BadRequestException('Image too large. Maximum 5MB');
+      throw new BadRequestException('Image too large. Maximum 10MB');
     }
     this.validateMagicBytes(file);
     this.validateExtension(file.originalname);
@@ -82,7 +82,7 @@ export class UploadsService {
       throw new BadRequestException('Invalid file type. Allowed: pdf, doc, docx, xls, xlsx');
     }
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException('File too large. Maximum 20MB');
+      throw new BadRequestException('File too large. Maximum 50MB');
     }
     this.validateMagicBytes(file);
     this.validateExtension(file.originalname);
