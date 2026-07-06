@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] — 2026-07-06
+
+### Security
+- **OPS-011**: Refresh tokens now set as httpOnly, Secure, SameSite=Strict cookies by the API on login, register, and token refresh; browser sends them automatically so JS never needs to read the value. The JWT refresh strategy accepts cookie-first with request-body fallback for non-browser clients.
+
+### Added
+- **OPS-012**: Structured JSON logging via `nestjs-pino` — production output is machine-readable JSON; development uses pino-pretty for readable output. Authorization and Cookie headers are redacted from HTTP access logs.
+- **Q-007 (baseline)**: Coverage thresholds added to both vitest configs. API: 65% lines/functions/statements, 55% branches. Web (store + lib layer): 50% lines/functions/statements, 40% branches. Path to 90% overall after measuring actuals.
+- Web unit tests for `auth.store`, `theme.store`, `utils`, and `api-client` (Q-001 rework — prior backlog entry was incorrectly marked done).
+- `withCredentials: true` on the web API client so the httpOnly refresh cookie is included in cross-origin requests.
+- `cookie-parser` middleware in API bootstrap.
+
+---
+
 ## [1.35.0] — 2026-07-06
 
 ### Security

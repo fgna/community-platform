@@ -9,7 +9,19 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
     exclude: ['e2e/**', 'node_modules/**'],
-    passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary'],
+      // Only gate on store + lib — components need E2E, not unit tests
+      include: ['src/store/**', 'src/lib/**'],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 40,
+        statements: 50,
+      },
+    },
   },
   resolve: {
     alias: {

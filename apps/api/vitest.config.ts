@@ -7,6 +7,23 @@ export default defineConfig({
     root: './',
     include: ['src/**/*.spec.ts'],
     setupFiles: ['./src/test-setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/**/dto/**',
+        'src/**/*.module.ts',
+        'src/main.ts',
+        'src/test-setup.ts',
+      ],
+      thresholds: {
+        lines: 65,
+        functions: 65,
+        branches: 55,
+        statements: 65,
+      },
+    },
   },
   plugins: [
     swc.vite({

@@ -11,7 +11,7 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 
 | ID | Item | Priority | Size | Status |
 |----|------|----------|------|--------|
-| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[ ]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
@@ -196,7 +196,7 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | Q-004 | Playwright e2e: course enroll + progress | P1 | M | `[x]` |
 | Q-005 | Playwright e2e: event RSVP | P1 | S | `[x]` |
 | Q-006 | API integration tests (Supertest) | P0 | L | `[x]` |
-| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[ ]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[~]` |
 | D-001 | GitHub Actions CI pipeline (lint, typecheck, test, build, e2e) | P0 | M | `[x]` |
 | D-002 | Dockerfile optimisation (multi-stage, non-root user) | P0 | S | `[x]` |
 | D-003 | Automated Prisma migration in Docker entrypoint | P0 | S | `[x]` |
@@ -486,8 +486,8 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | OPS-008 | `scripts/restore-test.sh` — verify backup is restorable without touching production DB | P0 | S | `[x]` |
 | OPS-009 | `scripts/verify-vps-deployment.sh` — post-deploy smoke test (env vars, containers, API health, Swagger disabled, TLS) | P0 | M | `[x]` |
 | OPS-010 | CI `security-config-guard` job — grep for dangerous `:-` defaults in compose files | P0 | S | `[x]` |
-| OPS-011 | httpOnly cookie migration for refresh tokens | P1 | M | `[ ]` |
-| OPS-012 | Structured JSON logging in production | P2 | S | `[ ]` |
+| OPS-011 | httpOnly cookie migration for refresh tokens | P1 | M | `[x]` |
+| OPS-012 | Structured JSON logging in production | P2 | S | `[x]` |
 
 ---
 

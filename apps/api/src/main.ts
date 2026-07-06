@@ -2,7 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { join } from 'path';
 import * as fs from 'fs';
 import { AppModule } from './app.module';
@@ -42,14 +44,16 @@ function validateConfig() {
 async function bootstrap() {
   validateConfig();
 
-  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    bufferLogs: true,
     rawBody: true,
   });
+  app.useLogger(app.get(PinoLogger));
+  const logger = new Logger('Bootstrap');
 
   app.enableShutdownHooks();
   app.set('trust proxy', 1);
+  app.use(cookieParser());
 
   // Ensure uploads directory exists and serve as static files
   const uploadsDir = join(process.cwd(), 'uploads');
