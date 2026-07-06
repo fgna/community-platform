@@ -1,8 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-DOMAIN="${DOMAIN:?Set DOMAIN in .env}"
-EMAIL="${SSL_EMAIL:?Set SSL_EMAIL in .env}"
+# Load .env if present in the current directory.
+# Explicit shell exports (e.g. DOMAIN=foo ./nginx/init-ssl.sh) take precedence
+# because set -a / . only sets variables that are not already in the environment.
+if [ -f ".env" ]; then
+  set -a
+  # shellcheck source=../.env
+  . "./.env"
+  set +a
+fi
+
+DOMAIN="${DOMAIN:?DOMAIN is not set — add DOMAIN=yourdomain.com to .env or export it before running this script}"
+EMAIL="${SSL_EMAIL:?SSL_EMAIL is not set — add SSL_EMAIL=you@yourdomain.com to .env or export it before running this script}"
 DATA_DIR="${DATA_DIR:-./data}"
 STAGING="${SSL_STAGING:-0}"
 

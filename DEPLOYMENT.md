@@ -2,6 +2,19 @@
 
 ---
 
+## Docker Modes: Dev vs. Production
+
+| Mode | Command | Port exposure | When to use |
+|------|---------|---------------|-------------|
+| **Local dev** | `docker compose up -d` | api:3001, web:3000 on host | Development and local testing |
+| **Production** | `docker compose -f docker-compose.yml --profile proxy up -d` | Only nginx on 80/443 | Any public-facing server |
+
+The key difference is `docker-compose.override.yml`: Docker Compose auto-loads it when present in the working directory, which adds host port bindings for the api and web services. Production deployments use `-f docker-compose.yml` explicitly to skip the override and keep api/web internal-only, accessible only through nginx.
+
+**Never run `docker compose up` (without `-f`) on a production server** — it will expose your API directly on port 3001.
+
+---
+
 ## Local Development
 
 ### First install
@@ -43,11 +56,13 @@ docker compose up postgres redis -d
 **6. Run migrations and seed**
 
 ```bash
-pnpm db:migrate   # applies migrations + generates Prisma client
-pnpm db:seed      # creates admin user and sample content
+pnpm db:migrate                  # applies migrations + generates Prisma client
+SEED_DEMO_DATA=true pnpm db:seed # creates demo admin user and sample content
 ```
 
-Default seed credentials: `admin@example.com / Admin123!@#`
+Demo seed credentials: `admin@example.com / Admin123!@#`
+
+> The seed script is guarded by `SEED_DEMO_DATA=true` — it exits immediately without creating any accounts if the variable is not set. This prevents accidental demo account creation in production.
 
 **7. Start the app**
 
@@ -201,19 +216,21 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com
 Point your domain's A record to the server IP, then:
 
 ```bash
-# Build and start the core services
-docker compose up --build -d
+# Build and start in production mode (no host port exposure for api/web)
+docker compose -f docker-compose.yml --profile proxy up --build -d
 
-# Run migrations and seed
+# Run database migrations (safe for production — never resets data)
 docker compose exec api npx prisma migrate deploy
-docker compose exec api npx prisma db seed
+
+# DO NOT run db:seed in production — it creates well-known demo credentials
+# The seed guard skips demo data when SEED_DEMO_DATA is not set to "true"
 
 # Provision SSL certificate and start nginx
 ./nginx/init-ssl.sh
 
 # Verify
-docker compose --profile proxy ps   # all containers healthy
-curl https://yourdomain.com         # should load the login page
+docker compose -f docker-compose.yml --profile proxy ps  # all containers healthy
+curl https://yourdomain.com                              # should load the login page
 ```
 
 ### 5. Set up automatic certificate renewal and backups
@@ -232,7 +249,7 @@ curl https://yourdomain.com         # should load the login page
 ```bash
 cd /home/deploy/community-platform
 git pull
-docker compose up --build -d
+docker compose -f docker-compose.yml --profile proxy up --build -d
 docker compose exec api npx prisma migrate deploy
 ```
 
@@ -266,38 +283,37 @@ cd community-platform
 cp .env.example .env
 # Set JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, DOMAIN, CORS_ORIGINS, NEXT_PUBLIC_API_URL
 
-# 4. Build and start
-docker compose up --build -d
+# 4. Build and start in production mode (no host port exposure for api/web)
+docker compose -f docker-compose.yml --profile proxy up --build -d
 
-# 5. Migrate and seed (first deploy only)
+# 5. Migrate (first deploy only) — DO NOT run db:seed in production
 docker compose exec api npx prisma migrate deploy
-docker compose exec api npx prisma db seed
 
 # 6. Enable HTTPS (optional — requires domain + DNS pointed to server)
 ./nginx/init-ssl.sh
 
 # 7. Verify
-docker compose ps                  # all containers should show "healthy"
-curl http://localhost:3001/health  # {"status":"ok"}
+docker compose -f docker-compose.yml --profile proxy ps  # all containers healthy
+curl https://yourdomain.com/health                       # {"status":"ok"}
 ```
 
 ### Updating
 
 ```bash
 git pull
-docker compose up --build -d
+docker compose -f docker-compose.yml --profile proxy up --build -d
 docker compose exec api npx prisma migrate deploy
 ```
 
 ### Services
 
-| Service  | URL                             | Notes                              |
-|----------|---------------------------------|------------------------------------|
-| Web      | http://localhost:3000           | (via nginx: https://yourdomain.com) |
-| API      | http://localhost:3001           | (via nginx: https://yourdomain.com/api) |
-| API Docs | http://localhost:3001/api/docs  | Swagger UI (non-production only)   |
-| Postgres | localhost:5432                  | Not exposed when using nginx       |
-| Redis    | localhost:6379                  | Not exposed when using nginx       |
+| Service  | Dev URL                         | Production URL                     | Notes |
+|----------|---------------------------------|------------------------------------|-------|
+| Web      | http://localhost:3000           | https://yourdomain.com             | Port 3000 only bound to host in dev (override.yml) |
+| API      | http://localhost:3001           | https://yourdomain.com/api         | Port 3001 only bound to host in dev (override.yml) |
+| API Docs | http://localhost:3001/api/docs  | Not available                      | Swagger disabled in production (NODE_ENV=production) |
+| Postgres | Not exposed                     | Not exposed                        | Internal only — `expose:` not `ports:` |
+| Redis    | Not exposed                     | Not exposed                        | Internal only — `expose:` not `ports:` |
 
 ```bash
 docker compose ps        # check health status

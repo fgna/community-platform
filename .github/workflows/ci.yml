@@ -324,6 +324,7 @@ jobs:
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      SEED_DEMO_DATA: "true"
     steps:
       - uses: actions/checkout@v4
 
