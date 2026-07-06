@@ -13,15 +13,15 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 |----|------|----------|------|--------|
 | HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[ ]` |
 | HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[ ]` |
-| HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[ ]` |
-| HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[ ]` |
-| HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[ ]` |
+| HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[x]` |
+| HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[~]` |
+| HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[~]` |
 | HAR-006 | Backup/restore operationally verified — restore script + docs | P1 | M | `[x]` |
 | HAR-007 | Docker API image size — remove devDeps from production stage | P2 | M | `[ ]` |
-| HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[~]` |
+| HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
 | HAR-009 | Documentation accuracy pass | P2 | M | `[ ]` |
-| HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[ ]` |
-| Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[ ]` |
+| HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[x]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
@@ -77,7 +77,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-003 — Dependency audit in CI + Dependabot  `[ ]` P1 · S
+### HAR-003 — Dependency audit in CI + Dependabot  `[x]` P1 · S
 
 **Problem:** `pnpm audit` is listed as optional in `PRODUCTION_READINESS.md`; no Dependabot config exists.
 
@@ -92,7 +92,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-004 — Coverage gates enforced in CI  `[ ]` P1 · S
+### HAR-004 — Coverage gates enforced in CI  `[~]` P1 · S
 
 **Problem:** `vitest.config.ts` has no `coverage.thresholds`. CI collects coverage but never fails on regression. README and BACKLOG (Q-007) both note this is unresolved.
 
@@ -109,7 +109,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-005 — Production deployment safety  `[ ]` P1 · S
+### HAR-005 — Production deployment safety  `[~]` P1 · S
 
 **Problem:** `docker compose up` (no `-f`) auto-loads `docker-compose.override.yml` and exposes ports 3001 and 3000 on all interfaces. Easy to misuse on a production server.
 
@@ -161,9 +161,9 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-008 — VPS verification script  `[~]` P1 · M
+### HAR-008 — VPS verification script  `[x]` P1 · M
 
-**In progress** (PR #44 open). Script at `scripts/verify-vps-deployment.sh`.
+**Completed.** Script at `scripts/verify-vps-deployment.sh`.
 
 **Completed checks:** container state, port exposure, direct API health, nginx routing, TLS expiry, HSTS, migration status, Postgres not exposed, demo accounts, uploads writable, security headers, seed guard, backup smoke test, non-root users.
 
@@ -200,7 +200,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-010 — Release checklist  `[ ]` P2 · S
+### HAR-010 — Release checklist  `[x]` P2 · S
 
 **Deliverable:** `RELEASE_CHECKLIST.md` — concrete, command-based checklist. No vague "verify everything works" steps.
 

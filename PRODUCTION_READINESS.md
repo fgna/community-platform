@@ -128,6 +128,7 @@ These are improvements beyond the baseline, prioritized by risk.
 
 ## Reference
 
+- [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) — per-release checklist (pre-release, deploy, post-deploy, rollback)
 - [DEPLOYMENT.md](./DEPLOYMENT.md) — step-by-step deployment guide
 - [SECURITY.md](./SECURITY.md) — security model and threat mitigations
 - [FEATURE_STATUS.md](./FEATURE_STATUS.md) — maturity status per feature
