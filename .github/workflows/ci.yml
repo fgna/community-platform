@@ -245,7 +245,7 @@ jobs:
         run: mv apps/web/public/app/app-release.apk apps/web/public/app/community.apk
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build API image
         uses: docker/build-push-action@v6
