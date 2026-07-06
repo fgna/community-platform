@@ -38,8 +38,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (canSign) {
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (canSign) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
         }
     }
