@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] — 2026-07-06
+
+### Security
+- **HAR-002**: Replace in-memory `loginAttempts` Map with Redis-backed `INCR`/`EXPIRE` counters — lockouts now survive API restarts and work correctly across multiple instances; graceful degradation when Redis is unavailable (fail-open with warning log)
+
+### Added
+- `apps/api/src/redis/redis.module.ts` — global `@Global()` NestJS module providing an `ioredis` client under the `REDIS_CLIENT` injection token; uses `lazyConnect: true` to prevent startup failure when Redis is temporarily unavailable
+
+### Changed
+- `apps/api/src/auth/auth.service.ts` — three async Redis helpers replace the in-memory Map: `checkLoginAttempts`, `recordFailedAttempt`, `clearLoginAttempts`; all handle Redis errors gracefully with `Logger.warn`
+- `apps/api/src/auth/auth.service.spec.ts` — added `REDIS_CLIENT` mock provider
+- `.github/workflows/ci.yml` — added `redis:7-alpine` service and `REDIS_URL` env var to `test-api` job
+
 ## [1.35.0] — 2026-07-06
 
 ### Added

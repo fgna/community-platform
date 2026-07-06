@@ -30,6 +30,7 @@ import { TierModule } from './tier/tier.module';
 import { DigestTemplateModule } from './digest/digest-template.module';
 import { BillingModule } from './billing/billing.module';
 import { AiCoachModule } from './ai-coach/ai-coach.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AiCoachModule } from './ai-coach/ai-coach.module';
         limit: 60,
       },
     ]),
+    RedisModule,
     PrismaModule,
     AuthModule,
     UsersModule,

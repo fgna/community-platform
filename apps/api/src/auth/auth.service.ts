@@ -1,30 +1,31 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { InvitesService } from '../invites/invites.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
+import type Redis from 'ioredis';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly MAX_LOGIN_ATTEMPTS = 10;
+  private readonly LOGIN_ATTEMPT_WINDOW_SECS = 15 * 60;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private invitesService: InvitesService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   static computeFingerprint(userAgent: string, ip: string): string {
     return createHash('sha256').update(`${userAgent}|${ip}`).digest('hex');
   }
-
-  // In-memory store for per-account brute-force protection.
-  // Maps email → { count, resetAt }. Reset on successful login or after TTL.
-  private readonly loginAttempts = new Map<string, { count: number; resetAt: number }>();
-  private readonly MAX_LOGIN_ATTEMPTS = 10;
-  private readonly LOGIN_ATTEMPT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
   async register(dto: RegisterDto, fingerprint?: string) {
     const email = dto.email.toLowerCase().trim();
@@ -79,34 +80,29 @@ export class AuthService {
   async login(dto: LoginDto, fingerprint?: string) {
     const email = dto.email.toLowerCase().trim();
 
-    // Per-account brute-force protection
-    const attempt = this.loginAttempts.get(email);
-    if (attempt && attempt.count >= this.MAX_LOGIN_ATTEMPTS && Date.now() < attempt.resetAt) {
-      throw new UnauthorizedException('Too many login attempts. Please try again later.');
-    }
+    await this.checkLoginAttempts(email);
 
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (!user || !user.isActive) {
-      this.recordFailedAttempt(email);
+      await this.recordFailedAttempt(email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (!user.passwordHash) {
-      this.recordFailedAttempt(email);
+      await this.recordFailedAttempt(email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await argon2.verify(user.passwordHash, dto.password);
     if (!isPasswordValid) {
-      this.recordFailedAttempt(email);
+      await this.recordFailedAttempt(email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Reset on successful login
-    this.loginAttempts.delete(email);
+    await this.clearLoginAttempts(email);
 
     const tokens = await this.generateTokens(user.id, user.email, user.role, fingerprint);
 
@@ -123,13 +119,35 @@ export class AuthService {
     };
   }
 
-  private recordFailedAttempt(email: string) {
-    const now = Date.now();
-    const existing = this.loginAttempts.get(email);
-    if (!existing || now >= existing.resetAt) {
-      this.loginAttempts.set(email, { count: 1, resetAt: now + this.LOGIN_ATTEMPT_WINDOW_MS });
-    } else {
-      existing.count++;
+  private async checkLoginAttempts(email: string): Promise<void> {
+    try {
+      const val = await this.redis.get(`login_attempts:${email}`);
+      if (val && parseInt(val, 10) >= this.MAX_LOGIN_ATTEMPTS) {
+        throw new UnauthorizedException('Too many login attempts. Please try again later.');
+      }
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      this.logger.warn(`Redis unavailable — brute-force check skipped: ${(err as Error).message}`);
+    }
+  }
+
+  private async recordFailedAttempt(email: string): Promise<void> {
+    try {
+      const key = `login_attempts:${email}`;
+      const count = await this.redis.incr(key);
+      if (count === 1) {
+        await this.redis.expire(key, this.LOGIN_ATTEMPT_WINDOW_SECS);
+      }
+    } catch (err) {
+      this.logger.warn(`Redis unavailable — attempt not recorded: ${(err as Error).message}`);
+    }
+  }
+
+  private async clearLoginAttempts(email: string): Promise<void> {
+    try {
+      await this.redis.del(`login_attempts:${email}`);
+    } catch (err) {
+      this.logger.warn(`Redis unavailable — attempts not cleared: ${(err as Error).message}`);
     }
   }
 
