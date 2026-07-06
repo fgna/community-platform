@@ -133,7 +133,7 @@ jobs:
         run: pnpm test:integration
 
       - name: Upload API coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: api-coverage
@@ -161,7 +161,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload web coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: web-coverage
@@ -187,7 +187,7 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: community-apk
           path: apps/mobile-android/app/build/outputs/apk/release/app-release.apk
@@ -394,7 +394,7 @@ jobs:
         run: pnpm test:e2e
 
       - name: Upload E2E report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
