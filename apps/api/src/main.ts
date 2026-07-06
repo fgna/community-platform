@@ -28,7 +28,7 @@ async function bootstrap() {
   });
 
   app.enableShutdownHooks();
-  app.set('trust proxy', true);
+  app.set('trust proxy', 1);
 
   // Ensure uploads directory exists and serve as static files
   const uploadsDir = join(process.cwd(), 'uploads');
@@ -36,7 +36,25 @@ async function bootstrap() {
   app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
 
   // Security
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https://*.googleusercontent.com', 'https://images.unsplash.com'],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          upgradeInsecureRequests: [],
+        },
+      } : false,
+    }),
+  );
 
   // CORS
   const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
@@ -58,7 +76,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: false,
       },
     }),
   );

@@ -1,8 +1,31 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import sanitizeHtml from 'sanitize-html';
+
+function sanitizeContent(content: string): string {
+  return sanitizeHtml(content, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      img: ['src', 'alt', 'title', 'width', 'height'],
+      a: ['href', 'target', 'rel', 'class'],
+      span: ['class'],
+      '*': ['style'],
+    },
+    allowedStyles: {
+      '*': {
+        color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+        'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+        'text-align': [/^left$/, /^right$/, /^center$/],
+        'font-size': [/^\d+(?:px|em|%)$/],
+      },
+    },
+    disallowedTagsMode: 'discard',
+  }).replace(/\x00/g, '');
+}
 
 const pollSelect = {
   id: true,
@@ -43,6 +66,8 @@ const postSelect = {
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
+
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -215,9 +240,10 @@ export class PostsService {
   }
 
   async create(dto: CreatePostDto, authorId: string) {
+    const sanitized = sanitizeContent(dto.content);
     const post = await this.prisma.post.create({
       data: {
-        content: dto.content,
+        content: sanitized,
         type: (dto.type as any) || 'DISCUSSION',
         authorId,
         ...(dto.categoryIds?.length && {
@@ -260,9 +286,10 @@ export class PostsService {
       throw new ForbiddenException('Post is not available');
     }
 
+    const sanitized = sanitizeContent(content);
     return this.prisma.post.update({
       where: { id },
-      data: { content },
+      data: { content: sanitized },
       select: postSelect,
     });
   }
@@ -297,7 +324,7 @@ export class PostsService {
       },
     });
 
-    this.notifications.create(post.authorId, authorId, 'COMMENT', postId, 'post').catch(() => {});
+    this.notifications.create(post.authorId, authorId, 'COMMENT', postId, 'post').catch((err) => this.logger.error('Failed to create comment notification', err));
 
     return comment;
   }
@@ -331,7 +358,7 @@ export class PostsService {
       });
 
       if ((result as any).added) {
-        this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch(() => {});
+        this.notifications.create(post.authorId, userId, 'REACTION', postId, 'post').catch((err) => this.logger.error('Failed to create reaction notification', err));
       }
 
       return result;

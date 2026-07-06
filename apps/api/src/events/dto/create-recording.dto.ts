@@ -1,12 +1,14 @@
-import { IsString, IsOptional, IsUrl, IsInt, Min, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsInt, Min, MinLength, MaxLength } from 'class-validator';
 
 export class CreateRecordingDto {
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   title: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(2000)
   description?: string;
 

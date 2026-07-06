@@ -17,18 +17,18 @@ export class OAuthService {
     private authService: AuthService,
   ) {}
 
-  async handleGoogleCallback(code: string, redirectUri: string) {
+  async handleGoogleCallback(code: string, redirectUri: string, fingerprint?: string) {
     this.requireGoogleConfig();
     const tokens = await this.exchangeGoogleCode(code, redirectUri);
     const userInfo = await this.getGoogleUserInfo(tokens.access_token);
-    return this.handleOAuthLogin('google', userInfo);
+    return this.handleOAuthLogin('google', userInfo, fingerprint);
   }
 
-  async handleLinkedInCallback(code: string, redirectUri: string) {
+  async handleLinkedInCallback(code: string, redirectUri: string, fingerprint?: string) {
     this.requireLinkedInConfig();
     const tokens = await this.exchangeLinkedInCode(code, redirectUri);
     const userInfo = await this.getLinkedInUserInfo(tokens.access_token);
-    return this.handleOAuthLogin('linkedin', userInfo);
+    return this.handleOAuthLogin('linkedin', userInfo, fingerprint);
   }
 
   async getLinkedAccounts(userId: string) {
@@ -96,7 +96,7 @@ export class OAuthService {
     return { message: `${provider} account unlinked` };
   }
 
-  private async handleOAuthLogin(provider: string, userInfo: OAuthUserInfo) {
+  private async handleOAuthLogin(provider: string, userInfo: OAuthUserInfo, fingerprint?: string) {
     const existing = await this.prisma.oAuthAccount.findUnique({
       where: { provider_providerAccountId: { provider, providerAccountId: userInfo.providerAccountId } },
       include: { user: { select: { id: true, email: true, name: true, role: true, avatarUrl: true, membershipTier: true, isActive: true } } },
@@ -106,7 +106,7 @@ export class OAuthService {
       if (!existing.user.isActive) {
         throw new UnauthorizedException('Account is deactivated');
       }
-      const tokens = await this.authService.generateTokens(existing.user.id, existing.user.email, existing.user.role);
+      const tokens = await this.authService.generateTokens(existing.user.id, existing.user.email, existing.user.role, fingerprint);
       const { isActive: _, ...user } = existing.user;
       return { user, ...tokens };
     }
@@ -131,7 +131,7 @@ export class OAuthService {
           userId: existingUser.id,
         },
       });
-      const tokens = await this.authService.generateTokens(existingUser.id, existingUser.email, existingUser.role);
+      const tokens = await this.authService.generateTokens(existingUser.id, existingUser.email, existingUser.role, fingerprint);
       const { isActive: _, ...user } = existingUser;
       return { user, ...tokens };
     }
@@ -152,7 +152,7 @@ export class OAuthService {
       select: { id: true, email: true, name: true, role: true, avatarUrl: true, membershipTier: true, createdAt: true },
     });
 
-    const tokens = await this.authService.generateTokens(newUser.id, newUser.email, newUser.role);
+    const tokens = await this.authService.generateTokens(newUser.id, newUser.email, newUser.role, fingerprint);
     return { user: newUser, ...tokens };
   }
 

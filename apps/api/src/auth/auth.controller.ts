@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, SetMetadata } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, SetMetadata, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
@@ -19,12 +19,19 @@ export class AuthController {
     private oauthService: OAuthService,
   ) {}
 
+  private getFingerprint(@Request() req: any): string | undefined {
+    const userAgent = req.headers?.['user-agent'] || '';
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    if (!userAgent && !ip) return undefined;
+    return AuthService.computeFingerprint(userAgent, ip);
+  }
+
   @Post('register')
   @SetMetadata(IS_PUBLIC_KEY, true)
   @Throttle({ auth: { limit: 5, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Register a new user' })
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Request() req: any, @Body() dto: RegisterDto) {
+    return this.authService.register(dto, this.getFingerprint(req));
   }
 
   @Post('login')
@@ -32,8 +39,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login with email and password' })
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(@Request() req: any, @Body() dto: LoginDto) {
+    return this.authService.login(dto, this.getFingerprint(req));
   }
 
   @Post('refresh')
@@ -43,7 +50,7 @@ export class AuthController {
   @Throttle({ auth: { limit: 30, ttl: 900_000 } })
   @ApiOperation({ summary: 'Refresh access token' })
   async refresh(@Request() req: any, @Body() dto: RefreshTokenDto) {
-    return this.authService.refresh(req.user.id, req.user.email, req.user.role, dto.refreshToken);
+    return this.authService.refresh(req.user.id, req.user.email, req.user.role, dto.refreshToken, this.getFingerprint(req));
   }
 
   @Post('logout')
@@ -60,8 +67,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login or register via Google OAuth' })
-  async oauthGoogle(@Body() dto: OAuthCallbackDto) {
-    return this.oauthService.handleGoogleCallback(dto.code, dto.redirectUri);
+  async oauthGoogle(@Request() req: any, @Body() dto: OAuthCallbackDto) {
+    return this.oauthService.handleGoogleCallback(dto.code, dto.redirectUri, this.getFingerprint(req));
   }
 
   @Post('oauth/linkedin')
@@ -69,8 +76,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login or register via LinkedIn OAuth' })
-  async oauthLinkedIn(@Body() dto: OAuthCallbackDto) {
-    return this.oauthService.handleLinkedInCallback(dto.code, dto.redirectUri);
+  async oauthLinkedIn(@Request() req: any, @Body() dto: OAuthCallbackDto) {
+    return this.oauthService.handleLinkedInCallback(dto.code, dto.redirectUri, this.getFingerprint(req));
   }
 
   @Get('oauth/accounts')

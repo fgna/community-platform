@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -32,6 +33,18 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
 
     if (!storedToken.user.isActive) {
       throw new UnauthorizedException('User is inactive');
+    }
+
+    // Validate fingerprint if the token was issued with one
+    if (payload.fhp) {
+      const userAgent = req.headers?.['user-agent'] || '';
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const currentFhp = AuthService.computeFingerprint(userAgent, ip);
+      if (currentFhp !== payload.fhp) {
+        // Fingerprint mismatch — revoke the token to prevent replay
+        await this.prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+        throw new UnauthorizedException('Token fingerprint mismatch — session invalidated');
+      }
     }
 
     return { ...storedToken.user, refreshToken };

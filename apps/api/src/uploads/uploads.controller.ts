@@ -18,7 +18,7 @@ export class UploadsController {
   constructor(private readonly uploads: UploadsService) {}
 
   @Post('image')
-  @UseInterceptors(FileInterceptor('file', { storage: undefined }))
+  @UseInterceptors(FileInterceptor('file', { storage: undefined, limits: { fileSize: 10 * 1024 * 1024 } }))
   uploadImage(
     @CurrentUser() user: { id: string },
     @UploadedFile() file: Express.Multer.File,
@@ -27,7 +27,7 @@ export class UploadsController {
   }
 
   @Post('file')
-  @UseInterceptors(FileInterceptor('file', { storage: undefined }))
+  @UseInterceptors(FileInterceptor('file', { storage: undefined, limits: { fileSize: 50 * 1024 * 1024 } }))
   uploadFile(
     @CurrentUser() user: { id: string },
     @UploadedFile() file: Express.Multer.File,
