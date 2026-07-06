@@ -15,15 +15,21 @@ android {
         versionName = "1.0"
     }
 
+    val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
+    val keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
+
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as? String
-            storeFile = keystorePath?.let { file(it) } ?: file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
-                ?: throw GradleException("KEYSTORE_PASSWORD environment variable or gradle property must be set for release builds")
-            keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: "community"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
-                ?: throw GradleException("KEY_PASSWORD environment variable or gradle property must be set for release builds")
+            if (keystorePassword != null && keyPassword != null) {
+                val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as? String
+                storeFile = keystorePath?.let { file(it) } ?: file("release.keystore")
+                storePassword = keystorePassword
+                keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: "community"
+                keyPassword = keyPassword
+            } else {
+                // CI builds without signing; only sign for production releases
+                storeFile = file("release.keystore")
+            }
         }
     }
 
@@ -34,7 +40,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (keystorePassword != null && keyPassword != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
