@@ -10,6 +10,17 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     exclude: ['e2e/**', 'node_modules/**'],
     passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary'],
+      // Baseline floor — raise after measuring with: pnpm test:coverage
+      thresholds: {
+        lines: 10,
+        functions: 10,
+        branches: 10,
+        statements: 10,
+      },
+    },
   },
   resolve: {
     alias: {

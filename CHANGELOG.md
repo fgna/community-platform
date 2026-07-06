@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] — 2026-07-06
+
+### Added
+- `RELEASE_CHECKLIST.md` — concrete per-release checklist covering pre-release, deployment, post-deployment verification, and rollback steps (HAR-010)
+- `.github/dependabot.yml` — weekly automated dependency updates for npm (grouped by production/development) and GitHub Actions ecosystems (HAR-003)
+- `dependency-audit` CI job — runs `pnpm audit --audit-level=high` on every push/PR; fails CI on high/critical vulnerabilities (HAR-003)
+- Coverage thresholds in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — 50% baseline floor (lines/functions/statements), 45% branches; CI now fails on coverage regression (HAR-004)
+- Section 0 in `scripts/verify-vps-deployment.sh` — six environment-variable checks before deployment validation: JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS, NODE_ENV, and Swagger disabled in production (HAR-008)
+
+### Changed
+- `PRODUCTION_READINESS.md` — added link to `RELEASE_CHECKLIST.md` in the Reference section
+
 ## [1.35.0] — 2026-07-06
 
 ### Added

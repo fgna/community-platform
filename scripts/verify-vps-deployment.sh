@@ -107,6 +107,70 @@ echo "Date:         $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo ""
 
 # ════════════════════════════════════════════════════════════════════════════
+# SECTION 0: Configuration validation
+# ════════════════════════════════════════════════════════════════════════════
+echo "── Section 0: Configuration ─────────────────────────────────────────────"
+
+echo "0.1  JWT_SECRET"
+if [ -z "${JWT_SECRET:-}" ]; then
+  fail "JWT_SECRET is not set — generate with: openssl rand -hex 32"
+elif echo "${JWT_SECRET}" | grep -qi "change\|example\|placeholder\|todo\|secret"; then
+  fail "JWT_SECRET looks like a placeholder — generate with: openssl rand -hex 32"
+elif [ "${#JWT_SECRET}" -lt 32 ]; then
+  fail "JWT_SECRET too short (${#JWT_SECRET} chars) — use at least 32 chars"
+else
+  ok "JWT_SECRET set (${#JWT_SECRET} chars)"
+fi
+
+echo "0.2  JWT_REFRESH_SECRET"
+if [ -z "${JWT_REFRESH_SECRET:-}" ]; then
+  fail "JWT_REFRESH_SECRET is not set — generate with: openssl rand -hex 32"
+elif echo "${JWT_REFRESH_SECRET}" | grep -qi "change\|example\|placeholder\|todo\|secret"; then
+  fail "JWT_REFRESH_SECRET looks like a placeholder — generate with: openssl rand -hex 32"
+elif [ "${#JWT_REFRESH_SECRET}" -lt 32 ]; then
+  fail "JWT_REFRESH_SECRET too short (${#JWT_REFRESH_SECRET} chars)"
+else
+  ok "JWT_REFRESH_SECRET set (${#JWT_REFRESH_SECRET} chars)"
+fi
+
+echo "0.3  POSTGRES_PASSWORD"
+if [ -z "${POSTGRES_PASSWORD:-}" ]; then
+  fail "POSTGRES_PASSWORD is not set"
+elif echo "${POSTGRES_PASSWORD}" | grep -qiE "^password$|^postgres$|^changeme$|^secret$"; then
+  fail "POSTGRES_PASSWORD is a well-known default — use a strong random password"
+else
+  ok "POSTGRES_PASSWORD set"
+fi
+
+echo "0.4  CORS_ORIGINS"
+if [ -z "${CORS_ORIGINS:-}" ]; then
+  warn "CORS_ORIGINS is not set — set to https://yourdomain.com for production"
+elif echo "${CORS_ORIGINS}" | grep -q '\*'; then
+  fail "CORS_ORIGINS contains a wildcard ('*') — insecure for production"
+else
+  ok "CORS_ORIGINS: ${CORS_ORIGINS}"
+fi
+
+echo "0.5  NODE_ENV"
+if [ "${NODE_ENV:-}" != "production" ]; then
+  fail "NODE_ENV is '${NODE_ENV:-unset}' — set NODE_ENV=production"
+else
+  ok "NODE_ENV=production"
+fi
+
+echo "0.6  Swagger UI disabled"
+DOCS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3001/api/docs" 2>/dev/null || echo "")
+if [ "$DOCS_STATUS" = "404" ]; then
+  ok "Swagger UI not accessible (HTTP 404)"
+elif [ -z "$DOCS_STATUS" ] || [ "$DOCS_STATUS" = "000" ]; then
+  skip "Swagger check skipped — API not reachable at localhost:3001"
+else
+  fail "Swagger UI is accessible at /api/docs (HTTP $DOCS_STATUS) — set NODE_ENV=production"
+fi
+
+echo ""
+
+# ════════════════════════════════════════════════════════════════════════════
 # SECTION 1: Container state
 # ════════════════════════════════════════════════════════════════════════════
 echo "── Section 1: Container state ──────────────────────────────────────────"
