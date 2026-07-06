@@ -239,11 +239,11 @@ docker compose exec api npx prisma db seed
 
 - Argon2id password hashing
 - JWT access tokens (15 min) + rotating refresh tokens (7 days)
-- SameSite cookie CSRF protection
-- Tiered rate limiting: 100 req/min default, 10 req/15min on login, per-user throttle keys
-- Helmet.js security headers
-- class-validator DTO validation on all inputs
-- Audit log for sensitive admin actions
+- SameSite=Lax auth cookies (set by frontend, server does not use cookies)
+- Tiered rate limiting: 100 req/min default, 10 req/15min on login, per-user throttle keys (via `UserThrottlerGuard`)
+- Helmet.js security headers + CSP in production
+- class-validator DTO validation on all inputs (`whitelist`, `forbidNonWhitelisted`, `transform`)
+- Audit log for 4 admin actions (role change, toggle active, hide post, pin post)
 
 See [SECURITY.md](./SECURITY.md).
 
@@ -257,9 +257,9 @@ pnpm test:coverage           # With coverage report
 cd apps/web && pnpm test:e2e # Playwright E2E (app must be running)
 ```
 
-Coverage targets: **90% overall · 95% business logic · 100% critical services**
+Coverage reports are generated and uploaded as CI artifacts (no gate thresholds enforced).
 
-CI runs on every PR: lint → typecheck → unit tests → build → E2E.
+CI runs on every PR: lint → typecheck → API unit tests → web unit tests → build → Docker build → E2E.
 
 ---
 
@@ -271,7 +271,7 @@ CI runs on every PR: lint → typecheck → unit tests → build → E2E.
 | [API.md](./API.md) | Full REST API reference |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | VPS, Docker, cloud provider guides |
 | [SECURITY.md](./SECURITY.md) | Security model, threat mitigations |
-| [GDPR.md](./GDPR.md) | GDPR compliance features |
+| [GDPR.md](./GDPR.md) | GDPR-supporting features |
 | [THEMING.md](./THEMING.md) | Theme system and customisation |
 | [BACKLOG.md](./BACKLOG.md) | Sprint-by-sprint product backlog |
 | [CHANGELOG.md](./CHANGELOG.md) | Release history |
@@ -289,6 +289,10 @@ CI runs on every PR: lint → typecheck → unit tests → build → E2E.
 See [BACKLOG.md](./BACKLOG.md) for open items.
 
 ---
+
+## Documentation audit basis
+
+The feature and readiness descriptions in this documentation are based on the current repository contents. Claims are limited to source code, configuration, scripts, and tests present in the codebase. Items not verified from code are marked as planned, experimental, or needing verification.
 
 ## License
 

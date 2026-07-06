@@ -4,7 +4,7 @@
 
 ### JWT Tokens
 - **Access tokens**: HS256 JWT, 15-minute expiry, signed with `JWT_SECRET`
-- **Refresh tokens**: UUID v4, stored in PostgreSQL with expiry timestamp, 7-day lifetime
+- **Refresh tokens**: JWT with embedded `jti` (UUID v4), stored in PostgreSQL with expiry timestamp, 7-day lifetime
 - Refresh token rotation: each use invalidates the old token and issues a new one
 - Logout invalidates the refresh token server-side
 
@@ -12,13 +12,13 @@
 Passwords are hashed with **Argon2id** (via the `argon2` npm package):
 - Industry best practice, winner of Password Hashing Competition
 - Resistant to GPU/ASIC attacks
-- Default parameters: memory=65536, iterations=3, parallelism=4
+- Uses argon2 library defaults (memory=65536, iterations=3, parallelism=4)
 
 ### Role-Based Access Control
 Two roles: `ADMIN` and `MEMBER`
-- `JwtAuthGuard` is a global guard — all endpoints require authentication by default
-- Public endpoints are explicitly marked with `@SetMetadata(IS_PUBLIC_KEY, true)`
-- `RolesGuard` is a global guard — checks `@Roles('ADMIN')` on controllers/handlers
+- `JwtAuthGuard` is a global `APP_GUARD` — all endpoints require authentication by default
+- Public endpoints explicitly marked with `@SetMetadata(IS_PUBLIC_KEY, true)`
+- `RolesGuard` is a global `APP_GUARD` — checks `@Roles('ADMIN')` on controllers/handlers
 - Admin operations (user management, content moderation, course/event CRUD) require `ADMIN` role
 
 ## Transport Security
@@ -39,14 +39,15 @@ All responses include security headers via `helmet`:
 ### Rate Limiting
 - Default: 100 requests per 60 seconds (configurable via `THROTTLE_TTL` / `THROTTLE_LIMIT` env vars)
 - Auth named throttler: 60 requests per 15 minutes for auth endpoints
-- Per-route overrides:
+- Per-route overrides on auth controller:
   - Register: 5 requests per hour
   - Login: 10 requests per 15 minutes
   - Refresh: 30 requests per 15 minutes
   - Logout: 10 requests per 15 minutes
-- Implemented via `@nestjs/throttler` with custom `UserThrottlerGuard`
-- Throttle key uses authenticated user ID (not just IP) for logged-in users
-- Applies globally to all endpoints
+- GDPR export: 3 requests per 15 minutes
+- AI Coach chat: 10 requests per minute
+- Implemented via `@nestjs/throttler` with custom `UserThrottlerGuard` (applied globally via `APP_GUARD`)
+- Throttle key uses authenticated user ID (not just IP), falls back to IP for unauthenticated
 
 ## Input Validation
 
@@ -72,6 +73,10 @@ All responses include security headers via `helmet`:
 ### Content Security
 - `X-Frame-Options: DENY` header on all Next.js responses
 - `X-Content-Type-Options: nosniff` on all Next.js responses
+- Content-Security-Policy header on all Next.js responses (default-src, script-src, style-src, connect-src including API URL, frame-src, object-src, base-uri, form-action)
+- NestJS Helmet CSP in production only (separate config from Next.js)
+- Stored XSS mitigated via `sanitize-html` on API post create/update
+- Rendered XSS mitigated via DOMPurify on frontend post rendering
 
 ### Token Storage
 - Tokens stored in localStorage (via Zustand persist) — acceptable for SPAs

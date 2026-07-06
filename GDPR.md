@@ -1,18 +1,25 @@
-# GDPR Compliance
+# GDPR-Supporting Features
 
-This document describes the GDPR compliance features built into the Community Platform.
+This document describes the GDPR-supporting features built into the Community Platform.
+It is not a legal document; consult a data protection professional for compliance advice.
 
-## Legal Basis for Processing
+## Implementation status
 
-| Data | Legal Basis | Purpose |
-|------|-------------|---------|
-| Email, name, password hash | Contract (Art. 6.1.b) | Account creation and authentication |
-| Posts, comments, reactions | Contract (Art. 6.1.b) | Core community functionality |
-| Course progress | Contract (Art. 6.1.b) | Learning hub functionality |
-| Event RSVPs | Contract (Art. 6.1.b) | Event management |
-| Analytics cookies | Consent (Art. 6.1.a) | Platform improvement |
-| Marketing cookies | Consent (Art. 6.1.a) | Personalized recommendations |
-| Audit logs | Legitimate interest (Art. 6.1.f) | Security and abuse prevention |
+The following features are implemented in code. Any claimed legal basis, data retention periods,
+or rights procedures beyond what is verified from the codebase are informational templates
+that deployers must review and customize.
+
+## Data Processing Overview
+
+| Data | Collected? | Purpose |
+|------|------------|---------|
+| Email, name, password hash | Yes (verified) | Account creation and authentication |
+| Posts, comments, reactions | Yes (verified) | Core community functionality |
+| Course progress | Yes (verified) | Learning hub functionality |
+| Event RSVPs | Yes (verified) | Event management |
+| Cookie consent preferences | Yes (verified) | Consent tracking |
+| Analytics/marketing cookies | Opt-in (verified) | Requires explicit user consent |
+| Audit logs | Yes (verified) | Security and abuse prevention [AuditLog model] |
 
 ## Data Subject Rights
 
@@ -124,4 +131,10 @@ In case of a data breach:
 
 ## Data Protection Officer
 
-If your organization processes data at large scale, appoint a DPO as required by Art. 37. Contact: dpo@yourdomain.com
+*Not implemented in code — informational only.* If your organization processes data at large scale, appoint a DPO as required by Art. 37.
+
+---
+
+## Documentation audit basis
+
+The feature descriptions in this document are based on the current repository contents. Claims are limited to source code, configuration, scripts, and tests present in the codebase. Items not verified from code are marked as needing verification.
