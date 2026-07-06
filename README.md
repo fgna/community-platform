@@ -1,6 +1,34 @@
 # Community Platform
 
-A production-ready, self-hosted community and learning platform with a premium dark executive dashboard. Built with Next.js 15, NestJS, PostgreSQL, and Docker.
+A production-oriented, self-hosted community and learning platform with a premium dark executive dashboard. Built with Next.js 15, NestJS, PostgreSQL, and Docker.
+
+> **Status: deployable beta.** Core features are implemented and tested. Some advanced modules (AI Coach, Billing, OAuth, Mobile Android) are experimental. See [Current Status](#current-status) and [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) before deploying to production.
+
+---
+
+## Current Status
+
+| Area | State | Notes |
+|---|---|---|
+| Auth (JWT, RBAC, invites) | Stable | Full unit + integration tests |
+| Community Feed | Stable | Full unit + E2E tests |
+| Courses + Progress | Stable | Unit tests; E2E smoke |
+| Events + RSVP | Stable | Unit tests; E2E smoke |
+| Member Directory | Stable | Unit tests |
+| Theme Engine | Stable | 3 themes, runtime switching |
+| Admin Panel | Stable | Role-guarded; unit tests |
+| GDPR (export, delete, consent) | Stable | Unit tests |
+| Notifications | Beta | Polling-based; no WebSocket yet |
+| Private Messaging | Beta | Polling-based; no WebSocket yet |
+| Search | Beta | Full-text via Prisma; no dedicated engine |
+| Analytics Dashboard | Beta | Aggregated queries; no dedicated pipeline |
+| AI Coach | Experimental | Requires `ANTHROPIC_API_KEY`; stub if missing |
+| Billing (Stripe) | Experimental | Requires `STRIPE_*` keys; disabled by default |
+| OAuth (Google/LinkedIn) | Experimental | Requires OAuth credentials; disabled by default |
+| Mobile Android (WebView) | Experimental | Wrapper app; not in main Docker stack |
+| Coverage gates | Not enforced | Coverage collected as CI artifacts only |
+
+See [FEATURE_STATUS.md](./FEATURE_STATUS.md) for a detailed per-feature matrix.
 
 ---
 
@@ -66,31 +94,36 @@ cp .env.example .env
 # 3. Start everything (postgres + redis + api + web)
 docker compose up --build -d
 
-# 4. Run DB migrations + seed (first run only)
+# 4. Run DB migrations (first run only)
 docker compose exec api npx prisma migrate deploy
-docker compose exec api npx prisma db seed
+
+# 4a. (Local/demo only) Seed sample data — creates known demo accounts
+#     SKIP this in production or use your own admin setup
+SEED_DEMO_DATA=true docker compose exec -e SEED_DEMO_DATA=true api npx prisma db seed
 
 # 5. (Optional) Enable HTTPS — requires a domain with DNS pointed to your server
-#    Set DOMAIN and SSL_EMAIL in .env first
+#    Set DOMAIN and SSL_EMAIL in .env, then run:
 ./nginx/init-ssl.sh
 ```
 
-| Service | URL |
-|---|---|
-| Web app | http://localhost:3000 |
-| API | http://localhost:3001 |
-| Health | http://localhost:3001/health |
-| API Docs | http://localhost:3001/api/docs |
-| HTTPS (with proxy profile) | https://yourdomain.com |
+| Service | URL | Notes |
+|---|---|---|
+| Web app | http://localhost:3000 | |
+| API | http://localhost:3001 | Dev only — not exposed in production |
+| Health | http://localhost:3001/health | |
+| API Docs | http://localhost:3001/api/docs | Dev only — disabled in production |
+| HTTPS (with proxy profile) | https://yourdomain.com | |
 
-**Default accounts (created by seed):**
+> **Note:** `docker compose up` (without `-f docker-compose.yml`) auto-loads `docker-compose.override.yml`, which binds ports 3000 and 3001 to the host — convenient for local development. Production deployments should use `docker compose -f docker-compose.yml --profile proxy up -d` (no override) so only nginx is publicly accessible.
+
+**Demo accounts (created by seed when `SEED_DEMO_DATA=true`):**
 
 | Role | Email | Password |
 |---|---|---|
 | Admin | `admin@example.com` | `Admin123!@#` |
 | Member | `alice@example.com` | `Member123!@#` |
 
-> Change these immediately in production.
+> **Production warning:** Do not run the demo seed in production. These are well-known credentials. See [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md).
 
 ---
 
@@ -111,9 +144,11 @@ docker compose up postgres redis -d
 # Copy and configure env
 cp .env.example .env
 
-# Run database migrations and seed
+# Run database migrations
 pnpm db:migrate
-pnpm db:seed
+
+# Seed demo data (local/dev only — creates known demo accounts)
+SEED_DEMO_DATA=true pnpm db:seed
 
 # Start API + web with hot reload
 pnpm dev
@@ -223,15 +258,19 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
 **Minimum VPS:** 1 vCPU · 2 GB RAM · 20 GB disk · Ubuntu 24.04
 
 ```bash
-# Quick VPS deploy
+# Quick VPS deploy (production mode — no host port exposure for api/web)
 curl -fsSL https://get.docker.com | sh
 git clone <repo-url> /opt/community-platform && cd /opt/community-platform
 cp .env.example .env && nano .env   # set secrets, DOMAIN, CORS_ORIGINS
-docker compose up --build -d
+
+# Start without docker-compose.override.yml (production mode)
+docker compose -f docker-compose.yml --profile proxy up --build -d
 docker compose exec api npx prisma migrate deploy
-docker compose exec api npx prisma db seed
+# Do NOT run db:seed in production — it creates known demo credentials
 ./nginx/init-ssl.sh                 # enable HTTPS (requires domain + DNS)
 ```
+
+> See [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) for the full pre-production checklist.
 
 ---
 
@@ -267,26 +306,29 @@ CI runs on every PR: lint → typecheck → API unit tests → web unit tests �
 
 | Doc | Contents |
 |---|---|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data flow, component diagram |
-| [API.md](./API.md) | Full REST API reference |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | VPS, Docker, cloud provider guides |
+| [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) | Pre-production checklist |
+| [FEATURE_STATUS.md](./FEATURE_STATUS.md) | Per-feature maturity matrix |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data flow, module diagram |
+| [API.md](./API.md) | REST API reference (core endpoints) |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | VPS, Docker, dev vs. production modes |
 | [SECURITY.md](./SECURITY.md) | Security model, threat mitigations |
 | [GDPR.md](./GDPR.md) | GDPR-supporting features |
 | [THEMING.md](./THEMING.md) | Theme system and customisation |
-| [BACKLOG.md](./BACKLOG.md) | Sprint-by-sprint product backlog |
+| [ROADMAP.md](./ROADMAP.md) | Future work and planned features |
+| [BACKLOG.md](./BACKLOG.md) | Active tasks and open bugs |
 | [CHANGELOG.md](./CHANGELOG.md) | Release history |
 
 ---
 
 ## Contributing
 
-1. Branch from `develop`: `git checkout -b feature/my-feature`
+1. Branch from `main`: `git checkout -b feature/my-feature`
 2. Write tests first (TDD — RED → GREEN → REFACTOR)
 3. Ensure `pnpm test` and `pnpm lint` pass
 4. Update `CHANGELOG.md`
-5. Open a PR against `develop`
+5. Open a PR against `main`
 
-See [BACKLOG.md](./BACKLOG.md) for open items.
+See [BACKLOG.md](./BACKLOG.md) for open items and [ROADMAP.md](./ROADMAP.md) for planned features.
 
 ---
 

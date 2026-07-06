@@ -3,8 +3,22 @@ import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
+// Guard: this seed creates well-known demo credentials.
+// It must not run unintentionally in production.
+// Set SEED_DEMO_DATA=true to enable it (local dev and CI only).
+const SEED_DEMO_DATA = process.env.SEED_DEMO_DATA === 'true';
+if (!SEED_DEMO_DATA) {
+  console.log(
+    'Demo seed skipped — SEED_DEMO_DATA is not set to "true".\n' +
+    'To seed demo data for local development, run:\n' +
+    '  SEED_DEMO_DATA=true pnpm db:seed\n' +
+    'Do NOT run the demo seed in production.',
+  );
+  process.exit(0);
+}
+
 async function main() {
-  console.log('Starting database seed...');
+  console.log('Starting database seed (demo data)...');
 
   // Create admin user
   const adminPasswordHash = await argon2.hash('Admin123!@#');

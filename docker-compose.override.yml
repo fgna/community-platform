@@ -1,12 +1,21 @@
-# Local development overrides.
-# The production CMD ("node dist/main") is intentionally left intact.
-# For hot-reloading, run `pnpm dev` locally instead of docker compose.
+# Local development overrides — automatically loaded by `docker compose` when this file is present.
+#
+# DO NOT use this file in production.
+# Production deployments should explicitly exclude it:
+#   docker compose -f docker-compose.yml --profile proxy up -d
+#
+# This file is intentionally committed so that local dev and CI smoke tests
+# (which auto-load it) get host port bindings without any extra flags.
 services:
   api:
+    ports:
+      - "3001:3001"
     environment:
       NODE_ENV: development
       LOG_LEVEL: debug
 
   web:
+    ports:
+      - "3000:3000"
     environment:
       NODE_ENV: development

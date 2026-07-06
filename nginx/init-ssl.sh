@@ -1,8 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
-DOMAIN="${DOMAIN:?Set DOMAIN in .env}"
-EMAIL="${SSL_EMAIL:?Set SSL_EMAIL in .env}"
+# Capture any explicit shell variable overrides before loading .env,
+# so that shell exports (e.g. DOMAIN=foo ./nginx/init-ssl.sh) take precedence.
+_DOMAIN="${DOMAIN:-}"
+_SSL_EMAIL="${SSL_EMAIL:-}"
+_DATA_DIR="${DATA_DIR:-}"
+_SSL_STAGING="${SSL_STAGING:-}"
+
+# Load .env if present — provides defaults for variables not set in the shell.
+if [ -f ".env" ]; then
+  set -a
+  # shellcheck source=../.env
+  . "./.env"
+  set +a
+fi
+
+# Restore shell overrides (non-empty shell value wins over .env value).
+[ -n "$_DOMAIN" ]      && DOMAIN="$_DOMAIN"
+[ -n "$_SSL_EMAIL" ]   && SSL_EMAIL="$_SSL_EMAIL"
+[ -n "$_DATA_DIR" ]    && DATA_DIR="$_DATA_DIR"
+[ -n "$_SSL_STAGING" ] && SSL_STAGING="$_SSL_STAGING"
+
+DOMAIN="${DOMAIN:?DOMAIN is not set — add DOMAIN=yourdomain.com to .env or export it before running this script}"
+EMAIL="${SSL_EMAIL:?SSL_EMAIL is not set — add SSL_EMAIL=you@yourdomain.com to .env or export it before running this script}"
 DATA_DIR="${DATA_DIR:-./data}"
 STAGING="${SSL_STAGING:-0}"
 

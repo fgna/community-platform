@@ -3,6 +3,19 @@
 > Format: `[ID] Title` · **Priority**: P0–P3 · **Size**: XS / S / M / L / XL  
 > Status: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` deferred
 
+This file tracks active work. Completed feature history lives in [CHANGELOG.md](./CHANGELOG.md). Future planned features are in [ROADMAP.md](./ROADMAP.md).
+
+---
+
+## Active / Open Items
+
+| ID | Item | Priority | Size | Status |
+|----|------|----------|------|--------|
+| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[ ]` |
+| GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
+| GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
+| GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
+
 ---
 
 ## Phase 1 — MVP
@@ -183,7 +196,7 @@
 | Q-004 | Playwright e2e: course enroll + progress | P1 | M | `[x]` |
 | Q-005 | Playwright e2e: event RSVP | P1 | S | `[x]` |
 | Q-006 | API integration tests (Supertest) | P0 | L | `[x]` |
-| Q-007 | Coverage gates enforced in CI (90% overall) | P0 | S | `[x]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[ ]` |
 | D-001 | GitHub Actions CI pipeline (lint, typecheck, test, build, e2e) | P0 | M | `[x]` |
 | D-002 | Dockerfile optimisation (multi-stage, non-root user) | P0 | S | `[x]` |
 | D-003 | Automated Prisma migration in Docker entrypoint | P0 | S | `[x]` |
@@ -518,11 +531,11 @@ A story is **Done** when:
 
 - [ ] Feature works as described in a running app
 - [ ] Unit tests written and passing
-- [ ] Coverage thresholds met (90% overall / 95% business logic)
+- [ ] Coverage reported (gate threshold enforcement: see Q-007)
 - [ ] No TypeScript errors (`pnpm typecheck`)
 - [ ] No lint errors (`pnpm lint`)
 - [ ] CHANGELOG.md updated
-- [ ] PR reviewed and merged to `develop`
+- [ ] PR reviewed and merged to `main`
 
 ---
 

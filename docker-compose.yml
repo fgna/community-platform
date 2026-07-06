@@ -58,8 +58,10 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
       LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
-    ports:
-      - "3001:3001"
+    # No host port binding — internal only in production.
+    # docker-compose.override.yml adds ports for local development.
+    expose:
+      - "3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,8 +89,10 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-    ports:
-      - "3000:3000"
+    # No host port binding — internal only in production.
+    # docker-compose.override.yml adds ports for local development.
+    expose:
+      - "3000"
     depends_on:
       api:
         condition: service_healthy

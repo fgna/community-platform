@@ -48,6 +48,7 @@ All responses include security headers via `helmet`:
 - AI Coach chat: 10 requests per minute
 - Implemented via `@nestjs/throttler` with custom `UserThrottlerGuard` (applied globally via `APP_GUARD`)
 - Throttle key uses authenticated user ID (not just IP), falls back to IP for unauthenticated
+- **Note**: the per-account brute-force protection in `AuthService` (`loginAttempts` Map) is in-memory; it resets on process restart and does not work across multiple API instances. In a horizontally scaled or frequently restarted deployment, this protection is weaker than the `@nestjs/throttler` layer above
 
 ## Input Validation
 
@@ -60,7 +61,7 @@ All responses include security headers via `helmet`:
 
 ### Sensitive Data Handling
 - Password hashes never returned in API responses (explicitly excluded in Prisma selects)
-- Refresh tokens are opaque UUIDs — never expose JWT structure
+- Refresh tokens are HS256 JWTs (signed with `JWT_REFRESH_SECRET`) stored as full JWT strings in the `RefreshToken` table; the `jti` claim (UUID v4) enables per-token revocation
 - Audit logs record sensitive admin actions
 
 ### GDPR Compliance
@@ -79,8 +80,10 @@ All responses include security headers via `helmet`:
 - Rendered XSS mitigated via DOMPurify on frontend post rendering
 
 ### Token Storage
-- Tokens stored in localStorage (via Zustand persist) — acceptable for SPAs
-- For higher security requirements, consider httpOnly cookies instead
+- Access and refresh tokens are stored in Zustand (persisted to localStorage)
+- **XSS risk**: tokens in localStorage are readable by any JavaScript on the page; a stored XSS attack can steal them. The XSS mitigations (DOMPurify, sanitize-html, CSP) reduce this risk but do not eliminate it
+- The Next.js middleware also mirrors the access token and user role into a non-httpOnly `auth-session` cookie for SSR route gating — this cookie is read by middleware only and is not used for backend authorization; the backend always validates the `Authorization: Bearer` JWT
+- This model is acceptable for a low-to-medium-risk SPA; for high-security deployments (financial, medical, sensitive data) consider migrating to httpOnly, Secure, SameSite=Strict cookies managed server-side
 
 ## Dependency Security
 
