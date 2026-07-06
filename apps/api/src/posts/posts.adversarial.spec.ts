@@ -255,26 +255,10 @@ describe('PostsService — adversarial', () => {
 
     it('null byte in content is stripped during sanitisation', async () => {
       const nullByteContent = 'before\x00after';
-      const sanitized = sanitizeHtml(nullByteContent, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
-        allowedAttributes: {
-          ...sanitizeHtml.defaults.allowedAttributes,
-          img: ['src', 'alt', 'title', 'width', 'height'],
-          a: ['href', 'target', 'rel', 'class'],
-          span: ['class'],
-          '*': ['style'],
-        },
-        allowedStyles: {
-          '*': {
-            color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-            'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-            'text-align': [/^left$/, /^right$/, /^center$/],
-            'font-size': [/^\d+(?:px|em|%)$/],
-          },
-        },
-        disallowedTagsMode: 'discard',
-      });
-      prisma.post.create.mockResolvedValue({ id: 'p-null', content: sanitized });
+      prisma.post.create.mockImplementation(async ({ data }) => ({
+        id: 'p-null',
+        content: data.content,
+      }));
 
       const result = await service.create({ content: nullByteContent }, 'u1');
       expect(result.content).not.toContain('\x00');

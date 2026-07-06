@@ -17,18 +17,16 @@ android {
 
     val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String
     val keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String
+    val canSign = keystorePassword != null && keyPassword != null
 
-    signingConfigs {
-        create("release") {
-            if (keystorePassword != null && keyPassword != null) {
+    if (canSign) {
+        signingConfigs {
+            create("release") {
                 val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as? String
                 storeFile = keystorePath?.let { file(it) } ?: file("release.keystore")
                 storePassword = keystorePassword
                 keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: "community"
                 keyPassword = keyPassword
-            } else {
-                // CI builds without signing; only sign for production releases
-                storeFile = file("release.keystore")
             }
         }
     }
@@ -40,7 +38,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (keystorePassword != null && keyPassword != null) {
+            if (canSign) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }

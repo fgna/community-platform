@@ -5,6 +5,28 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import sanitizeHtml from 'sanitize-html';
 
+function sanitizeContent(content: string): string {
+  return sanitizeHtml(content, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      img: ['src', 'alt', 'title', 'width', 'height'],
+      a: ['href', 'target', 'rel', 'class'],
+      span: ['class'],
+      '*': ['style'],
+    },
+    allowedStyles: {
+      '*': {
+        color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+        'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
+        'text-align': [/^left$/, /^right$/, /^center$/],
+        'font-size': [/^\d+(?:px|em|%)$/],
+      },
+    },
+    disallowedTagsMode: 'discard',
+  }).replace(/\x00/g, '');
+}
+
 const pollSelect = {
   id: true,
   question: true,
@@ -218,25 +240,7 @@ export class PostsService {
   }
 
   async create(dto: CreatePostDto, authorId: string) {
-    const sanitized = sanitizeHtml(dto.content, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
-      allowedAttributes: {
-        ...sanitizeHtml.defaults.allowedAttributes,
-        img: ['src', 'alt', 'title', 'width', 'height'],
-        a: ['href', 'target', 'rel', 'class'],
-        span: ['class'],
-        '*': ['style'],
-      },
-      allowedStyles: {
-        '*': {
-          color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-          'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-          'text-align': [/^left$/, /^right$/, /^center$/],
-          'font-size': [/^\d+(?:px|em|%)$/],
-        },
-      },
-      disallowedTagsMode: 'discard',
-    });
+    const sanitized = sanitizeContent(dto.content);
     const post = await this.prisma.post.create({
       data: {
         content: sanitized,
@@ -282,25 +286,7 @@ export class PostsService {
       throw new ForbiddenException('Post is not available');
     }
 
-    const sanitized = sanitizeHtml(content, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img', 'figure', 'figcaption', 'span', 'del', 'ins', 'sup', 'sub']),
-      allowedAttributes: {
-        ...sanitizeHtml.defaults.allowedAttributes,
-        img: ['src', 'alt', 'title', 'width', 'height'],
-        a: ['href', 'target', 'rel', 'class'],
-        span: ['class'],
-        '*': ['style'],
-      },
-      allowedStyles: {
-        '*': {
-          color: [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-          'background-color': [/^#(0x)?[0-9a-fA-F]+$/i, /^rgb\(/],
-          'text-align': [/^left$/, /^right$/, /^center$/],
-          'font-size': [/^\d+(?:px|em|%)$/],
-        },
-      },
-      disallowedTagsMode: 'discard',
-    });
+    const sanitized = sanitizeContent(content);
     return this.prisma.post.update({
       where: { id },
       data: { content: sanitized },
