@@ -6,12 +6,12 @@
 
 | Mode | Command | Port exposure | When to use |
 |------|---------|---------------|-------------|
-| **Local dev** | `docker compose up -d` | api:3001, web:3000 on host | Development and local testing |
+| **Local dev** | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` | api:3001, web:3000 on host | Development and local testing |
 | **Production** | `docker compose -f docker-compose.yml --profile proxy up -d` | Only nginx on 80/443 | Any public-facing server |
 
-The key difference is `docker-compose.override.yml`: Docker Compose auto-loads it when present in the working directory, which adds host port bindings for the api and web services. Production deployments use `-f docker-compose.yml` explicitly to skip the override and keep api/web internal-only, accessible only through nginx.
+`docker-compose.dev.yml` adds host port bindings for the api and web services and must be loaded explicitly. It was previously named `docker-compose.override.yml`; the rename removes the Docker Compose auto-load behaviour so that plain `docker compose up` no longer exposes ports 3001/3000 on the host.
 
-**Never run `docker compose up` (without `-f`) on a production server** — it will expose your API directly on port 3001.
+**Never omit `-f docker-compose.yml` on a production server** — always be explicit about which files are loaded.
 
 ---
 

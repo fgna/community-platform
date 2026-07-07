@@ -91,8 +91,8 @@ cp .env.example .env
 #   JWT_SECRET=<openssl rand -hex 32>
 #   JWT_REFRESH_SECRET=<openssl rand -hex 32>
 
-# 3. Start everything (postgres + redis + api + web)
-docker compose up --build -d
+# 3. Start everything (postgres + redis + api + web) with dev port bindings
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 # 4. Run DB migrations (first run only)
 docker compose exec api npx prisma migrate deploy
@@ -114,7 +114,7 @@ SEED_DEMO_DATA=true docker compose exec -e SEED_DEMO_DATA=true api npx prisma db
 | API Docs | http://localhost:3001/api/docs | Dev only — disabled in production |
 | HTTPS (with proxy profile) | https://yourdomain.com | |
 
-> **Note:** `docker compose up` (without `-f docker-compose.yml`) auto-loads `docker-compose.override.yml`, which binds ports 3000 and 3001 to the host — convenient for local development. Production deployments should use `docker compose -f docker-compose.yml --profile proxy up -d` (no override) so only nginx is publicly accessible.
+> **Note:** Local development requires `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` to get host port bindings for the api (3001) and web (3000). Production deployments use only `docker compose -f docker-compose.yml --profile proxy up -d` so only nginx is publicly accessible.
 
 **Demo accounts (created by seed when `SEED_DEMO_DATA=true`):**
 
@@ -263,7 +263,7 @@ curl -fsSL https://get.docker.com | sh
 git clone <repo-url> /opt/community-platform && cd /opt/community-platform
 cp .env.example .env && nano .env   # set secrets, DOMAIN, CORS_ORIGINS
 
-# Start without docker-compose.override.yml (production mode)
+# Start in production mode (base file only — no dev port exposure)
 docker compose -f docker-compose.yml --profile proxy up --build -d
 docker compose exec api npx prisma migrate deploy
 # Do NOT run db:seed in production — it creates known demo credentials

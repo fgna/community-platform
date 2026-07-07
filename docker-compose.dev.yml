@@ -1,0 +1,21 @@
+# Local development overrides — must be loaded explicitly:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# DO NOT use this file in production. Production deployments use only the base file:
+#   docker compose -f docker-compose.yml --profile proxy up -d
+#
+# This file is NOT auto-loaded. It replaces docker-compose.override.yml to prevent
+# accidental host port exposure when running plain `docker compose up` on a production server.
+services:
+  api:
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  web:
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development

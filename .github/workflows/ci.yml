@@ -340,7 +340,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Build and start all services
-        run: docker compose up --build -d --wait --wait-timeout 180
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d --wait --wait-timeout 180
 
       - name: Verify API health endpoint
         run: |
@@ -365,7 +365,7 @@ jobs:
 
       - name: Tear down
         if: always()
-        run: docker compose down -v
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
   # ─── E2E Tests ──────────────────────────────────────────────────────────────
   test-e2e:
