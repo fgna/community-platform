@@ -11,8 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **HAR-011**: CSP hardening — `apps/web` now sets a per-request nonce-based `script-src` via middleware (`'self' 'nonce-<random>' 'strict-dynamic'`, no `unsafe-inline`; `unsafe-eval` dev-only for HMR) instead of the static `unsafe-inline`/`unsafe-eval` policy in `next.config.ts`. `style-src 'unsafe-inline'` is kept (and documented) since React inline `style` props have no nonce-based alternative. `apps/api`'s production Helmet CSP `script-src` reduced to `'self'` — production never serves scripts, so neither `unsafe-inline` nor `unsafe-eval` was ever needed there.
 - **HAR-013**: Request ID propagation — every API request gets an `X-Request-Id` (trusts an upstream-supplied header, otherwise mints a UUID), echoed back on the response and included in every JSON error body and 5xx log line for correlation.
 
+### Added
+- `.github/ISSUE_TEMPLATE/` — bug report, feature request, security hardening, deployment issue, and documentation issue templates, plus a chooser config pointing to private vulnerability reporting
+- `.github/pull_request_template.md` — Summary/Type/Verification/Risk/Deployment notes/Linked issue sections
+- `.github/workflows/codeql.yml` — CodeQL static analysis for JS/TS on push/PR to `main` and weekly
+- `.github/workflows/secret-scan.yml` — Gitleaks scan on push/PR; `.gitleaksignore` documents the one known false positive (a CI test-fixture JWT secret)
+- `BACKLOG.md` — new "GitHub Repository Hygiene" section (GH-001–GH-007) tracking the settings-only items (branch protection, CODEOWNERS, secret scanning toggle, release environment protection, label taxonomy, Issues/Projects migration) that need repo admin access rather than code
+
 ### Changed
 - **HAR-012**: `apps/api/vitest.config.ts` — added a `src/auth/**` coverage threshold (88% lines/statements, 80% functions, 62% branches) independent of the global 50/50/55/50 baseline, gating the auth service well above the general floor.
+
+### Fixed
+- README status table and testing section corrected — both claimed coverage gates were "not enforced" collection-only, which has been stale since HAR-004; now reflects the actual enforced thresholds
 
 ## [1.36.0] — 2026-07-06
 

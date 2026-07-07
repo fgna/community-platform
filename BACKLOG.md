@@ -24,10 +24,84 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | HAR-011 | CSP hardening — remove unsafe-eval/unsafe-inline from script-src | P1 | M | `[x]` |
 | HAR-012 | Raise coverage gates on auth-critical files above baseline | P1 | S | `[x]` |
 | HAR-013 | Request ID propagation for observability | P2 | S | `[x]` |
+| GH-001 | Enable branch protection on `main` | P1 | XS | `[ ]` |
+| GH-002 | Add CODEOWNERS with real usernames/teams | P1 | XS | `[ ]` |
+| GH-003 | Enable secret scanning + push protection (repo settings) | P1 | XS | `[ ]` |
+| GH-004 | Enable private vulnerability reporting (repo settings) | P2 | XS | `[ ]` |
+| GH-005 | Protected environment + required reviewers for release workflow | P2 | S | `[ ]` |
+| GH-006 | Create label taxonomy (type/priority/size/area) | P2 | XS | `[ ]` |
+| GH-007 | Migrate active backlog items into GitHub Issues + Projects/Milestones | P3 | L | `[ ]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
+
+---
+
+## GitHub Repository Hygiene (Manual — Requires Org/Repo Admin Access)
+
+These came out of a repo hygiene audit. Issue templates, PR template, CodeQL, and
+Gitleaks are implemented in code (see HAR-011/012/013 above for the unrelated
+security-hardening items landed in the same pass, and the `.github/` directory
+for these). Everything below needs a human with repo admin access clicking
+through GitHub Settings — none of it can be expressed as a committed file.
+
+### GH-001 — Branch protection on `main`  `[ ]` P1 · XS
+
+Settings → Branches → add a ruleset for `main`:
+- Require a pull request before merging (≥1 approval)
+- Require status checks to pass: `Lint`, `Typecheck`, `Dependency Audit`, `API Unit Tests`, `Web Unit Tests`, `Build`
+- Require branches to be up to date before merging
+- Require review from Code Owners (once GH-002 lands)
+- Block force pushes and branch deletion
+
+### GH-002 — CODEOWNERS  `[ ]` P1 · XS
+
+Add `.github/CODEOWNERS` once real GitHub usernames/teams are known, e.g.:
+```
+/apps/api/                 @<backend-owner>
+/apps/web/                 @<frontend-owner>
+/apps/api/prisma/          @<backend-owner> @<ops-owner>
+/docker-compose*.yml       @<ops-owner>
+/nginx/                    @<ops-owner>
+/.github/workflows/        @<ops-owner>
+/SECURITY.md               @<ops-owner>
+/PRODUCTION_READINESS.md   @<ops-owner>
+```
+
+### GH-003 — Secret scanning + push protection  `[ ]` P1 · XS
+
+Settings → Code security → enable "Secret scanning" and "Push protection".
+Complements the Gitleaks CI job (`.github/workflows/secret-scan.yml`), which
+scans on push/PR but can't block a push before it reaches GitHub the way
+native push protection does.
+
+### GH-004 — Private vulnerability reporting  `[ ]` P2 · XS
+
+Settings → Code security → enable "Private vulnerability reporting". The
+issue template chooser (`.github/ISSUE_TEMPLATE/config.yml`) already links to
+`/security/advisories/new`; it 404s until this is turned on.
+
+### GH-005 — Protected release environment  `[ ]` P2 · S
+
+Settings → Environments → create a `production` (or `release`) environment
+with required reviewers, attach it to the job(s) in `.github/workflows/release.yml`
+that push Docker images / create the GitHub Release.
+
+### GH-006 — Label taxonomy  `[ ]` P2 · XS
+
+Create via repo Settings → Labels (or `gh label create` scripted once):
+`type:{bug,feature,security,ops,docs,test,refactor}`,
+`priority:{p0,p1,p2,p3}`, `size:{xs,s,m,l,xl}`,
+`area:{api,web,auth,db,docker,ci,mobile,docs,security}`.
+
+### GH-007 — Migrate backlog into Issues + Projects  `[ ]` P3 · L
+
+Bigger process change, not a settings toggle: move `BACKLOG.md`'s active
+items into GitHub Issues (labels for priority/size, milestones for
+phase/sprint), keeping `BACKLOG.md` as a generated summary rather than the
+source of truth. Deliberately not attempted in this pass — it changes how
+the whole team tracks work, not just repo config.
 
 ---
 

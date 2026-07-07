@@ -26,7 +26,7 @@ A production-oriented, self-hosted community and learning platform with a premiu
 | Billing (Stripe) | Experimental | Requires `STRIPE_*` keys; disabled by default |
 | OAuth (Google/LinkedIn) | Experimental | Requires OAuth credentials; disabled by default |
 | Mobile Android (WebView) | Experimental | Wrapper app; not in main Docker stack |
-| Coverage gates | Not enforced | Coverage collected as CI artifacts only |
+| Coverage gates | Enforced | 50–55% baseline on gated service files; 62–88% on `src/auth/**` |
 
 See [FEATURE_STATUS.md](./FEATURE_STATUS.md) for a detailed per-feature matrix.
 
@@ -296,7 +296,7 @@ pnpm test:coverage           # With coverage report
 cd apps/web && pnpm test:e2e # Playwright E2E (app must be running)
 ```
 
-Coverage reports are generated and uploaded as CI artifacts (no gate thresholds enforced).
+Coverage reports are generated and uploaded as CI artifacts. Gate thresholds are enforced in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — a 50–55% baseline on the files with dedicated unit tests, and a stricter 62–88% floor on `src/auth/**`.
 
 CI runs on every PR: lint → typecheck → API unit tests → web unit tests → build → Docker build → E2E.
 
