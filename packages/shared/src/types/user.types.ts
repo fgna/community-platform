@@ -37,5 +37,5 @@ export interface TokenPair {
 export interface LoginResponse {
   user: AuthUser;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string; // no longer in body — moved to httpOnly cookie (HAR-001)
 }

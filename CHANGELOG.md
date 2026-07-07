@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.38.0] — 2026-07-07
+
+### Security
+- **HAR-001**: Move `refreshToken` out of `localStorage` into an `httpOnly; Secure; SameSite=Lax` cookie (`refresh_token`, path `/api/auth`)
+  - API: added `cookie-parser`; login/register/OAuth set the cookie and omit `refreshToken` from response body; refresh endpoint reads from cookie and rotates it; logout clears it server-side
+  - `JwtRefreshStrategy` extracts token from cookie first, body second (body fallback retained)
+  - Zustand `refreshToken` state removed — no token persisted to `localStorage`; `accessToken` kept in-memory only (not persisted); silent refresh on page load via cookie
+  - `withCredentials: true` added to `apiClient`; `auth-session` cookie changed from token value to session-indicator `"1"`
+  - `SECURITY.md` updated with full cookie model including Android known limitation
+
+### Changed
+- `packages/shared` `LoginResponse.refreshToken` made optional (no longer in response body)
+
 ## [1.36.0] — 2026-07-06
 
 ### Security

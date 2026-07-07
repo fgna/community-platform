@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { createTestApp, cleanupByEmailSuffix, registerUser } from './helpers';
+import { createTestApp, cleanupByEmailSuffix, registerUser, extractRefreshTokenCookie } from './helpers';
 
 const SUFFIX = '@auth.int.test';
 
@@ -30,7 +30,8 @@ describe('Auth — integration', () => {
         .expect(201);
 
       expect(res.body).toHaveProperty('accessToken');
-      expect(res.body).toHaveProperty('refreshToken');
+      expect(res.body).not.toHaveProperty('refreshToken');
+      expect(extractRefreshTokenCookie(res)).toBeTruthy();
       expect(res.body.user.email).toBe(`new${SUFFIX}`);
       expect(res.body.user.role).toBe('MEMBER');
       expect(res.body.user).not.toHaveProperty('passwordHash');
@@ -88,7 +89,8 @@ describe('Auth — integration', () => {
         .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
-      expect(res.body).toHaveProperty('refreshToken');
+      expect(res.body).not.toHaveProperty('refreshToken');
+      expect(extractRefreshTokenCookie(res)).toBeTruthy();
       expect(res.body.user.email).toBe(email);
     });
 
