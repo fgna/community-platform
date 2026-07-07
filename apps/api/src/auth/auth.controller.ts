@@ -2,7 +2,7 @@ import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, Res, Ht
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { OAuthService } from './oauth.service';
 import { LoginDto } from './dto/login.dto';
