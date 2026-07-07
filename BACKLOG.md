@@ -12,7 +12,7 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | ID | Item | Priority | Size | Status |
 |----|------|----------|------|--------|
 | HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[x]` |
-| HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[ ]` |
+| HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[x]` |
 | HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[x]` |
 | HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[~]` |
 | HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[x]` |
@@ -90,10 +90,13 @@ that push Docker images / create the GitHub Release.
 
 ### GH-006 — Label taxonomy  `[ ]` P2 · XS
 
-Create via repo Settings → Labels (or `gh label create` scripted once):
-`type:{bug,feature,security,ops,docs,test,refactor}`,
-`priority:{p0,p1,p2,p3}`, `size:{xs,s,m,l,xl}`,
-`area:{api,web,auth,db,docker,ci,mobile,docs,security}`.
+Run `./scripts/setup-github-labels.sh` (requires the GitHub CLI, `gh auth login`
+first) to create `type:{bug,feature,security,ops,docs,test,refactor}`,
+`priority:{p0,p1,p2,p3}`, `size:{xs,s,m,l,xl}`, and
+`area:{api,web,auth,db,docker,ci,mobile,docs,security}`. The issue templates
+in `.github/ISSUE_TEMPLATE/` already reference `type:*` labels — run this
+before or shortly after merge so new issues aren't pointing at labels that
+don't exist yet.
 
 ### GH-007 — Migrate backlog into Issues + Projects  `[ ]` P3 · L
 
@@ -109,30 +112,24 @@ the whole team tracks work, not just repo config.
 
 Raises the platform from deployable beta to small-scale production-ready. Items are ordered by implementation priority — do not add product features; do not mark items complete without code + test evidence.
 
-### HAR-001 — httpOnly Secure cookie auth  `[ ]` P1 · L
+### HAR-001 — httpOnly Secure cookie auth  `[x]` P1 · L
 
-**Problem:** Access and refresh tokens are stored in Zustand persisted to `localStorage` (key `community-auth`). Any XSS can steal both. `auth-session` and `user-role` cookies are non-`HttpOnly` and lack `Secure`.
+**Completed:**
+- `cookie-parser` added to API; `app.use(cookieParser())` in `main.ts`
+- Login, register, and OAuth endpoints set `refresh_token` as httpOnly Secure SameSite=Lax cookie (path `/api/auth`); `refreshToken` removed from response body
+- Refresh endpoint reads token from cookie (body fallback retained for API clients); rotates and re-sets cookie
+- Logout endpoint clears cookie server-side; accepts body token as fallback
+- `JwtRefreshStrategy` now extracts token from cookie first, body second
+- Zustand auth store: `refreshToken` removed from state and persist; `accessToken` in memory only (not persisted); `auth-session` cookie changed from token to `"1"` (session indicator)
+- `withCredentials: true` on apiClient; silent-refresh interceptor sends empty body (cookie auto-sent)
+- `LoginResponse` type in shared package: `refreshToken` made optional
+- `SECURITY.md` updated with full cookie model description
 
-**Goal:** Move refresh token to an `httpOnly; Secure; SameSite=Lax` cookie managed server-side. Keep minimal display state in Zustand (no long-lived secrets).
-
-**Requirements:**
-- Backend: add `cookie-parser`; set refresh-token cookie on login/register; read cookie on `/auth/refresh`; clear cookie on logout
-- Frontend: remove `refreshToken` from Zustand persist; set `withCredentials: true` on axios client; Zustand keeps only `user`, `accessToken` (in memory), `isAuthenticated`
-- Logout must clear cookie server-side
-- Refresh rotation must still work
-- Next.js middleware route guards must still work
-- E2E test: login → authenticated page → token expiry → auto-refresh → logout
-
-**Acceptance criteria:**
-- `refreshToken` absent from `localStorage` after login
-- `Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Lax` in login response
-- Login, refresh, logout all work
-- `SECURITY.md` updated to describe cookie model
-- `PRODUCTION_READINESS.md` httpOnly item marked `[x]`
+**Known limitation:** Android native `AuthClient.kt` reads `refreshToken` from response body — will fail. WebView sessions still work (browser handles cookies). Fix requires `AuthClient.kt` migration.
 
 ---
 
-### HAR-002 — Redis-backed brute-force protection  `[ ]` P1 · M
+### HAR-002 — Redis-backed brute-force protection  `[x]` P1 · M
 
 **Problem:** `loginAttempts` is an in-memory `Map` on `AuthService` (`auth.service.ts` lines 24–27). Resets on any restart. Does not survive scale-out.
 

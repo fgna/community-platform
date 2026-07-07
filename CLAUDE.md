@@ -324,12 +324,39 @@ CHANGELOG.md
 
 `BACKLOG.md` is the single source of truth for all work items. Use it systematically:
 
-- **Before starting work**: Read `BACKLOG.md` to understand current status and priorities.
-- **New features**: Add a backlog entry before implementing. Mark `[~]` while in progress, `[x]` when done.
-- **Bug reports**: Immediately add to the "User-Reported Bugs" section with an ID (BUG-NNN), description, root cause (once identified), size, and status.
-- **Bug fixes**: Update the corresponding backlog entry to `[x]` when the fix is committed.
-- **Security findings**: Add to the "Security & Reliability Fixes" section with a SEC-NNN ID.
-- **Never skip**: Every piece of work — feature, bug, fix, refactor — must be tracked in the backlog. If it's not in `BACKLOG.md`, it didn't happen.
+## Before starting any work
+
+Read `BACKLOG.md` to understand current status and priorities. Never begin implementation without first checking it.
+
+## ID scheme
+
+| Work type | ID prefix | Section in BACKLOG.md |
+|-----------|-----------|----------------------|
+| Feature / story | F-, A-, W-, B-, … | Phase sprints |
+| Bug (user-reported) | BUG-NNN | User-Reported Bugs |
+| Security finding | SEC-NNN | Security & Reliability Fixes |
+| CI / infrastructure | CI-NNN | CI Infrastructure |
+| Production hardening | HAR-NNN | Production Hardening |
+| General quality | Q-NNN | Active / Open Items |
+
+## Active / Open Items table
+
+The table at the top of `BACKLOG.md` is a live dashboard of in-flight and prioritised upcoming work. Keep it accurate:
+
+- **Add a row** when a new item is identified and is either in progress or prioritised for near-term work. Include ID, one-line description, priority (P0–P3), size, and status.
+- **Set status `[~]`** (in progress) when you open the PR or start the implementation.
+- **Set status `[x]`** and remove the row when the PR is merged and the work is fully done.
+- **Do not** add every future feature here — only items that are actively being worked or are the next priority.
+
+## Rules for every work type
+
+- **New work** (feature, hardening, refactor): Add an entry with the correct ID prefix to the appropriate section *before* implementing. Set `[~]` when work starts.
+- **Bug reports**: Add to "User-Reported Bugs" immediately with BUG-NNN, description, and known root cause. Update to `[x]` when the fix is committed.
+- **Security findings**: Add to "Security & Reliability Fixes" with SEC-NNN. Update to `[x]` when fixed.
+- **Hardening items**: Add to "Production Hardening" with HAR-NNN. Include problem, requirements, and acceptance criteria.
+- **CI fixes**: Add to "CI Infrastructure" with CI-NNN.
+- **Never skip**: Every piece of work — feature, bug, fix, refactor, hardening — must be tracked. If it's not in `BACKLOG.md`, it didn't happen.
+- **Never delete completed rows**: Mark `[x]` and leave the row in place. The history matters.
 
 ---
 
@@ -412,8 +439,8 @@ pnpm test:coverage
 # Build for production
 pnpm build
 
-# Docker: start all services
-docker compose up -d
+# Docker: start all services (dev — includes host port bindings)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 # Docker: run migrations
 docker compose exec api pnpm prisma migrate deploy

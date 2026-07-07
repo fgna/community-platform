@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.37.0] — 2026-07-07
+## [1.39.0] — 2026-07-07
 
 ### Security
 - **HAR-011**: CSP hardening — `apps/web` now sets a per-request nonce-based `script-src` via middleware (`'self' 'nonce-<random>' 'strict-dynamic'`, no `unsafe-inline`; `unsafe-eval` dev-only for HMR) instead of the static `unsafe-inline`/`unsafe-eval` policy in `next.config.ts`. `style-src 'unsafe-inline'` is kept (and documented) since React inline `style` props have no nonce-based alternative. `apps/api`'s production Helmet CSP `script-src` reduced to `'self'` — production never serves scripts, so neither `unsafe-inline` nor `unsafe-eval` was ever needed there.
@@ -24,12 +24,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - README status table and testing section corrected — both claimed coverage gates were "not enforced" collection-only, which has been stale since HAR-004; now reflects the actual enforced thresholds
 
+## [1.38.0] — 2026-07-07
+
+### Security
+- **HAR-001**: Move `refreshToken` out of `localStorage` into an `httpOnly; Secure; SameSite=Lax` cookie (`refresh_token`, path `/api/auth`)
+  - API: added `cookie-parser`; login/register/OAuth set the cookie and omit `refreshToken` from response body; refresh endpoint reads from cookie and rotates it; logout clears it server-side
+  - `JwtRefreshStrategy` extracts token from cookie first, body second (body fallback retained)
+  - Zustand `refreshToken` state removed — no token persisted to `localStorage`; `accessToken` kept in-memory only (not persisted); silent refresh on page load via cookie
+  - `withCredentials: true` added to `apiClient`; `auth-session` cookie changed from token value to session-indicator `"1"`
+  - `SECURITY.md` updated with full cookie model including Android known limitation
+
+### Changed
+- `packages/shared` `LoginResponse.refreshToken` made optional (no longer in response body)
+
 ## [1.36.0] — 2026-07-06
 
 ### Security
+- **HAR-002**: Replace in-memory `loginAttempts` Map with Redis-backed `INCR`/`EXPIRE` counters — lockouts now survive API restarts and work correctly across multiple instances; graceful degradation when Redis is unavailable (fail-open with warning log)
 - **OPS-011**: Refresh tokens now set as httpOnly, Secure, SameSite=Strict cookies by the API on login, register, and token refresh; browser sends them automatically so JS never needs to read the value. The JWT refresh strategy accepts cookie-first with request-body fallback for non-browser clients.
 
 ### Added
+- `apps/api/src/redis/redis.module.ts` — global `@Global()` NestJS module providing an `ioredis` client under the `REDIS_CLIENT` injection token; uses `lazyConnect: true` to prevent startup failure when Redis is temporarily unavailable
 - `RELEASE_CHECKLIST.md` — concrete per-release checklist covering pre-release, deployment, post-deployment verification, and rollback steps (HAR-010)
 - `.github/dependabot.yml` — weekly automated dependency updates for npm (grouped by production/development) and GitHub Actions ecosystems (HAR-003)
 - `dependency-audit` CI job — runs `pnpm audit --audit-level=high` on every push/PR; fails CI on high/critical vulnerabilities (HAR-003)
@@ -37,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Section 0 in `scripts/verify-vps-deployment.sh` — six env-var checks before deployment validation (HAR-008)
 
 ### Changed
+- `apps/api/src/auth/auth.service.ts` — three async Redis helpers replace the in-memory Map: `checkLoginAttempts`, `recordFailedAttempt`, `clearLoginAttempts`; all handle Redis errors gracefully with `Logger.warn`
+- `apps/api/src/auth/auth.service.spec.ts` — added `REDIS_CLIENT` mock provider
+- `.github/workflows/ci.yml` — added `redis:7-alpine` service and `REDIS_URL` env var to `test-api` job
 - `PRODUCTION_READINESS.md` — added link to `RELEASE_CHECKLIST.md` in the Reference section
 
 ### Added

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { InvitesService } from '../invites/invites.service';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -28,6 +29,13 @@ const mockInvites = {
   consumeInvite: vi.fn().mockResolvedValue(null),
 };
 
+const mockRedis = {
+  get: vi.fn().mockResolvedValue(null),
+  incr: vi.fn().mockResolvedValue(1),
+  expire: vi.fn().mockResolvedValue(1),
+  del: vi.fn().mockResolvedValue(1),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -38,6 +46,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
         { provide: InvitesService, useValue: mockInvites },
+        { provide: REDIS_CLIENT, useValue: mockRedis },
       ],
     }).compile();
 

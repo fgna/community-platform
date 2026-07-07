@@ -3,6 +3,20 @@ import { useAuthStore } from '@/store/auth.store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Access token lives only in this module-level closure — never in localStorage,
+// never in global Zustand state. XSS cannot enumerate it via React devtools or
+// the Zustand store API. It is lost on page reload and silently re-acquired via
+// the httpOnly refresh_token cookie on the first 401.
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string): void {
+  _accessToken = token;
+}
+
+export function clearAccessToken(): void {
+  _accessToken = null;
+}
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_URL}/api`,
   headers: {
@@ -12,19 +26,18 @@ export const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor — attach access token
+// Request interceptor — attach access token from closure
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (_accessToken) {
+      config.headers.Authorization = `Bearer ${_accessToken}`;
     }
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// Response interceptor — handle 401 and refresh token
+// Response interceptor — handle 401 and silent refresh
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> =
   [];
@@ -46,6 +59,17 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't attempt refresh on the refresh endpoint itself (prevents infinite loop)
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        const { clearAuth } = useAuthStore.getState();
+        clearAccessToken();
+        clearAuth();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -59,21 +83,23 @@ apiClient.interceptors.response.use(
 
       originalRequest._retry = true;
 
-      const { refreshToken, clearAuth, setAccessToken } = useAuthStore.getState();
+      const { isAuthenticated, clearAuth } = useAuthStore.getState();
 
-      if (!refreshToken) {
-        // No session to refresh — propagate the original error (e.g. wrong password on /auth/login)
+      if (!isAuthenticated) {
         return Promise.reject(error);
       }
 
       isRefreshing = true;
 
       try {
-        const response = await axios.post(`${API_URL}/api/auth/refresh`, {
-          refreshToken,
-        });
+        // The httpOnly refresh_token cookie is sent automatically via withCredentials.
+        const response = await axios.post(
+          `${API_URL}/api/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
 
-        const { accessToken: newAccessToken } = response.data;
+        const newAccessToken: string = response.data.accessToken;
         setAccessToken(newAccessToken);
         processQueue(null, newAccessToken);
 
@@ -81,6 +107,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        clearAccessToken();
         clearAuth();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';

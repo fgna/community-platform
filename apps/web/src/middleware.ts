@@ -5,6 +5,15 @@ const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health'];
 const AUTH_PATHS = ['/login', '/register'];
 const ADMIN_PATHS = ['/admin'];
 
+// Middleware runs on the Edge runtime, where `Buffer` isn't part of the
+// guaranteed API surface — use Web Crypto/btoa instead so this doesn't depend
+// on a Node.js polyfill being present.
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
+
 // Nonce-based CSP: each request gets a fresh nonce, so script-src never needs
 // 'unsafe-inline'. 'strict-dynamic' lets Next's own nonce-carrying bootstrap
 // scripts load their child chunks without listing every host. 'unsafe-eval' is
@@ -36,7 +45,7 @@ function buildCspHeader(nonce: string): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const nonce = generateNonce();
   const cspHeader = buildCspHeader(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);

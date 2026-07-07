@@ -41,6 +41,17 @@ export async function cleanupByEmailSuffix(
   await prisma.user.deleteMany({ where: { email: { endsWith: suffix } } });
 }
 
+// The refresh token is issued as an httpOnly `refresh_token` cookie (HAR-001) rather
+// than in the response body. httpOnly only blocks browser JS access — the raw
+// Set-Cookie header is still readable here, which is how integration tests get the
+// token value to exercise /auth/refresh and /auth/logout.
+export function extractRefreshTokenCookie(res: request.Response): string | undefined {
+  const setCookie = res.headers['set-cookie'];
+  const cookies = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+  const match = cookies.map((c) => /refresh_token=([^;]+)/.exec(c)).find(Boolean);
+  return match?.[1];
+}
+
 export async function registerUser(
   app: INestApplication,
   email: string,
@@ -52,7 +63,7 @@ export async function registerUser(
     .send({ email, name, password });
   return {
     accessToken: res.body.accessToken,
-    refreshToken: res.body.refreshToken,
+    refreshToken: extractRefreshTokenCookie(res) ?? '',
     userId: res.body.user?.id,
   };
 }

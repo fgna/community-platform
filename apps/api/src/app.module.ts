@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
+import { normalizeRequestId } from './common/request-id';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -32,6 +33,7 @@ import { TierModule } from './tier/tier.module';
 import { DigestTemplateModule } from './digest/digest-template.module';
 import { BillingModule } from './billing/billing.module';
 import { AiCoachModule } from './ai-coach/ai-coach.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -45,8 +47,7 @@ import { AiCoachModule } from './ai-coach/ai-coach.module';
         // request can be correlated end-to-end; otherwise mint one. Either way,
         // echo it back on the response so clients/error reports can quote it.
         genReqId: (req: any, res: any) => {
-          const existingId = req.headers['x-request-id'];
-          const id = Array.isArray(existingId) ? existingId[0] : existingId || randomUUID();
+          const id = normalizeRequestId(req.headers['x-request-id']) ?? randomUUID();
           res.setHeader('X-Request-Id', id);
           return id;
         },
@@ -71,6 +72,7 @@ import { AiCoachModule } from './ai-coach/ai-coach.module';
         limit: 60,
       },
     ]),
+    RedisModule,
     PrismaModule,
     AuthModule,
     UsersModule,

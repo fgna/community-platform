@@ -59,7 +59,7 @@ services:
       LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
       LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
     # No host port binding — internal only in production.
-    # docker-compose.override.yml adds ports for local development.
+    # docker-compose.dev.yml adds ports for local development (must be loaded explicitly).
     expose:
       - "3001"
     depends_on:
@@ -90,7 +90,7 @@ services:
     environment:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL in .env (e.g. https://yourdomain.com)}
     # No host port binding — internal only in production.
-    # docker-compose.override.yml adds ports for local development.
+    # docker-compose.dev.yml adds ports for local development (must be loaded explicitly).
     expose:
       - "3000"
     depends_on:
