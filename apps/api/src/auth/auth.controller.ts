@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, SetMetadata, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, Response, HttpCode, HttpStatus, SetMetadata, Headers } from '@nestjs/common';
+import type { Response as ExpressResponse } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
@@ -19,19 +20,35 @@ export class AuthController {
     private oauthService: OAuthService,
   ) {}
 
-  private getFingerprint(@Request() req: any): string | undefined {
+  private getFingerprint(req: any): string | undefined {
     const userAgent = req.headers?.['user-agent'] || '';
     const ip = req.ip || req.connection?.remoteAddress || '';
     if (!userAgent && !ip) return undefined;
     return AuthService.computeFingerprint(userAgent, ip);
   }
 
+  private setRefreshCookie(res: ExpressResponse, token: string) {
+    res.cookie('refresh-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/api/auth',
+    });
+  }
+
+  private clearRefreshCookie(res: ExpressResponse) {
+    res.clearCookie('refresh-token', { path: '/api/auth' });
+  }
+
   @Post('register')
   @SetMetadata(IS_PUBLIC_KEY, true)
   @Throttle({ auth: { limit: 5, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Register a new user' })
-  async register(@Request() req: any, @Body() dto: RegisterDto) {
-    return this.authService.register(dto, this.getFingerprint(req));
+  async register(@Request() req: any, @Response({ passthrough: true }) res: ExpressResponse, @Body() dto: RegisterDto) {
+    const result = await this.authService.register(dto, this.getFingerprint(req));
+    this.setRefreshCookie(res, result.refreshToken);
+    return result;
   }
 
   @Post('login')
@@ -39,8 +56,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login with email and password' })
-  async login(@Request() req: any, @Body() dto: LoginDto) {
-    return this.authService.login(dto, this.getFingerprint(req));
+  async login(@Request() req: any, @Response({ passthrough: true }) res: ExpressResponse, @Body() dto: LoginDto) {
+    const result = await this.authService.login(dto, this.getFingerprint(req));
+    this.setRefreshCookie(res, result.refreshToken);
+    return result;
   }
 
   @Post('refresh')
@@ -49,8 +68,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 30, ttl: 900_000 } })
   @ApiOperation({ summary: 'Refresh access token' })
-  async refresh(@Request() req: any, @Body() dto: RefreshTokenDto) {
-    return this.authService.refresh(req.user.id, req.user.email, req.user.role, dto.refreshToken, this.getFingerprint(req));
+  async refresh(@Request() req: any, @Response({ passthrough: true }) res: ExpressResponse, @Body() dto: RefreshTokenDto) {
+    const oldToken = req?.cookies?.['refresh-token'] ?? dto.refreshToken;
+    const result = await this.authService.refresh(req.user.id, req.user.email, req.user.role, oldToken, this.getFingerprint(req));
+    this.setRefreshCookie(res, result.refreshToken);
+    return result;
   }
 
   @Post('logout')
@@ -58,8 +80,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 900_000 } })
   @ApiOperation({ summary: 'Logout and invalidate refresh token' })
-  async logout(@Body() dto: RefreshTokenDto) {
-    return this.authService.logout(dto.refreshToken);
+  async logout(@Request() req: any, @Response({ passthrough: true }) res: ExpressResponse, @Body() dto: RefreshTokenDto) {
+    this.clearRefreshCookie(res);
+    const token = req?.cookies?.['refresh-token'] ?? dto.refreshToken;
+    return this.authService.logout(token);
   }
 
   @Post('oauth/google')

@@ -2,33 +2,58 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 import { join } from 'path';
 import * as fs from 'fs';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
-function validateRequiredSecrets() {
+function validateConfig() {
   const logger = new Logger('Bootstrap');
-  const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+  const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length > 0) {
     logger.fatal(`Missing required environment variables: ${missing.join(', ')}. Refusing to start.`);
     process.exit(1);
   }
+
+  if (process.env.NODE_ENV === 'production') {
+    const placeholders = ['change-me', 'changeme', 'your-secret', 'your-jwt', 'example', 'placeholder', 'todo', 'insert-', 'replace-', 'put-your'];
+    for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET']) {
+      const val = process.env[key] ?? '';
+      if (placeholders.some((p) => val.toLowerCase().includes(p))) {
+        logger.fatal(`${key} looks like a placeholder value. Generate a real secret with: openssl rand -hex 32`);
+        process.exit(1);
+      }
+      if (val.length < 32) {
+        logger.fatal(`${key} is too short (${val.length} chars). Minimum 32 characters required.`);
+        process.exit(1);
+      }
+    }
+
+    const corsOrigins = process.env.CORS_ORIGINS ?? '';
+    if (!corsOrigins || corsOrigins.trim() === '*' || corsOrigins.split(',').some((o) => o.trim() === '*')) {
+      logger.fatal('CORS_ORIGINS must be set to specific origins in production. Wildcard (*) is not allowed.');
+      process.exit(1);
+    }
+  }
 }
 
 async function bootstrap() {
-  validateRequiredSecrets();
+  validateConfig();
 
-  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    bufferLogs: true,
     rawBody: true,
   });
+  app.useLogger(app.get(PinoLogger));
+  const logger = new Logger('Bootstrap');
 
   app.enableShutdownHooks();
   app.set('trust proxy', 1);
+  app.use(cookieParser());
 
   // Ensure uploads directory exists and serve as static files
   const uploadsDir = join(process.cwd(), 'uploads');

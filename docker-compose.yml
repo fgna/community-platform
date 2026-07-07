@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (generate with openssl rand -hex 32)}
       POSTGRES_DB: ${POSTGRES_DB:-community_platform}
     # Ports not exposed to host in production — only accessible via internal network
     expose:
@@ -13,7 +13,7 @@ services:
     volumes:
       - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-community_platform}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,7 @@ services:
     container_name: community_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-community_platform}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-community_platform}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
@@ -47,7 +47,7 @@ services:
       JWT_REFRESH_EXPIRES_IN: 7d
       NODE_ENV: production
       API_PORT: 3001
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env (e.g. https://yourdomain.com)}
       THROTTLE_TTL: 60000
       THROTTLE_LIMIT: 100
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -81,14 +81,14 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env (e.g. https://api.yourdomain.com)}
         NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
         NEXT_PUBLIC_LINKEDIN_CLIENT_ID: ${NEXT_PUBLIC_LINKEDIN_CLIENT_ID:-}
     container_name: community_web
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL in .env (e.g. https://yourdomain.com)}
     # No host port binding — internal only in production.
     # docker-compose.override.yml adds ports for local development.
     expose:
@@ -147,7 +147,7 @@ services:
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER:-postgres}
       PGDATABASE: ${POSTGRES_DB:-community_platform}
-      _PGPASS: ${POSTGRES_PASSWORD:-password}
+      _PGPASS: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - ${DATA_DIR:-./data}/backups:/backups
     entrypoint: >

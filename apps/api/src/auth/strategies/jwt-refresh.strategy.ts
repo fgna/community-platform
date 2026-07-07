@@ -8,7 +8,12 @@ import { AuthService } from '../auth.service';
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private prisma: PrismaService) {
     super({
-      jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // httpOnly cookie is the preferred mechanism
+        (req: any) => req?.cookies?.['refresh-token'] ?? null,
+        // Body fallback keeps non-browser clients (mobile, API tools) working
+        ExtractJwt.fromBodyField('refreshToken'),
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
       passReqToCallback: true,
@@ -16,7 +21,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   }
 
   async validate(req: any, payload: any) {
-    const refreshToken = req.body?.refreshToken;
+    const refreshToken = req?.cookies?.['refresh-token'] ?? req.body?.refreshToken;
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not provided');

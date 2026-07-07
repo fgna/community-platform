@@ -9,13 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - **HAR-002**: Replace in-memory `loginAttempts` Map with Redis-backed `INCR`/`EXPIRE` counters — lockouts now survive API restarts and work correctly across multiple instances; graceful degradation when Redis is unavailable (fail-open with warning log)
+- **OPS-011**: Refresh tokens now set as httpOnly, Secure, SameSite=Strict cookies by the API on login, register, and token refresh; browser sends them automatically so JS never needs to read the value. The JWT refresh strategy accepts cookie-first with request-body fallback for non-browser clients.
 
 ### Added
 - `apps/api/src/redis/redis.module.ts` — global `@Global()` NestJS module providing an `ioredis` client under the `REDIS_CLIENT` injection token; uses `lazyConnect: true` to prevent startup failure when Redis is temporarily unavailable
 - `RELEASE_CHECKLIST.md` — concrete per-release checklist covering pre-release, deployment, post-deployment verification, and rollback steps (HAR-010)
 - `.github/dependabot.yml` — weekly automated dependency updates for npm (grouped by production/development) and GitHub Actions ecosystems (HAR-003)
 - `dependency-audit` CI job — runs `pnpm audit --audit-level=high` on every push/PR; fails CI on high/critical vulnerabilities (HAR-003)
-- Coverage thresholds in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — 50% baseline floor; CI now fails on coverage regression (HAR-004)
+- Coverage thresholds in `apps/api/vitest.config.ts` and `apps/web/vitest.config.ts` — scoped include + 50–60% baseline floor; CI now fails on coverage regression (HAR-004)
 - Section 0 in `scripts/verify-vps-deployment.sh` — six env-var checks before deployment validation (HAR-008)
 
 ### Changed
@@ -24,18 +25,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/ci.yml` — added `redis:7-alpine` service and `REDIS_URL` env var to `test-api` job
 - `PRODUCTION_READINESS.md` — added link to `RELEASE_CHECKLIST.md` in the Reference section
 
+### Added
+- **OPS-012**: Structured JSON logging via `nestjs-pino` — production output is machine-readable JSON; development uses pino-pretty for readable output. Authorization and Cookie headers are redacted from HTTP access logs.
+- **HAR-008 / Q-007 (baseline)**: Coverage thresholds added to both vitest configs. API gated on 4 service files (50% floor). Web gated on store + lib layer (60% floor). Path to 90% overall after measuring actuals.
+- **HAR-008**: `scripts/verify-vps-deployment.sh` extended with Section 0 — env-var pre-flight checks (JWT_SECRET, JWT_REFRESH_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS, NODE_ENV, Swagger disabled).
+- Web unit tests for `auth.store`, `theme.store`, `utils`, and `api-client` (Q-001 rework — prior backlog entry was incorrectly marked done).
+- `withCredentials: true` on the web API client so the httpOnly refresh cookie is included in cross-origin requests.
+- `cookie-parser` middleware in API bootstrap.
+
+---
+
 ## [1.35.0] — 2026-07-06
 
+### Security
+- **OPS-003**: Hardened `docker-compose.yml` — replaced `:-` insecure fallbacks with `:?` required expansion for `POSTGRES_PASSWORD`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`; compose now fails fast when these are unset
+- **OPS-005**: Enhanced `main.ts` startup validation — refuses to start if JWT secrets contain placeholder strings or are shorter than 32 chars; refuses to start if `CORS_ORIGINS` is wildcard `*` in production
+- **OPS-010**: Added CI `security-config-guard` job — greps compose files for dangerous `:-` defaults and SEED_DEMO_DATA=true; fails the build if found
+
 ### Added
-- `scripts/restore.sh` — Docker-based database restore script; drops/recreates DB, runs pg_restore inside the postgres container, restarts the API, and re-applies migrations
+- `scripts/preflight-production.sh` — validates `.env`, secrets strength, CORS, NODE_ENV, demo seed guard, Docker availability, and compose override file before deploying
+- `scripts/production-up.sh` — safe deployment wrapper that runs preflight → build → migrate → verify in sequence; explicitly excludes `docker-compose.override.yml`
 - `scripts/verify-vps-deployment.sh` — comprehensive VPS deployment verification script covering container state, port exposure, API/web routing through nginx, TLS, database migration status, demo account check, uploads, security headers, seed guard, backup smoke test, and non-root container users
+- `scripts/restore.sh` — Docker-based database restore script; drops/recreates DB, runs pg_restore inside the postgres container, restarts the API, and re-applies migrations
+- `scripts/backup.sh` — point-in-time PostgreSQL backup via `pg_dump -Fc` with automatic pruning (keeps 30 most recent)
+- `scripts/restore-test.sh` — verifies a backup is restorable into a temporary test DB without touching the live database
+- `scripts/create-admin.sh` — bootstrap first admin user in production without running the demo seed
+- `.env.development.example` — development defaults separate from the production template
 
 ### Changed
 - `apps/web/Dockerfile` — removed Android SDK build stage (`eclipse-temurin:21-jdk-jammy`) that downloaded ~1.5 GB from Google's servers unconditionally; APK placeholder is now created at build time if the file is absent (CI pre-builds the APK separately)
-- `scripts/smoke-test.sh` — added check 6: nginx `/health` routing verification in proxy mode (confirms the response is API JSON, not Next.js HTML); improved usage comment to explain proxy mode; fixed migration fail message to reference the correct Docker command
+- `scripts/smoke-test.sh` — added nginx `/health` routing verification in proxy mode
 - `nginx/default-no-ssl.conf.template` — added upload caching headers (`expires 7d`, `Cache-Control: public, immutable`) to match the SSL template
-- `DEPLOYMENT.md` — added Backup and Restore section with full Docker-based restore procedure and reference to `scripts/restore.sh`
-- `PRODUCTION_READINESS.md` — replaced bare `pg_restore` host command with `./scripts/restore.sh` Docker-based restore; added Deployment Verification section referencing `verify-vps-deployment.sh`
+- `docker-compose.override.yml` — added documentation note that production deployments must explicitly exclude it with `-f docker-compose.yml`
+- CI `docker-smoke` job — added required env vars (`POSTGRES_PASSWORD`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`) now that compose uses `:?` required expansion
+- `DEPLOYMENT.md` — added Backup and Restore section with full Docker-based restore procedure
+- `PRODUCTION_READINESS.md` — added Deployment Verification section referencing `verify-vps-deployment.sh`
+
+---
 
 ## [1.34.0] — 2026-06-22
 

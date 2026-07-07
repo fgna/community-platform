@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
@@ -34,6 +35,20 @@ import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+        transport: process.env.NODE_ENV !== 'production'
+          ? { target: 'pino-pretty', options: { singleLine: true } }
+          : undefined,
+        // Redact sensitive headers from request logs
+        redact: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-refresh-token"]'],
+        serializers: {
+          req: (req: any) => ({ id: req.id, method: req.method, url: req.url }),
+          res: (res: any) => ({ statusCode: res.statusCode }),
+        },
+      },
+    }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
