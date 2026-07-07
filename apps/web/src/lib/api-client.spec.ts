@@ -37,10 +37,8 @@ vi.mock('axios', async () => {
 vi.mock('@/store/auth.store', () => ({
   useAuthStore: {
     getState: vi.fn(() => ({
-      accessToken: null,
-      refreshToken: null,
+      isAuthenticated: false,
       clearAuth: vi.fn(),
-      setAccessToken: vi.fn(),
     })),
   },
 }));
@@ -70,33 +68,25 @@ describe('api-client', () => {
   });
 
   describe('request interceptor', () => {
-    it('attaches Bearer token when access token exists', async () => {
-      const { useAuthStore } = await import('@/store/auth.store');
-      vi.mocked(useAuthStore.getState).mockReturnValue({
-        accessToken: 'test-token',
-        refreshToken: null,
-        clearAuth: vi.fn(),
-        setAccessToken: vi.fn(),
-      } as any);
-
+    it('attaches Bearer token when setAccessToken was called', async () => {
       const mod = await import('./api-client');
-      const [[interceptorFn]] = vi.mocked(mod.default.interceptors.request.use).mock.calls as any;
+      mod.setAccessToken('test-token');
+
+      const calls = vi.mocked(mod.default.interceptors.request.use).mock.calls as any;
+      const [interceptorFn] = calls[calls.length - 1]; // latest registration
       const config = { headers: {} };
       const result = interceptorFn(config);
       expect(result.headers.Authorization).toBe('Bearer test-token');
+
+      mod.clearAccessToken();
     });
 
-    it('leaves Authorization unset when no access token', async () => {
-      const { useAuthStore } = await import('@/store/auth.store');
-      vi.mocked(useAuthStore.getState).mockReturnValue({
-        accessToken: null,
-        refreshToken: null,
-        clearAuth: vi.fn(),
-        setAccessToken: vi.fn(),
-      } as any);
-
+    it('leaves Authorization unset when clearAccessToken was called', async () => {
       const mod = await import('./api-client');
-      const [[interceptorFn]] = vi.mocked(mod.default.interceptors.request.use).mock.calls as any;
+      mod.clearAccessToken();
+
+      const calls = vi.mocked(mod.default.interceptors.request.use).mock.calls as any;
+      const [interceptorFn] = calls[calls.length - 1]; // latest registration
       const config = { headers: {} };
       const result = interceptorFn(config);
       expect(result.headers.Authorization).toBeUndefined();

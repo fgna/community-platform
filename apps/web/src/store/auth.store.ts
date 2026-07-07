@@ -27,10 +27,8 @@ function clearAuthCookies() {
 
 interface AuthStore {
   user: AuthUser | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, accessToken: string) => void;
-  setAccessToken: (token: string) => void;
+  setAuth: (user: AuthUser) => void;
   updateUser: (partial: Partial<AuthUser>) => void;
   clearAuth: () => void;
 }
@@ -39,26 +37,23 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken) => {
+      setAuth: (user) => {
         if (typeof window !== 'undefined') syncAuthCookies(user.role);
-        set({ user, accessToken, isAuthenticated: true });
-      },
-      setAccessToken: (token) => {
-        set({ accessToken: token });
+        set({ user, isAuthenticated: true });
       },
       updateUser: (partial) =>
         set((state) => ({ user: state.user ? { ...state.user, ...partial } : null })),
       clearAuth: () => {
         if (typeof window !== 'undefined') clearAuthCookies();
-        set({ user: null, accessToken: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false });
       },
     }),
     {
       name: 'community-auth',
-      // accessToken is NOT persisted — it's short-lived (15 min) and retrieved
-      // via silent refresh on page load using the httpOnly refresh_token cookie.
+      // Only user identity and session flag are persisted.
+      // The access token lives in api-client's module closure (never persisted).
+      // The refresh token lives in an httpOnly cookie (never accessible to JS).
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

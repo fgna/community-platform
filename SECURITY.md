@@ -83,7 +83,7 @@ All responses include security headers via `helmet`:
 
 **Refresh token**: stored as an `httpOnly; Secure; SameSite=Lax` cookie (`refresh_token`) scoped to `path=/api/auth`. Not accessible from JavaScript — XSS cannot steal it.
 
-**Access token**: held only in Zustand in-memory state, not persisted to localStorage. Lost on page reload; silently re-acquired via the httpOnly cookie on the first 401 response (silent refresh).
+**Access token**: held only in a module-level closure inside `apps/web/src/lib/api-client.ts` — not in Zustand, not in localStorage, not in any React state. Not enumerable via React devtools or the Zustand store API. Lost on page reload; silently re-acquired via the httpOnly cookie on the first 401 response (silent refresh).
 
 **Session-indicator cookies** (non-httpOnly — not secrets, readable by Next.js middleware):
 - `auth-session=1` — presence signals an active session; used by middleware for route gating

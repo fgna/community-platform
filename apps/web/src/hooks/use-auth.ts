@@ -2,13 +2,13 @@ import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
-import apiClient from '@/lib/api-client';
+import apiClient, { setAccessToken, clearAccessToken } from '@/lib/api-client';
 import type { LoginResponse } from '@community/shared';
 
 export function useAuth() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated, accessToken, setAuth, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, setAuth, clearAuth } = useAuthStore();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -16,8 +16,8 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      // refreshToken is now an httpOnly cookie — not in response body
-      setAuth(data.user, data.accessToken);
+      setAccessToken(data.accessToken);
+      setAuth(data.user);
       router.push('/dashboard');
     },
   });
@@ -28,7 +28,8 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken);
+      setAccessToken(data.accessToken);
+      setAuth(data.user);
       router.push('/dashboard');
     },
   });
@@ -39,18 +40,19 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken);
+      setAccessToken(data.accessToken);
+      setAuth(data.user);
       router.push('/dashboard');
     },
   });
 
   const logout = useCallback(async () => {
     try {
-      // POST to logout — the httpOnly refresh_token cookie is cleared server-side
       await apiClient.post('/auth/logout');
     } catch {
       // Ignore errors on logout
     } finally {
+      clearAccessToken();
       clearAuth();
       queryClient.clear();
       router.push('/login');
@@ -60,7 +62,6 @@ export function useAuth() {
   return {
     user,
     isAuthenticated,
-    accessToken,
     login: loginMutation.mutateAsync,
     loginLoading: loginMutation.isPending,
     loginError: loginMutation.error,

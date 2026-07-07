@@ -13,7 +13,6 @@ const mockUser: AuthUser = {
 function resetStore() {
   useAuthStore.setState({
     user: null,
-    accessToken: null,
     isAuthenticated: false,
   });
   localStorage.clear();
@@ -25,34 +24,23 @@ describe('useAuthStore', () => {
   beforeEach(resetStore);
 
   describe('setAuth', () => {
-    it('sets user, accessToken, and isAuthenticated', () => {
-      useAuthStore.getState().setAuth(mockUser, 'access-123');
+    it('sets user and isAuthenticated', () => {
+      useAuthStore.getState().setAuth(mockUser);
       const state = useAuthStore.getState();
       expect(state.user).toEqual(mockUser);
-      expect(state.accessToken).toBe('access-123');
       expect(state.isAuthenticated).toBe(true);
     });
 
     it('writes auth-session=1 and user-role cookies', () => {
-      useAuthStore.getState().setAuth(mockUser, 'tok');
+      useAuthStore.getState().setAuth(mockUser);
       expect(document.cookie).toContain('auth-session=1');
       expect(document.cookie).toContain('user-role=MEMBER');
     });
   });
 
-  describe('setAccessToken', () => {
-    it('updates only the access token', () => {
-      useAuthStore.getState().setAuth(mockUser, 'old-token');
-      useAuthStore.getState().setAccessToken('new-token');
-      const state = useAuthStore.getState();
-      expect(state.accessToken).toBe('new-token');
-      expect(state.isAuthenticated).toBe(true);
-    });
-  });
-
   describe('updateUser', () => {
     it('merges partial update into existing user', () => {
-      useAuthStore.getState().setAuth(mockUser, 'tok');
+      useAuthStore.getState().setAuth(mockUser);
       useAuthStore.getState().updateUser({ name: 'Updated Name' });
       const state = useAuthStore.getState();
       expect(state.user?.name).toBe('Updated Name');
@@ -67,26 +55,24 @@ describe('useAuthStore', () => {
 
   describe('clearAuth', () => {
     it('clears all auth state', () => {
-      useAuthStore.getState().setAuth(mockUser, 'tok');
+      useAuthStore.getState().setAuth(mockUser);
       useAuthStore.getState().clearAuth();
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
-      expect(state.accessToken).toBeNull();
       expect(state.isAuthenticated).toBe(false);
     });
 
     it('clears auth cookies', () => {
-      useAuthStore.getState().setAuth(mockUser, 'tok');
+      useAuthStore.getState().setAuth(mockUser);
       useAuthStore.getState().clearAuth();
       expect(document.cookie).not.toContain('auth-session=1');
     });
   });
 
   describe('initial state', () => {
-    it('starts unauthenticated with no tokens', () => {
+    it('starts unauthenticated', () => {
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
-      expect(state.accessToken).toBeNull();
       expect(state.isAuthenticated).toBe(false);
     });
   });
