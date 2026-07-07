@@ -152,8 +152,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/community_test
+      REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-jwt-secret-at-least-32-chars-long
       JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars
       JWT_EXPIRES_IN: 15m

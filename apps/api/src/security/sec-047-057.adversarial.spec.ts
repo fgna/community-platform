@@ -118,12 +118,22 @@ describe('[SEC-051] Invite token email validation', () => {
       refreshToken: { deleteMany: vi.fn(), create: vi.fn() },
     };
 
+    const mockRedisClient = {
+      get: vi.fn().mockResolvedValue(null),
+      incr: vi.fn().mockResolvedValue(1),
+      expire: vi.fn().mockResolvedValue(1),
+      del: vi.fn().mockResolvedValue(1),
+    };
+
+    const { REDIS_CLIENT } = await import('../redis/redis.module');
+
     const module = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: { sign: vi.fn().mockReturnValue('token') } },
         { provide: InvitesService, useValue: mockInvitesService },
+        { provide: REDIS_CLIENT, useValue: mockRedisClient },
       ],
     }).compile();
 

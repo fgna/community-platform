@@ -12,7 +12,7 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | ID | Item | Priority | Size | Status |
 |----|------|----------|------|--------|
 | HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[x]` |
-| HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[ ]` |
+| HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[x]` |
 | HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[x]` |
 | HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[~]` |
 | HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[x]` |
@@ -55,7 +55,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 
 ---
 
-### HAR-002 — Redis-backed brute-force protection  `[ ]` P1 · M
+### HAR-002 — Redis-backed brute-force protection  `[x]` P1 · M
 
 **Problem:** `loginAttempts` is an in-memory `Map` on `AuthService` (`auth.service.ts` lines 24–27). Resets on any restart. Does not survive scale-out.
 
