@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { InvitesService } from '../invites/invites.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SetupAdminDto } from './dto/setup-admin.dto';
 import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
@@ -151,6 +152,41 @@ export class AuthService {
       where: { token: refreshToken },
     });
     return { message: 'Logged out successfully' };
+  }
+
+  async getSetupStatus(): Promise<{ needsSetup: boolean }> {
+    const count = await this.prisma.user.count({ where: { role: 'ADMIN' } });
+    return { needsSetup: count === 0 };
+  }
+
+  async createFirstAdmin(dto: SetupAdminDto) {
+    const count = await this.prisma.user.count({ where: { role: 'ADMIN' } });
+    if (count > 0) {
+      throw new BadRequestException('Setup already complete — an admin account already exists');
+    }
+    const email = dto.email.toLowerCase().trim();
+    const passwordHash = await argon2.hash(dto.password);
+    try {
+      const user = await this.prisma.user.create({
+        data: { email, name: dto.name, passwordHash, role: 'ADMIN' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          avatarUrl: true,
+          membershipTier: true,
+          createdAt: true,
+        },
+      });
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      return { user, ...tokens };
+    } catch (err: any) {
+      if (err?.code === 'P2002') {
+        throw new ConflictException('An account with this email already exists');
+      }
+      throw err;
+    }
   }
 
   async generateTokens(userId: string, email: string, role: string, fingerprint?: string) {

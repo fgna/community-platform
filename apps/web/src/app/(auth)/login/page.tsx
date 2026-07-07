@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -19,12 +20,24 @@ interface LoginForm {
 export default function LoginPage() {
   const { login, loginLoading, loginError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const setupComplete = searchParams.get('setup') === 'complete';
   const t = useTranslations('auth');
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>();
+
+  useEffect(() => {
+    fetch('/api/auth/setup')
+      .then((r) => r.json())
+      .then(({ needsSetup }) => {
+        if (needsSetup) router.replace('/setup');
+      })
+      .catch(() => {});
+  }, [router]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -42,6 +55,19 @@ export default function LoginPage() {
       <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--theme-text)' }}>
         {t('signInTitle')}
       </h2>
+
+      {setupComplete && (
+        <div
+          className="mb-4 p-3 rounded-lg text-sm"
+          style={{
+            background: 'rgba(34,197,94,0.1)',
+            border: '1px solid rgba(34,197,94,0.3)',
+            color: '#22c55e',
+          }}
+        >
+          Admin account created. Sign in to continue.
+        </div>
+      )}
 
       <SocialButtons />
 

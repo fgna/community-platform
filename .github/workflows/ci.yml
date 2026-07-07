@@ -194,6 +194,81 @@ jobs:
           name: api-coverage
           path: apps/api/coverage/
 
+  # ─── Backup / Restore Test ──────────────────────────────────────────────────
+  backup-restore:
+    name: Backup / Restore Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: community_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d community_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/community_test
+      PGPASSWORD: testpassword
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-chars-long
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Generate Prisma client and run migrations
+        working-directory: apps/api
+        run: |
+          pnpm prisma generate
+          pnpm prisma migrate deploy
+
+      - name: Record migration row count before backup
+        id: before
+        run: |
+          count=$(psql -h localhost -U testuser -d community_test -t -c \
+            "SELECT count(*) FROM \"_prisma_migrations\";")
+          echo "count=$(echo "$count" | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Create pg_dump backup
+        run: |
+          pg_dump -h localhost -U testuser -d community_test -Fc -f /tmp/test-backup.dump
+          ls -lh /tmp/test-backup.dump
+
+      - name: Create restore target database
+        run: psql -h localhost -U testuser -d postgres -c "CREATE DATABASE community_restore;"
+
+      - name: Restore dump to new database
+        run: |
+          pg_restore -h localhost -U testuser -d community_restore \
+            --no-owner /tmp/test-backup.dump
+
+      - name: Verify row counts match
+        run: |
+          before="${{ steps.before.outputs.count }}"
+          after=$(psql -h localhost -U testuser -d community_restore -t -c \
+            "SELECT count(*) FROM \"_prisma_migrations\";")
+          after=$(echo "$after" | tr -d ' ')
+          echo "Before: $before | After: $after"
+          [ "$before" = "$after" ] || \
+            { echo "ERROR: migration row count mismatch ($before vs $after)"; exit 1; }
+
   # ─── Unit Tests (Web) ───────────────────────────────────────────────────────
   test-web:
     name: Web Unit Tests

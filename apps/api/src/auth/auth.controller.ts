@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { OAuthService } from './oauth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SetupAdminDto } from './dto/setup-admin.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { OAuthCallbackDto } from './dto/oauth-callback.dto';
 import { IS_PUBLIC_KEY } from './guards/jwt-auth.guard';
@@ -84,6 +85,22 @@ export class AuthController {
     this.clearRefreshCookie(res);
     const token = req?.cookies?.['refresh-token'] ?? dto.refreshToken;
     return this.authService.logout(token);
+  }
+
+  @Get('setup')
+  @SetMetadata(IS_PUBLIC_KEY, true)
+  @ApiOperation({ summary: 'Check if initial admin setup is required' })
+  async getSetupStatus() {
+    return this.authService.getSetupStatus();
+  }
+
+  @Post('setup')
+  @SetMetadata(IS_PUBLIC_KEY, true)
+  @HttpCode(HttpStatus.CREATED)
+  @Throttle({ auth: { limit: 3, ttl: 3_600_000 } })
+  @ApiOperation({ summary: 'Create the first admin account (disabled once any admin exists)' })
+  async createFirstAdmin(@Body() dto: SetupAdminDto) {
+    return this.authService.createFirstAdmin(dto);
   }
 
   @Post('oauth/google')

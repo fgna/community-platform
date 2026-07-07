@@ -11,6 +11,7 @@ const mockPrisma = {
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    count: vi.fn().mockResolvedValue(0),
   },
   refreshToken: {
     create: vi.fn(),

@@ -10,11 +10,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      // Gate on the service files that have dedicated unit tests.
-      // Controllers and other services are exercised via E2E / adversarial
-      // tests and will be added here as unit tests are written.
       include: [
         'src/auth/auth.service.ts',
+        'src/auth/oauth.service.ts',
         'src/courses/courses.service.ts',
         'src/messages/messages.service.ts',
         'src/posts/posts.service.ts',

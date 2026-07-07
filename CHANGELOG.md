@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] — 2026-07-07
+
+### Added
+- First-admin setup flow (HAR-011): `GET /auth/setup` returns `{ needsSetup: boolean }`; `POST /auth/setup` creates the first admin account and is permanently disabled once any admin exists. Throttled at 3 req/hour.
+- `/setup` page in the web app — name/email/password form that provisions the initial admin, then redirects to login with a success banner
+- Login page auto-redirects to `/setup` when the API reports `needsSetup: true`; authenticated users on `/setup` are sent to `/dashboard`
+- CI `backup-restore` job — runs migrations, pg_dump, pg_restore to a fresh DB, and asserts migration row counts match (HAR-006 verification)
+- `coverage.include` scoping in `apps/api/vitest.config.ts` — coverage now measured only for the 5 most-tested service files; thresholds raised to 50%/lines/functions/statements, 40% branches (HAR-004/Q-007)
+
+### Changed
+- `apps/api/src/auth/auth.service.spec.ts` / `auth.adversarial.spec.ts` — added `user.count` mock for forward compatibility with setup methods
+
 ## [1.36.0] — 2026-07-06
 
 ### Security
