@@ -79,11 +79,25 @@ All responses include security headers via `helmet`:
 - Stored XSS mitigated via `sanitize-html` on API post create/update
 - Rendered XSS mitigated via DOMPurify on frontend post rendering
 
-### Token Storage
-- Access and refresh tokens are stored in Zustand (persisted to localStorage)
-- **XSS risk**: tokens in localStorage are readable by any JavaScript on the page; a stored XSS attack can steal them. The XSS mitigations (DOMPurify, sanitize-html, CSP) reduce this risk but do not eliminate it
-- The Next.js middleware also mirrors the access token and user role into a non-httpOnly `auth-session` cookie for SSR route gating — this cookie is read by middleware only and is not used for backend authorization; the backend always validates the `Authorization: Bearer` JWT
-- This model is acceptable for a low-to-medium-risk SPA; for high-security deployments (financial, medical, sensitive data) consider migrating to httpOnly, Secure, SameSite=Strict cookies managed server-side
+### Token Storage (HAR-001)
+
+**Refresh token**: stored as an `httpOnly; Secure; SameSite=Lax` cookie (`refresh_token`) scoped to `path=/api/auth`. Not accessible from JavaScript — XSS cannot steal it.
+
+**Access token**: held only in Zustand in-memory state, not persisted to localStorage. Lost on page reload; silently re-acquired via the httpOnly cookie on the first 401 response (silent refresh).
+
+**Session-indicator cookies** (non-httpOnly — not secrets, readable by Next.js middleware):
+- `auth-session=1` — presence signals an active session; used by middleware for route gating
+- `user-role=<ADMIN|MEMBER>` — used by middleware to protect `/admin` routes
+
+The backend never trusts these indicator cookies for authorization — it always validates the `Authorization: Bearer` JWT on protected endpoints.
+
+**Known limitation — Android native client**: The Android WebView app (`apps/mobile-android`) uses a native HTTP client (`AuthClient.kt`) that reads `refreshToken` from the response body and sends it via body on refresh. Since `refreshToken` is no longer in the response body, the native Android auth flow will break. The WebView-based session (which uses browser cookies) still works. Fix: update `AuthClient.kt` to use Android's `CookieManager` to extract and send the httpOnly cookie, or use the body fallback (send `refreshToken` in the request body to `/api/auth/refresh` — the strategy still accepts it).
+
+**Cookie settings**:
+- `httpOnly: true` — inaccessible to JavaScript
+- `secure: true` in production — HTTPS only
+- `sameSite: lax` — sent on top-level navigations, blocked on cross-site subrequests (CSRF protection)
+- `path: /api/auth` — only sent to auth endpoints, not every API request
 
 ## Dependency Security
 

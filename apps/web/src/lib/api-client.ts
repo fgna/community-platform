@@ -24,7 +24,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor — handle 401 and refresh token
+// Response interceptor — handle 401 and silent refresh
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> =
   [];
@@ -46,6 +46,16 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't attempt refresh on the refresh endpoint itself (prevents infinite loop)
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        const { clearAuth } = useAuthStore.getState();
+        clearAuth();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -59,19 +69,23 @@ apiClient.interceptors.response.use(
 
       originalRequest._retry = true;
 
-      const { refreshToken, clearAuth, setAccessToken } = useAuthStore.getState();
+      const { isAuthenticated, clearAuth, setAccessToken } = useAuthStore.getState();
 
-      if (!refreshToken) {
-        // No session to refresh — propagate the original error (e.g. wrong password on /auth/login)
+      if (!isAuthenticated) {
+        // No session to refresh — propagate the original error
         return Promise.reject(error);
       }
 
       isRefreshing = true;
 
       try {
-        const response = await axios.post(`${API_URL}/api/auth/refresh`, {
-          refreshToken,
-        });
+        // The httpOnly refresh_token cookie is sent automatically with withCredentials.
+        // No body needed.
+        const response = await axios.post(
+          `${API_URL}/api/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
 
         const { accessToken: newAccessToken } = response.data;
         setAccessToken(newAccessToken);

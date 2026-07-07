@@ -16,7 +16,8 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
+      // refreshToken is now an httpOnly cookie — not in response body
+      setAuth(data.user, data.accessToken);
       router.push('/dashboard');
     },
   });
@@ -27,7 +28,7 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
+      setAuth(data.user, data.accessToken);
       router.push('/dashboard');
     },
   });
@@ -38,17 +39,15 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
+      setAuth(data.user, data.accessToken);
       router.push('/dashboard');
     },
   });
 
   const logout = useCallback(async () => {
-    const { refreshToken } = useAuthStore.getState();
     try {
-      if (refreshToken) {
-        await apiClient.post('/auth/logout', { refreshToken });
-      }
+      // POST to logout — the httpOnly refresh_token cookie is cleared server-side
+      await apiClient.post('/auth/logout');
     } catch {
       // Ignore errors on logout
     } finally {

@@ -12,8 +12,11 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
 }
 
-function syncAuthCookies(accessToken: string, role: string) {
-  setCookie('auth-session', accessToken);
+// Non-httpOnly session-indicator cookies: read by Next.js middleware for route guards.
+// auth-session = "1" means a session exists (actual token validation happens API-side).
+// user-role = role string used by middleware to gate /admin routes.
+function syncAuthCookies(role: string) {
+  setCookie('auth-session', '1');
   setCookie('user-role', role);
 }
 
@@ -25,9 +28,8 @@ function clearAuthCookies() {
 interface AuthStore {
   user: AuthUser | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  setAuth: (user: AuthUser, accessToken: string) => void;
   setAccessToken: (token: string) => void;
   updateUser: (partial: Partial<AuthUser>) => void;
   clearAuth: () => void;
@@ -38,34 +40,32 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken) => {
-        if (typeof window !== 'undefined') syncAuthCookies(accessToken, user.role);
-        set({ user, accessToken, refreshToken, isAuthenticated: true });
+      setAuth: (user, accessToken) => {
+        if (typeof window !== 'undefined') syncAuthCookies(user.role);
+        set({ user, accessToken, isAuthenticated: true });
       },
       setAccessToken: (token) => {
-        if (typeof window !== 'undefined') setCookie('auth-session', token);
         set({ accessToken: token });
       },
       updateUser: (partial) =>
         set((state) => ({ user: state.user ? { ...state.user, ...partial } : null })),
       clearAuth: () => {
         if (typeof window !== 'undefined') clearAuthCookies();
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        set({ user: null, accessToken: null, isAuthenticated: false });
       },
     }),
     {
       name: 'community-auth',
+      // accessToken is NOT persisted — it's short-lived (15 min) and retrieved
+      // via silent refresh on page load using the httpOnly refresh_token cookie.
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.isAuthenticated && state.accessToken && state.user && typeof window !== 'undefined') {
-          syncAuthCookies(state.accessToken, state.user.role);
+        if (state?.isAuthenticated && state.user && typeof window !== 'undefined') {
+          syncAuthCookies(state.user.role);
         }
       },
     },
