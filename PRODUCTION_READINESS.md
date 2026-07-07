@@ -41,7 +41,7 @@ These require operator action for every production deployment.
 - [ ] Verify no default demo accounts exist: `SELECT email FROM "User" WHERE email LIKE '%example.com';`
 
 ### Network and HTTPS
-- [ ] Use production Docker Compose mode — **do not** copy `docker-compose.override.yml` to production:
+- [ ] Use production Docker Compose mode — load only the base file, **not** `docker-compose.dev.yml`:
   ```bash
   docker compose -f docker-compose.yml --profile proxy up -d
   ```
