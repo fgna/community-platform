@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/ISSUE_TEMPLATE/` — bug report, feature request, security hardening, deployment issue, and documentation issue templates, plus a chooser config pointing to private vulnerability reporting
 - `.github/pull_request_template.md` — Summary/Type/Verification/Risk/Deployment notes/Linked issue sections
 - `.github/workflows/codeql.yml` — CodeQL static analysis for JS/TS on push/PR to `main` and weekly
-- `.github/workflows/secret-scan.yml` — Gitleaks scan on push/PR; `.gitleaksignore` documents the one known false positive (a CI test-fixture JWT secret)
+- `.github/workflows/secret-scan.yml` — Gitleaks scan on push/PR; `.gitleaks.toml` allowlists the `generic-api-key` rule for `.github/workflows/ci.yml` specifically (that file hardcodes ephemeral test-only JWT secrets for CI databases, never real ones — real secrets there use `${{ secrets.* }}`)
 - `BACKLOG.md` — new "GitHub Repository Hygiene" section (GH-001–GH-007) tracking the settings-only items (branch protection, CODEOWNERS, secret scanning toggle, release environment protection, label taxonomy, Issues/Projects migration) that need repo admin access rather than code
 
 ### Changed

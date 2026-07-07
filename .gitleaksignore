@@ -1,9 +1,0 @@
-# Known false positives: the CI test-fixture JWT secret in .github/workflows/ci.yml
-# (e.g. "ci-test-jwt-secret-at-least-32-chars-long") trips the generic-api-key rule
-# on entropy alone. It is a hardcoded placeholder used only to satisfy main.ts's
-# 32-char minimum check in CI, never a real secret. Verify with:
-#   gitleaks detect --source . --redact --verbose
-07d8b5b5292232758caad7a5918d0905dbf532f2:.github/workflows/ci.yml:generic-api-key:215
-7ae279270700aec4a6fcb45b0dcd825e95678d91:.github/workflows/ci.yml:generic-api-key:220
-ca72fc31e0fa0abe37cbf5522f58463bb227ac12:.github/workflows/ci.yml:generic-api-key:82
-ca72fc31e0fa0abe37cbf5522f58463bb227ac12:.github/workflows/ci.yml:generic-api-key:240
