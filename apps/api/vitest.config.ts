@@ -25,6 +25,19 @@ export default defineConfig({
         functions: 50,
         branches: 55,
         statements: 50,
+        // Auth is the highest-value target in the codebase — hold it to a
+        // stricter floor than the general baseline (measured: 91.82% stmts/lines,
+        // 87.5% functions, 72.41% branches, though branch % has been observed to
+        // dip a few points under system load — auth.service.ts's Date.now()-based
+        // token-expiry checks are timing-sensitive). Gate set with real margin
+        // below actual to avoid failing CI on that noise while still catching a
+        // genuine regression.
+        'src/auth/**': {
+          lines: 88,
+          functions: 80,
+          branches: 62,
+          statements: 88,
+        },
       },
     },
   },

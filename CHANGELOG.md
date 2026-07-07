@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] — 2026-07-07
+
+### Security
+- **HAR-011**: CSP hardening — `apps/web` now sets a per-request nonce-based `script-src` via middleware (`'self' 'nonce-<random>' 'strict-dynamic'`, no `unsafe-inline`; `unsafe-eval` dev-only for HMR) instead of the static `unsafe-inline`/`unsafe-eval` policy in `next.config.ts`. `style-src 'unsafe-inline'` is kept (and documented) since React inline `style` props have no nonce-based alternative. `apps/api`'s production Helmet CSP `script-src` reduced to `'self'` — production never serves scripts, so neither `unsafe-inline` nor `unsafe-eval` was ever needed there.
+- **HAR-013**: Request ID propagation — every API request gets an `X-Request-Id` (trusts an upstream-supplied header, otherwise mints a UUID), echoed back on the response and included in every JSON error body and 5xx log line for correlation.
+
+### Changed
+- **HAR-012**: `apps/api/vitest.config.ts` — added a `src/auth/**` coverage threshold (88% lines/statements, 80% functions, 62% branches) independent of the global 50/50/55/50 baseline, gating the auth service well above the general floor.
+
 ## [1.36.0] — 2026-07-06
 
 ### Security

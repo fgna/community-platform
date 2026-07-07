@@ -21,6 +21,9 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
 | HAR-009 | Documentation accuracy pass | P2 | M | `[ ]` |
 | HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[x]` |
+| HAR-011 | CSP hardening — remove unsafe-eval/unsafe-inline from script-src | P1 | M | `[x]` |
+| HAR-012 | Raise coverage gates on auth-critical files above baseline | P1 | S | `[x]` |
+| HAR-013 | Request ID propagation for observability | P2 | S | `[x]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
@@ -215,6 +218,37 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 - `docker compose exec api npx prisma migrate deploy`
 - `DOMAIN=<your-domain> ./scripts/verify-vps-deployment.sh`
 - Monitor logs 5 min post-deploy
+
+---
+
+### HAR-011 — CSP hardening  `[x]` P1 · M
+
+**Completed:**
+- `apps/web`: CSP moved from static `next.config.ts` headers to `apps/web/src/middleware.ts`, which mints a fresh nonce per request; `script-src` is now `'self' 'nonce-<random>' 'strict-dynamic'` (+ `'unsafe-eval'` in development only, for webpack HMR) — no `'unsafe-inline'`
+- `style-src 'unsafe-inline'` kept and documented: the app renders React inline `style={{...}}` props pervasively for theme tokens, producing real `style="..."` attributes; CSP nonces only apply to `<style>`/`<link>` tags, not style attributes, so there is no nonce-based alternative
+- Verified in a real headless-Chromium production build (`next build` + standalone server): zero CSP violations across `/`, `/login`, `/register`, `/pricing`, including a hydrated form interaction
+- `apps/api`: production Helmet CSP `script-src` reduced to `'self'` (no `unsafe-inline`/`unsafe-eval`) — Swagger, the only thing that ever needed inline scripts, is dev-only, so production never serves scripts at all
+- `SECURITY.md` updated with the full reasoning
+
+---
+
+### HAR-012 — Raise coverage gates on auth-critical files  `[x]` P1 · S
+
+**Completed:**
+- `apps/api/vitest.config.ts`: added a per-glob threshold override for `src/auth/**` (Vitest's glob-keyed `coverage.thresholds`), independent of the 50/50/55/50 global baseline
+- Measured actual coverage of `auth.service.ts` (the only auth file with dedicated unit tests): 91.82% stmts/lines, 87.5% functions, 72.41% branches (branch % observed to dip under system load — `Date.now()`-based token-expiry checks are timing-sensitive)
+- Gate set with real margin below actual — lines/statements 88%, functions 80%, branches 62% — to lock in the current level without flaking on timing noise
+- Verified the gate has teeth: running a reduced test subset intentionally drops auth coverage and the `"src/auth/**"` threshold error fires independently of the global one
+
+---
+
+### HAR-013 — Request ID propagation  `[x]` P2 · S
+
+**Completed:**
+- `apps/api/src/app.module.ts`: `pinoHttp.genReqId` now trusts an upstream-supplied `X-Request-Id` header (e.g. from a reverse proxy) or mints a `crypto.randomUUID()`, and echoes it back on the response via the same header
+- `X-Request-Id` added to CORS `exposedHeaders` so browser JS can read it
+- `GlobalExceptionFilter` includes `requestId` in every JSON error body and in the 5xx log line, so a user-reported error can be correlated to its exact log line
+- Covered by `test/request-id.integration.spec.ts` (generation, echo-back, uniqueness) and `src/common/filters/http-exception.filter.spec.ts`
 
 ---
 

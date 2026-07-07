@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -40,6 +41,15 @@ import { AiCoachModule } from './ai-coach/ai-coach.module';
         transport: process.env.NODE_ENV !== 'production'
           ? { target: 'pino-pretty', options: { singleLine: true } }
           : undefined,
+        // Trust an upstream-supplied request ID (e.g. nginx/load balancer) so a
+        // request can be correlated end-to-end; otherwise mint one. Either way,
+        // echo it back on the response so clients/error reports can quote it.
+        genReqId: (req: any, res: any) => {
+          const existingId = req.headers['x-request-id'];
+          const id = Array.isArray(existingId) ? existingId[0] : existingId || randomUUID();
+          res.setHeader('X-Request-Id', id);
+          return id;
+        },
         // Redact sensitive headers from request logs
         redact: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-refresh-token"]'],
         serializers: {
