@@ -1,11 +1,12 @@
 # Local development overrides — automatically loaded by `docker compose` when this file is present.
 #
 # DO NOT use this file in production.
-# Production deployments should explicitly exclude it:
+# Production deployments must explicitly exclude it:
 #   docker compose -f docker-compose.yml --profile proxy up -d
 #
 # This file is intentionally committed so that local dev and CI smoke tests
-# (which auto-load it) get host port bindings without any extra flags.
+# (which auto-load it) get host port bindings and safe dev defaults without
+# requiring a full .env file.
 services:
   api:
     ports:

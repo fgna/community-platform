@@ -10,12 +10,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      // Baseline floor — raise after measuring with: pnpm test:coverage
+      // Gate on the service files that have dedicated unit tests.
+      // Controllers and other services are exercised via E2E / adversarial
+      // tests and will be added here as unit tests are written.
+      include: [
+        'src/auth/auth.service.ts',
+        'src/courses/courses.service.ts',
+        'src/messages/messages.service.ts',
+        'src/posts/posts.service.ts',
+      ],
+      exclude: ['src/**/*.spec.ts'],
       thresholds: {
-        lines: 20,
-        functions: 20,
-        branches: 30,
-        statements: 20,
+        lines: 50,
+        functions: 50,
+        branches: 55,
+        statements: 50,
       },
     },
   },

@@ -13,12 +13,17 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      // Baseline floor — raise after measuring with: pnpm test:coverage
+      // Gate on store + the specific lib files that have unit tests.
+      // Other lib files (markdown, oauth, query-client, render-post-content,
+      // theme-provider) are exercised via E2E and will be added here as
+      // unit tests are written.
+      include: ['src/store/**', 'src/lib/api-client.ts', 'src/lib/utils.ts'],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
       thresholds: {
-        lines: 10,
-        functions: 10,
-        branches: 10,
-        statements: 10,
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
       },
     },
   },

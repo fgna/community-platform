@@ -11,11 +11,11 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 
 | ID | Item | Priority | Size | Status |
 |----|------|----------|------|--------|
-| HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[ ]` |
+| HAR-001 | httpOnly Secure cookie auth — move refresh token out of localStorage | P1 | L | `[x]` |
 | HAR-002 | Redis-backed login brute-force protection (survives restart, multi-instance) | P1 | M | `[ ]` |
 | HAR-003 | Dependency audit in CI + Dependabot config | P1 | S | `[x]` |
 | HAR-004 | Coverage gates enforced in CI — see Q-007 | P1 | S | `[~]` |
-| HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[~]` |
+| HAR-005 | Production deployment safety — rename override + deploy script | P1 | S | `[x]` |
 | HAR-006 | Backup/restore operationally verified — restore script + docs | P1 | M | `[x]` |
 | HAR-007 | Docker API image size — remove devDeps from production stage | P2 | M | `[ ]` |
 | HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
@@ -396,7 +396,7 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 | Q-004 | Playwright e2e: course enroll + progress | P1 | M | `[x]` |
 | Q-005 | Playwright e2e: event RSVP | P1 | S | `[x]` |
 | Q-006 | API integration tests (Supertest) | P0 | L | `[x]` |
-| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[ ]` |
+| Q-007 | Coverage gates enforced in CI (90% overall) | P1 | S | `[~]` |
 | D-001 | GitHub Actions CI pipeline (lint, typecheck, test, build, e2e) | P0 | M | `[x]` |
 | D-002 | Dockerfile optimisation (multi-stage, non-root user) | P0 | S | `[x]` |
 | D-003 | Automated Prisma migration in Docker entrypoint | P0 | S | `[x]` |
@@ -666,6 +666,28 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 | ID | Finding | Root cause | Size | Status |
 |----|---------|------------|------|--------|
 | CI-001 | **E2E job: API server at `:3001` never becomes available** — `wait-on` times out every run | `HealthModule` missing `PrismaModule` import — NestJS DI fails, API never starts | M | `[x]` |
+
+---
+
+## Operational Hardening
+
+> Items from July 2026 operational hardening review. Goal: make production deployments
+> safe-by-default and easily verifiable.
+
+| ID | Item | Priority | Size | Status |
+|----|------|----------|------|--------|
+| OPS-001 | `scripts/preflight-production.sh` — validate .env and system state before deploying | P0 | S | `[x]` |
+| OPS-002 | `scripts/production-up.sh` — safe deployment wrapper (runs preflight, migrate, verify) | P0 | S | `[x]` |
+| OPS-003 | Harden `docker-compose.yml` — replace `:-` fallbacks with `:?` for POSTGRES_PASSWORD, CORS_ORIGINS, NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_URL | P0 | S | `[x]` |
+| OPS-004 | `.env.development.example` — dev defaults separate from production template | P1 | XS | `[x]` |
+| OPS-005 | `apps/api/src/main.ts` runtime validation — check placeholder secrets, CORS wildcard at startup | P0 | S | `[x]` |
+| OPS-006 | `scripts/create-admin.sh` — bootstrap first admin user without demo seed | P0 | S | `[x]` |
+| OPS-007 | `scripts/backup.sh` — pg_dump with retention pruning | P0 | S | `[x]` |
+| OPS-008 | `scripts/restore-test.sh` — verify backup is restorable without touching production DB | P0 | S | `[x]` |
+| OPS-009 | `scripts/verify-vps-deployment.sh` — post-deploy smoke test (env vars, containers, API health, Swagger disabled, TLS) | P0 | M | `[x]` |
+| OPS-010 | CI `security-config-guard` job — grep for dangerous `:-` defaults in compose files | P0 | S | `[x]` |
+| OPS-011 | httpOnly cookie migration for refresh tokens | P1 | M | `[x]` |
+| OPS-012 | Structured JSON logging in production | P2 | S | `[x]` |
 
 ---
 
