@@ -56,7 +56,7 @@ jobs:
         run: mv apps/web/public/app/app-release.apk apps/web/public/app/community.apk
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
