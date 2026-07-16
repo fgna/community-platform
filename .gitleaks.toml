@@ -1,0 +1,16 @@
+# Extends gitleaks' built-in rule set (does not replace it) so we keep every
+# default detector and only add a narrow, content-agnostic allowlist.
+[extend]
+useDefault = true
+
+# .github/workflows/ci.yml hardcodes ephemeral JWT secrets (e.g.
+# "ci-test-jwt-secret-at-least-32-chars-long") purely to satisfy main.ts's
+# 32-char minimum length check for spun-up-and-torn-down CI test databases.
+# There are no real secrets in this file — everything that needs a genuine
+# secret uses `${{ secrets.* }}` (see release.yml). Scoped to generic-api-key
+# only, and to this one file, so the rule still catches anything else.
+[[rules]]
+id = "generic-api-key"
+
+  [rules.allowlist]
+  paths = ['''\.github/workflows/ci\.yml''']

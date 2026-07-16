@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
     };
   },
   async headers() {
+    // Content-Security-Policy is set per-request in src/middleware.ts (it needs a
+    // fresh nonce every request); everything else static stays here.
     return [
       {
         source: '/(.*)',
@@ -36,21 +38,6 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://avatars.githubusercontent.com https://images.unsplash.com https://via.placeholder.com",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}`,
-              "frame-src 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join('; '),
-          },
         ],
       },
     ];

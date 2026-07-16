@@ -66,7 +66,10 @@ async function bootstrap() {
       contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          // Swagger (the only thing that ever needed inline scripts here) is
+          // dev-only (see below) — production serves no HTML/scripts, so
+          // script-src needs neither 'unsafe-inline' nor 'unsafe-eval'.
+          scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           imgSrc: ["'self'", 'data:', 'blob:', 'https://*.googleusercontent.com', 'https://images.unsplash.com'],
@@ -88,7 +91,7 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Refresh-Token'],
-    exposedHeaders: ['X-New-Access-Token'],
+    exposedHeaders: ['X-New-Access-Token', 'X-Request-Id'],
   });
 
   // Global prefix (health excluded so infra/Docker can probe /health directly)

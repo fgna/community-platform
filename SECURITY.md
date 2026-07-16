@@ -74,8 +74,10 @@ All responses include security headers via `helmet`:
 ### Content Security
 - `X-Frame-Options: DENY` header on all Next.js responses
 - `X-Content-Type-Options: nosniff` on all Next.js responses
-- Content-Security-Policy header on all Next.js responses (default-src, script-src, style-src, connect-src including API URL, frame-src, object-src, base-uri, form-action)
-- NestJS Helmet CSP in production only (separate config from Next.js)
+- Content-Security-Policy header on all Next.js responses, set per-request in `apps/web/src/middleware.ts` (not in `next.config.ts`, since it needs a fresh nonce every request):
+  - `script-src 'self' 'nonce-<random>' 'strict-dynamic'` (+ `'unsafe-eval'` in development only, for webpack HMR/fast-refresh) — no `'unsafe-inline'`; Next's own bootstrap scripts carry the nonce automatically since `x-nonce` is set on the incoming request
+  - `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com` — `'unsafe-inline'` is required here and has no nonce-based alternative: the app renders React inline `style={{...}}` props pervasively for theme tokens, which produce real `style="..."` attributes, and CSP nonces only apply to `<style>`/`<link>` tags, never to style attributes
+- NestJS Helmet CSP in production only (separate config from Next.js) — `script-src 'self'` with no `'unsafe-inline'`/`'unsafe-eval'`, since the API never serves scripts in production (Swagger, the only thing that ever needed inline scripts, is dev-only)
 - Stored XSS mitigated via `sanitize-html` on API post create/update
 - Rendered XSS mitigated via DOMPurify on frontend post rendering
 

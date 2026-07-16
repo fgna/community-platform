@@ -21,10 +21,90 @@ This file tracks active work. Completed feature history lives in [CHANGELOG.md](
 | HAR-008 | VPS verification script — comprehensive deployment health check | P1 | M | `[x]` |
 | HAR-009 | Documentation accuracy pass | P2 | M | `[ ]` |
 | HAR-010 | Release checklist (`RELEASE_CHECKLIST.md`) | P2 | S | `[x]` |
+| HAR-011 | CSP hardening — remove unsafe-eval/unsafe-inline from script-src | P1 | M | `[x]` |
+| HAR-012 | Raise coverage gates on auth-critical files above baseline | P1 | S | `[x]` |
+| HAR-013 | Request ID propagation for observability | P2 | S | `[x]` |
+| GH-001 | Enable branch protection on `main` | P1 | XS | `[ ]` |
+| GH-002 | Add CODEOWNERS with real usernames/teams | P1 | XS | `[ ]` |
+| GH-003 | Enable secret scanning + push protection (repo settings) | P1 | XS | `[ ]` |
+| GH-004 | Enable private vulnerability reporting (repo settings) | P2 | XS | `[ ]` |
+| GH-005 | Protected environment + required reviewers for release workflow | P2 | S | `[ ]` |
+| GH-006 | Create label taxonomy (type/priority/size/area) | P2 | XS | `[ ]` |
+| GH-007 | Migrate active backlog items into GitHub Issues + Projects/Milestones | P3 | L | `[ ]` |
 | Q-007 | Coverage gates enforced in CI (90% overall) — see HAR-004 | P1 | S | `[~]` |
 | GL-030 | Multi-tenancy (isolated workspaces per organisation) | P2 | XL | `[ ]` |
 | GL-033 | Video lessons (HLS streaming, chapter markers) | P2 | XL | `[ ]` |
 | GL-034 | Live events / webinar integration | P2 | XL | `[ ]` |
+
+---
+
+## GitHub Repository Hygiene (Manual — Requires Org/Repo Admin Access)
+
+These came out of a repo hygiene audit. Issue templates, PR template, CodeQL, and
+Gitleaks are implemented in code (see HAR-011/012/013 above for the unrelated
+security-hardening items landed in the same pass, and the `.github/` directory
+for these). Everything below needs a human with repo admin access clicking
+through GitHub Settings — none of it can be expressed as a committed file.
+
+### GH-001 — Branch protection on `main`  `[ ]` P1 · XS
+
+Settings → Branches → add a ruleset for `main`:
+- Require a pull request before merging (≥1 approval)
+- Require status checks to pass: `Lint`, `Typecheck`, `Dependency Audit`, `API Unit Tests`, `Web Unit Tests`, `Build`
+- Require branches to be up to date before merging
+- Require review from Code Owners (once GH-002 lands)
+- Block force pushes and branch deletion
+
+### GH-002 — CODEOWNERS  `[ ]` P1 · XS
+
+Add `.github/CODEOWNERS` once real GitHub usernames/teams are known, e.g.:
+```
+/apps/api/                 @<backend-owner>
+/apps/web/                 @<frontend-owner>
+/apps/api/prisma/          @<backend-owner> @<ops-owner>
+/docker-compose*.yml       @<ops-owner>
+/nginx/                    @<ops-owner>
+/.github/workflows/        @<ops-owner>
+/SECURITY.md               @<ops-owner>
+/PRODUCTION_READINESS.md   @<ops-owner>
+```
+
+### GH-003 — Secret scanning + push protection  `[ ]` P1 · XS
+
+Settings → Code security → enable "Secret scanning" and "Push protection".
+Complements the Gitleaks CI job (`.github/workflows/secret-scan.yml`), which
+scans on push/PR but can't block a push before it reaches GitHub the way
+native push protection does.
+
+### GH-004 — Private vulnerability reporting  `[ ]` P2 · XS
+
+Settings → Code security → enable "Private vulnerability reporting". The
+issue template chooser (`.github/ISSUE_TEMPLATE/config.yml`) already links to
+`/security/advisories/new`; it 404s until this is turned on.
+
+### GH-005 — Protected release environment  `[ ]` P2 · S
+
+Settings → Environments → create a `production` (or `release`) environment
+with required reviewers, attach it to the job(s) in `.github/workflows/release.yml`
+that push Docker images / create the GitHub Release.
+
+### GH-006 — Label taxonomy  `[ ]` P2 · XS
+
+Run `./scripts/setup-github-labels.sh` (requires the GitHub CLI, `gh auth login`
+first) to create `type:{bug,feature,security,ops,docs,test,refactor}`,
+`priority:{p0,p1,p2,p3}`, `size:{xs,s,m,l,xl}`, and
+`area:{api,web,auth,db,docker,ci,mobile,docs,security}`. The issue templates
+in `.github/ISSUE_TEMPLATE/` already reference `type:*` labels — run this
+before or shortly after merge so new issues aren't pointing at labels that
+don't exist yet.
+
+### GH-007 — Migrate backlog into Issues + Projects  `[ ]` P3 · L
+
+Bigger process change, not a settings toggle: move `BACKLOG.md`'s active
+items into GitHub Issues (labels for priority/size, milestones for
+phase/sprint), keeping `BACKLOG.md` as a generated summary rather than the
+source of truth. Deliberately not attempted in this pass — it changes how
+the whole team tracks work, not just repo config.
 
 ---
 
@@ -209,6 +289,37 @@ Raises the platform from deployable beta to small-scale production-ready. Items 
 - `docker compose exec api npx prisma migrate deploy`
 - `DOMAIN=<your-domain> ./scripts/verify-vps-deployment.sh`
 - Monitor logs 5 min post-deploy
+
+---
+
+### HAR-011 — CSP hardening  `[x]` P1 · M
+
+**Completed:**
+- `apps/web`: CSP moved from static `next.config.ts` headers to `apps/web/src/middleware.ts`, which mints a fresh nonce per request; `script-src` is now `'self' 'nonce-<random>' 'strict-dynamic'` (+ `'unsafe-eval'` in development only, for webpack HMR) — no `'unsafe-inline'`
+- `style-src 'unsafe-inline'` kept and documented: the app renders React inline `style={{...}}` props pervasively for theme tokens, producing real `style="..."` attributes; CSP nonces only apply to `<style>`/`<link>` tags, not style attributes, so there is no nonce-based alternative
+- Verified in a real headless-Chromium production build (`next build` + standalone server): zero CSP violations across `/`, `/login`, `/register`, `/pricing`, including a hydrated form interaction
+- `apps/api`: production Helmet CSP `script-src` reduced to `'self'` (no `unsafe-inline`/`unsafe-eval`) — Swagger, the only thing that ever needed inline scripts, is dev-only, so production never serves scripts at all
+- `SECURITY.md` updated with the full reasoning
+
+---
+
+### HAR-012 — Raise coverage gates on auth-critical files  `[x]` P1 · S
+
+**Completed:**
+- `apps/api/vitest.config.ts`: added a per-glob threshold override for `src/auth/**` (Vitest's glob-keyed `coverage.thresholds`), independent of the 50/50/55/50 global baseline
+- Measured actual coverage of `auth.service.ts` (the only auth file with dedicated unit tests): 91.82% stmts/lines, 87.5% functions, 72.41% branches (branch % observed to dip under system load — `Date.now()`-based token-expiry checks are timing-sensitive)
+- Gate set with real margin below actual — lines/statements 88%, functions 80%, branches 62% — to lock in the current level without flaking on timing noise
+- Verified the gate has teeth: running a reduced test subset intentionally drops auth coverage and the `"src/auth/**"` threshold error fires independently of the global one
+
+---
+
+### HAR-013 — Request ID propagation  `[x]` P2 · S
+
+**Completed:**
+- `apps/api/src/app.module.ts`: `pinoHttp.genReqId` now trusts an upstream-supplied `X-Request-Id` header (e.g. from a reverse proxy) or mints a `crypto.randomUUID()`, and echoes it back on the response via the same header
+- `X-Request-Id` added to CORS `exposedHeaders` so browser JS can read it
+- `GlobalExceptionFilter` includes `requestId` in every JSON error body and in the 5xx log line, so a user-reported error can be correlated to its exact log line
+- Covered by `test/request-id.integration.spec.ts` (generation, echo-back, uniqueness) and `src/common/filters/http-exception.filter.spec.ts`
 
 ---
 
